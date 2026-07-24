@@ -23,7 +23,12 @@ export async function criarSessao(c, usuario, segredo) {
   setCookie(c, NOME_COOKIE, token, {
     httpOnly: true, // JavaScript do navegador não consegue ler esse cookie (protege contra roubo via script malicioso)
     secure: ehHttps, // só exige https quando não estamos rodando localmente
-    sameSite: "Lax", // proteção básica contra ataques de outros sites
+    // Front e back moram em domínios diferentes (pages.dev vs workers.dev),
+    // então o cookie precisa de SameSite=None pra ser enviado nas chamadas
+    // do front — exige "Secure" junto, por isso só em produção (https).
+    // Localmente, front e back rodam ambos em "localhost" (portas
+    // diferentes contam como mesmo "site"), então "Lax" já basta.
+    sameSite: ehHttps ? "None" : "Lax",
     path: "/",
     maxAge: DURACAO_SEGUNDOS,
   });
