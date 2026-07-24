@@ -1,0 +1,10 @@
+name = "lucri-cockpit-server"
+main = "src/index.js"
+compatibility_date = "2025-07-18"
+
+# Banco de dados D1 — descomentar e preencher depois de rodar:
+#   npx wrangler d1 create lucri-cockpit-db
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "lucri-cockpit-db"
+# database_id = "PREENCHER_APOS_CRIAR"
