@@ -1,0 +1,8 @@
+name = "lucri-cockpit-server"
+main = "src/index.js"
+compatibility_date = "2025-07-18"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lucri-cockpit-db"
+database_id = "1b4990a1-5bf2-4a1b-8503-c0da7411e673"
