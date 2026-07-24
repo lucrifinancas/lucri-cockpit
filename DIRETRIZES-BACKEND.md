@@ -29,7 +29,7 @@ Responsabilidades:
 4. **Normalização dos dados** do Conta Azul para os formatos que o front consome
    (evitar o front lidar com a forma bruta da API externa — isso muda se o Conta
    Azul mudar o contrato deles). V1 cobre 8 abas: HOME, AJUSTES, ENTRADAS, SAÍDAS,
-   DESPESAS, CAIXA, BALANÇO, DRE — ver `README.md`. Atenção especial a:
+   DESPESAS, CAIXA, BALANÇO, DRE — ver `DECISOES-E-ESCOPO.md`. Atenção especial a:
    - **SAÍDAS vs. DESPESAS são endpoints/modelos distintos** — SAÍDAS é toda
      movimentação de débito do caixa (inclui transferência, investimento, etc.);
      DESPESAS é só o subconjunto operacional (fixo + variável) que alimenta o DRE.
@@ -110,7 +110,7 @@ DESPESAS/DRE (ver "Em aberto").
 
 ## Em aberto
 
-Ver seção "Em aberto" do `README.md`. Destaque para o backend:
+Ver seção "Em aberto" do `DECISOES-E-ESCOPO.md`. Destaque para o backend:
 - **Origem da categorização fixo/variável para DESPESAS/DRE** — ainda não se
   sabe se o Conta Azul já entrega essa categorização pronta ou se o dashboard
   precisa de um mapeamento próprio por cliente. Evitar fechar o schema de
