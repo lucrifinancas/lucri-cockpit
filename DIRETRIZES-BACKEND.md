@@ -2,6 +2,9 @@
 
 Leia `README.md` primeiro para contexto geral do projeto.
 
+O código do backend fica em `server/` (irmã da pasta `app/` do front) —
+ver `server/README.md` pra estrutura sugerida.
+
 ## Responsabilidade do backend
 
 O backend é a camada entre o Conta Azul e o front. O front nunca fala direto com a
@@ -100,7 +103,7 @@ ERP, ou dado mockado em dev) sem tocar no resto da aplicação.
 
 Com a lista de abas da v1 já fechada (HOME, AJUSTES, ENTRADAS, SAÍDAS, DESPESAS,
 CAIXA, BALANÇO, DRE), definir e documentar os endpoints (formato de request/
-response) num arquivo `API-CONTRACT.md` nesta mesma pasta o quanto antes — isso
+response) num arquivo `API-CONTRACT.md` dentro de `server/` o quanto antes — isso
 desbloqueia o front trabalhar contra um mock fiel ao invés de dado inventado.
 Pode avançar sem depender de nenhuma decisão pendente, exceto o formato exato de
 DESPESAS/DRE (ver "Em aberto").
