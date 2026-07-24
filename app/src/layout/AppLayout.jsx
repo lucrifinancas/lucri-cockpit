@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
 import { useAuth } from "../auth/AuthContext";
+import { ROLE_LABELS } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
 import { MOCK_CLIENTS, getClientById } from "../data/mockClients";
 import PeriodSelector from "../components/PeriodSelector";
@@ -28,11 +29,6 @@ const NAV_ITEMS = [
   { to: "/dre", label: "DRE", icon: FileText },
   { to: "/ajustes", label: "Ajustes", icon: GearSix },
 ];
-
-const ROLE_LABELS = {
-  equipe_lucri: "Equipe Lucri",
-  cliente: "Cliente",
-};
 
 export default function AppLayout() {
   const { user, logout } = useAuth();

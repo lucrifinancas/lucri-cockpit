@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { MoonStars, Plugs, SquaresFour, Sun, UserCircle, UserPlus } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
+import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
 import { useTheme } from "../context/ThemeContext";
 import { MOCK_CLIENTS, getClientById } from "../data/mockClients";
@@ -9,15 +10,11 @@ import ClientAvatar from "../components/ClientAvatar";
 import "../styles/page.css";
 import "./AjustesPage.css";
 
-const ROLE_LABELS = {
-  equipe_lucri: "Equipe Lucri",
-  cliente: "Cliente",
-};
-
 export default function AjustesPage() {
   const { user, updateProfile } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const isEquipe = user?.role === "equipe_lucri";
+  const isEquipe = isInternalRole(user?.role);
+  const isMaster = user?.role === "master";
   const [clients, setClients] = useState(MOCK_CLIENTS);
   const [newName, setNewName] = useState("");
   const [profileName, setProfileName] = useState(user?.name ?? "");
@@ -159,7 +156,7 @@ export default function AjustesPage() {
         </section>
       )}
 
-      {isEquipe && (
+      {isMaster && (
         <section className="settings-card">
           <h2 className="settings-card-title">
             <UserPlus size={18} weight="regular" />
