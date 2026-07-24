@@ -1,15 +1,85 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { MOCK_CLIENTS } from "../data/mockClients";
 import logo from "../assets/lucri-logo.png";
 import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
 import "./LoginPage.css";
 
+const SLIDE_INTERVAL_MS = 5000;
+
+// 4 slides do painel de destaque do login — 1 por "motivo pra confiar na
+// Lucri" (financeiro, Instagram, vencimentos, relatório automático). Mesmo
+// par de cards (back/front) em todos, só muda o conteúdo.
+const SLIDES = [
+  {
+    cardBack: { label: "Saldo em conta", value: "R$ 37.244,12", dot: true, barPct: 68, barColor: "var(--lucri-mint)" },
+    cardFront: {
+      label: "Entradas do mês",
+      value: "R$ 70.670,87",
+      rows: [
+        { label: "Recorrentes", value: "84%" },
+        { label: "Pontuais", value: "6%" },
+      ],
+    },
+    headline: "Clareza financeira pra decidir sem achismo",
+    text: "A Lucri centraliza receitas, despesas e caixa dos seus clientes em um só painel — visão completa pra tomar decisão com segurança.",
+  },
+  {
+    cardBack: { label: "Instagram", value: "@lucrifinancas", dot: true, barPct: 100, barColor: "var(--lucri-sky)" },
+    cardFront: {
+      label: "Novo conteúdo toda semana",
+      value: "12,4K seguidores",
+      rows: [
+        { label: "Posts por semana", value: "3" },
+        { label: "Dicas de gestão", value: "✓" },
+      ],
+    },
+    headline: "Segue a Lucri no Instagram",
+    text: "Dicas de gestão financeira, bastidores e novidades do produto toda semana — @lucrifinancas.",
+  },
+  {
+    cardBack: { label: "Contas a vencer", value: "R$ 2.690,01", dot: true, barPct: 42, barColor: "var(--chart-despesa)" },
+    cardFront: {
+      label: "Status dos vencimentos",
+      value: "92% em dia",
+      rows: [
+        { label: "Em dia", value: "92%" },
+        { label: "Atrasado", value: "8%" },
+      ],
+    },
+    headline: "Nunca mais perca um vencimento",
+    text: "Contas a pagar e a receber organizadas por status, com alerta antes do prazo — direto do Conta Azul.",
+  },
+  {
+    cardBack: { label: "Resultado do mês", value: "R$ 22.861,34", dot: true, barPct: 75, barColor: "var(--lucri-mint)" },
+    cardFront: {
+      label: "DRE automático",
+      value: "Pronto a cada mês",
+      rows: [
+        { label: "Receita", value: "R$ 70.670,87" },
+        { label: "Despesa", value: "R$ 32.265,41" },
+      ],
+    },
+    headline: "Relatório pronto, sem trabalho manual",
+    text: "DRE e Balanço gerados automaticamente a partir dos dados do Conta Azul — sem planilha, sem retrabalho.",
+  },
+];
+
 export default function LoginPage() {
   const { login } = useAuth();
   const [role, setRole] = useState("equipe_lucri");
   const [clientId, setClientId] = useState(MOCK_CLIENTS[0].id);
   const [name, setName] = useState("");
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSlideIndex((i) => (i + 1) % SLIDES.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const slide = SLIDES[slideIndex];
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -69,43 +139,41 @@ export default function LoginPage() {
           <div className="login-showcase-cards">
             <div className="login-preview-card login-preview-card-back">
               <div className="login-preview-card-header">
-                <span>Saldo em conta</span>
-                <span className="login-preview-dot" />
+                <span>{slide.cardBack.label}</span>
+                {slide.cardBack.dot && <span className="login-preview-dot" />}
               </div>
-              <strong className="login-preview-value">R$ 37.244,12</strong>
+              <strong className="login-preview-value">{slide.cardBack.value}</strong>
               <div className="login-preview-bar">
-                <span style={{ width: "68%", background: "var(--lucri-mint)" }} />
+                <span style={{ width: `${slide.cardBack.barPct}%`, background: slide.cardBack.barColor }} />
               </div>
             </div>
 
             <div className="login-preview-card login-preview-card-front">
               <div className="login-preview-card-header">
-                <span>Entradas do mês</span>
+                <span>{slide.cardFront.label}</span>
               </div>
-              <strong className="login-preview-value">R$ 70.670,87</strong>
-              <div className="login-preview-row">
-                <span>Recorrentes</span>
-                <span className="login-preview-pill">84%</span>
-              </div>
-              <div className="login-preview-row">
-                <span>Pontuais</span>
-                <span className="login-preview-pill">6%</span>
-              </div>
+              <strong className="login-preview-value">{slide.cardFront.value}</strong>
+              {slide.cardFront.rows.map((row) => (
+                <div className="login-preview-row" key={row.label}>
+                  <span>{row.label}</span>
+                  <span className="login-preview-pill">{row.value}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           <img src={logoLockup} alt="Lucri Cockpit" className="login-showcase-logo" />
-          <h2>Clareza financeira pra decidir sem achismo</h2>
-          <p>
-            A Lucri centraliza receitas, despesas e caixa dos seus clientes em um só painel —
-            visão completa pra tomar decisão com segurança.
-          </p>
+          <h2>{slide.headline}</h2>
+          <p>{slide.text}</p>
 
           <div className="login-showcase-dots">
-            <span className="active" />
-            <span />
-            <span />
-            <span />
+            {SLIDES.map((s, i) => (
+              <span
+                key={s.headline}
+                className={i === slideIndex ? "active" : ""}
+                onClick={() => setSlideIndex(i)}
+              />
+            ))}
           </div>
         </div>
       </div>
