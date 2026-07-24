@@ -1,0 +1,89 @@
+/* Identidade visual — ver ../../../1.MANUAL DA MARCA/MANUAL-DA-MARCA-LUCRI.md
+   Tema claro (branco), padrão dos relatórios mensais que a Lucri já manda pros
+   clientes — decisão explícita do usuário depois de ver os PNGs de referência. */
+:root {
+  --lucri-night: #010116;
+  --lucri-mint: #00eb85;
+  --lucri-sky: #00d0f5;
+  --lucri-white: #ffffff;
+  --lucri-gradient: linear-gradient(90deg, var(--lucri-sky), var(--lucri-mint));
+
+  --bg-app: var(--lucri-white);
+  --bg-panel: #ffffff;
+  --bg-panel-hover: #f4f5f7;
+  --bg-subtle: #f4f5f7;
+  --border-subtle: #e5e4e7;
+
+  --text-primary: var(--lucri-night);
+  --text-secondary: #55566b;
+  --text-muted: #8a8ba0;
+
+  --accent: var(--lucri-sky);
+  --cta: var(--lucri-mint);
+  --danger: #e2453c;
+
+  /* Cores semânticas de gráfico — mesmo padrão dos relatórios: receita em
+     verde (marca), despesa em coral (fora da paleta de marca, só pra gráfico,
+     igual o próprio relatório já faz), caixa/lucro em azul-céu (marca). */
+  --chart-receita: var(--lucri-mint);
+  --chart-despesa: #ff6b4a;
+  --chart-caixa: var(--lucri-sky);
+  --chart-saldo: var(--lucri-night);
+
+  --font-title: "Ancress", "Montserrat", sans-serif;
+  --font-body: "Montserrat", sans-serif;
+
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+}
+
+/* Tema escuro — mesma marca, superfícies invertidas. Cores de identidade
+   (--lucri-*) e semânticas de gráfico (--chart-*) não mudam: só as
+   superfícies (bg/border/texto) trocam pra manter contraste. */
+:root[data-theme="dark"] {
+  --bg-app: #0b0b1a;
+  --bg-panel: #14142a;
+  --bg-panel-hover: #1c1c36;
+  --bg-subtle: #1c1c36;
+  --border-subtle: #2a2a45;
+
+  --text-primary: #f4f5f7;
+  --text-secondary: #a8a9c0;
+  --text-muted: #747592;
+
+  --chart-saldo: #8a8ba0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-title);
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font-family: var(--font-body);
+}

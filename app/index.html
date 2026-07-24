@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Financeiro — Lucri</title>
+    <script>
+      // Aplica o tema salvo antes do React montar, pra não piscar claro
+      // por uma fração de segundo em cada reload quando o tema é escuro.
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("lucri-dash.theme") || "light"
+      );
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

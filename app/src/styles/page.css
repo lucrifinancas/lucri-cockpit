@@ -1,0 +1,73 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.page-title {
+  font-size: 22px;
+}
+
+.stat-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Grid de colunas — evita a última linha ficar torta quando o total de
+   cards não é múltiplo do que cabe por linha no flex-wrap. Home tem 7 ou 9
+   cards dependendo do tipo de cliente (servico/produto), então usa
+   auto-fit em vez de coluna fixa — reflui bem pros dois casos. */
+.stat-row-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.pending-notice {
+  background: var(--bg-panel);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pending-notice strong {
+  color: var(--text-primary);
+}
+
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.subsection-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.chart-row-2 {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* start, não stretch: evita um card curto (ex: 3 linhas) esticar até a
+     altura do vizinho mais alto (ex: 8 linhas) e sobrar espaço em branco. */
+  align-items: start;
+}
+
+.chart-row-item {
+  min-width: 0;
+}
