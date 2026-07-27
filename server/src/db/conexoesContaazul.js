@@ -21,6 +21,17 @@ export async function buscarConexaoPorCliente(db, clienteId) {
     .first();
 }
 
+export async function atualizarTokens(db, clienteId, { accessToken, refreshToken, expiraEm }) {
+  await db
+    .prepare(
+      `UPDATE conexoes_contaazul
+       SET access_token = ?, refresh_token = ?, expira_em = ?, atualizado_em = datetime('now')
+       WHERE cliente_id = ?`
+    )
+    .bind(accessToken, refreshToken, expiraEm, clienteId)
+    .run();
+}
+
 export async function criarAutorizacaoPendente(db, state, clienteId) {
   await db
     .prepare("INSERT INTO contaazul_autorizacoes_pendentes (state, cliente_id) VALUES (?, ?)")

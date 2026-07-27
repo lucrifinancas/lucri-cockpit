@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { authRoutes } from "./routes/auth.js";
 import { clientesRoutes } from "./routes/clientes.js";
 import { contaazulOnboardingRoutes } from "./routes/contaazulOnboarding.js";
+import { homeRoutes } from "./routes/home.js";
 
 const app = new Hono();
 
@@ -23,5 +24,6 @@ app.get("/api/health", (c) => {
 app.route("/api/auth", authRoutes);
 app.route("/api/clientes", clientesRoutes);
 app.route("/api/contaazul", contaazulOnboardingRoutes);
+app.route("/api/clientes", homeRoutes);
 
 export default app;
