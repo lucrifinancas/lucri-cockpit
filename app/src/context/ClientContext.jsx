@@ -1,9 +1,10 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { isInternalRole } from "../auth/roles";
 import { MOCK_CLIENTS } from "../data/mockClients";
 
-// Cliente "ativo" na tela: equipe_lucri escolhe qual cliente ver (seletor no
-// header); cliente final está sempre travado no próprio tenant.
+// Cliente "ativo" na tela: master/analista escolhem qual cliente ver (seletor
+// no header); cliente final está sempre travado no próprio tenant.
 
 const ClientContext = createContext(null);
 
@@ -16,7 +17,7 @@ export function ClientProvider({ children }) {
   const value = useMemo(
     () => ({
       activeClientId,
-      canSwitchClient: user?.role === "equipe_lucri",
+      canSwitchClient: isInternalRole(user?.role),
       setSelectedClientId,
     }),
     [activeClientId, user?.role]

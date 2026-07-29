@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
+import { ROLE_LABELS } from "./roles";
 import { MOCK_CLIENTS } from "../data/mockClients";
 import logo from "../assets/lucri-logo.png";
 import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
@@ -67,7 +68,7 @@ const SLIDES = [
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [role, setRole] = useState("equipe_lucri");
+  const [role, setRole] = useState("master");
   const [clientId, setClientId] = useState(MOCK_CLIENTS[0].id);
   const [name, setName] = useState("");
   const [slideIndex, setSlideIndex] = useState(0);
@@ -83,11 +84,11 @@ export default function LoginPage() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    login({ role, clientId, name: name || (role === "equipe_lucri" ? "Equipe Lucri" : "Cliente") });
+    login({ role, clientId, name: name || ROLE_LABELS[role] });
   }
 
   function handleDevLogin() {
-    login({ role: "equipe_lucri", clientId: MOCK_CLIENTS[0].id, name: "Dev" });
+    login({ role: "master", clientId: MOCK_CLIENTS[0].id, name: "Dev" });
   }
 
   return (
@@ -108,7 +109,8 @@ export default function LoginPage() {
           <label className="login-field">
             Perfil de acesso
             <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="equipe_lucri">Equipe Lucri (vê todos os clientes)</option>
+              <option value="master">Master (vê todos os clientes, cadastra novos)</option>
+              <option value="analista">Analista (vê todos os clientes)</option>
               <option value="cliente">Cliente final (vê só os próprios dados)</option>
             </select>
           </label>

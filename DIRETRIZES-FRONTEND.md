@@ -88,7 +88,7 @@ não de implementação (lá é HTML puro, aqui é React):
 
 ## Em aberto
 
-Ver seção "Em aberto" do `README.md`. Destaque para o front:
+Ver seção "Em aberto" do `DECISOES-E-ESCOPO.md`. Destaque para o front:
 - Se a categorização fixo/variável de DESPESAS exigir uma tela de mapeamento
   própria (ainda não confirmado), isso adiciona uma tela extra de configuração
   por cliente — evitar fixar o layout de DESPESAS/DRE até isso ser esclarecido.
