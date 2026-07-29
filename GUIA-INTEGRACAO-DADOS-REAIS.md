@@ -51,6 +51,12 @@ role/cliente fake) por campos reais de e-mail/senha.
 "Reconcilia papéis de usuário com o schema do backend", então essa parte já
 está alinhada.
 
+**Novo desde a última versão deste guia**: já existe
+`POST /api/clientes/:id/login` (só `master`) pra criar o acesso de um
+cliente, e `POST /api/auth/alterar-senha` pra qualquer usuário logado trocar
+a própria senha — ambos documentados em `API-CONTRACT.md` e já refletidos
+no `CHECKLIST-FRONTEND.md`.
+
 ## 3. Lista de clientes real (`src/data/mockClients.js` → API)
 
 Hoje `MOCK_CLIENTS` tem IDs tipo `"padaria-bomgosto"` (string). No backend

@@ -29,9 +29,21 @@ vai entregar.
   "Em aberto")
 - [ ] **AJUSTES** — configurações + status das conexões Conta Azul por
   cliente + tema
-- [ ] **AJUSTES → onboarding de cliente** (só visível pra `master`/`analista`)
-  — tela de cadastrar cliente novo e iniciar a autorização OAuth ⏳ (depende
-  do endpoint de onboarding no backend)
+- [ ] **AJUSTES → onboarding de cliente** (endpoints já prontos e testados,
+  ver `API-CONTRACT.md`):
+  - [ ] Cadastrar cliente novo (`POST /api/clientes`) — visível pra
+    `master`/`analista`
+  - [ ] Botão "Conectar Conta Azul" — chama `GET /api/contaazul/autorizar/:id`
+    e redireciona o navegador pra URL retornada (não é fetch comum, é
+    navegação de página inteira)
+  - [ ] Ler `?contaazul=sucesso`/`erro` na URL ao carregar Ajustes (é pra
+    onde o backend redireciona depois do OAuth) e mostrar aviso
+  - [ ] Criar login do cliente (`POST /api/clientes/:id/login`) — **só
+    `master`** pode; formulário de e-mail + senha inicial, que precisa ser
+    repassada ao cliente por fora do sistema (WhatsApp, etc — não existe
+    envio automático ainda)
+- [ ] **AJUSTES → Meu perfil**: campo de trocar a própria senha
+  (`POST /api/auth/alterar-senha`) — pede senha atual + nova senha
 - [ ] **ENTRADAS** — pode começar com dado mockado
 - [ ] **SAÍDAS** — pode começar com dado mockado (visão bruta, não confundir
   com DESPESAS)
@@ -50,13 +62,19 @@ vai entregar.
   final não vê esse seletor, já que seu login é vinculado a 1 único tenant)
 - [ ] Toggle de tema
 
-## Aguardando o backend (não bloqueia começar, mas fixar API contract antes de fechar componentes de dado)
+## Backend — status atual (tudo testado com dados reais)
 
-- [ ] `API-CONTRACT.md` — formato de request/response de cada endpoint
-- [ ] Endpoint de login (autenticação de usuário da aplicação)
-- [ ] Endpoint de onboarding de cliente (cadastro + OAuth Conta Azul)
-- [ ] Endpoints de dados reais por aba (hoje só banco de usuários e conexões
-  existem; dados do Conta Azul ainda não têm rota própria no backend)
+- [x] `API-CONTRACT.md` — formato de request/response de cada endpoint
+- [x] Login/sessão, `/me`, logout, trocar senha
+- [x] Onboarding de cliente (cadastro + OAuth Conta Azul + criar login do
+  cliente)
+- [x] HOME, ENTRADAS, SAÍDAS, CAIXA — dados reais do Conta Azul
+- [ ] DESPESAS, DRE, BALANÇO — bloqueados (ver "Em aberto")
+
+**Beta 1 (foco atual): só HOME e AJUSTES precisam sair do mock.** Ver
+`GUIA-INTEGRACAO-DADOS-REAIS.md` — passo a passo arquivo por arquivo do que
+trocar, incluindo duas lacunas de dado (saldo por conta, classificação
+recorrente/pontual) que não têm origem real ainda.
 
 ## Em aberto — não fixar layout ainda
 

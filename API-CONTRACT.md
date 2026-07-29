@@ -70,6 +70,31 @@ Protegida. Encerra a sessão (apaga o cookie).
 
 ---
 
+## `POST /api/auth/alterar-senha`
+
+Protegida (qualquer papel). O usuário logado troca a própria senha —
+funcionalidade recomendada para a tela "Meu perfil" em Ajustes, e também o
+primeiro passo natural depois que um cliente recebe a senha inicial criada
+pelo master (ver `POST /api/clientes/:id/login` abaixo).
+
+**Corpo da requisição:**
+```json
+{ "senha_atual": "senhaAtualDoUsuario", "senha_nova": "novaSenhaEscolhida" }
+```
+`senha_nova` precisa ter pelo menos 8 caracteres.
+
+**Resposta `200`:**
+```json
+{ "ok": true }
+```
+
+**Resposta `401`** (senha atual errada):
+```json
+{ "erro": "Senha atual incorreta." }
+```
+
+---
+
 ## `GET /api/clientes`
 
 Protegida (`master`, `analista`). Lista todos os clientes cadastrados.
@@ -95,6 +120,46 @@ Protegida (`master`, `analista`). Cria um cliente novo.
 **Resposta `201`:**
 ```json
 { "id": 3, "nome": "Nome da Empresa", "criado_em": "2026-07-29 18:00:00" }
+```
+
+---
+
+## `POST /api/clientes/:id/login`
+
+Protegida — **só `master`** (analista não pode criar login de cliente,
+mesma regra já aplicada no front). Cria o acesso do cliente ao próprio
+dashboard, vinculado ao cliente indicado na URL.
+
+Fluxo sugerido: o master define uma senha inicial aqui (pode ser gerada
+automaticamente ou digitada) e repassa pro cliente por fora do sistema
+(WhatsApp, e-mail manual). O cliente já pode trocar essa senha depois, via
+`POST /api/auth/alterar-senha`.
+
+**Corpo da requisição:**
+```json
+{ "email": "contato@clientedaLucri.com", "senha": "senhaInicialEscolhida" }
+```
+`senha` precisa ter pelo menos 8 caracteres.
+
+**Resposta `201`:**
+```json
+{
+  "id": 6,
+  "email": "contato@clientedaLucri.com",
+  "papel": "cliente",
+  "cliente_id": 1,
+  "criado_em": "2026-07-29 18:14:14"
+}
+```
+
+**Resposta `409`** (e-mail já cadastrado em outro usuário):
+```json
+{ "erro": "Já existe um usuário com esse e-mail." }
+```
+
+**Resposta `403`** (quem chamou não é master):
+```json
+{ "erro": "Sem permissão para esta ação." }
 ```
 
 ---
@@ -244,6 +309,6 @@ Protegida (`master`, `analista`). Resumo consolidado de fluxo de caixa
 - **DESPESAS** e **DRE** — bloqueados pela definição de categorização
   fixo/variável (ver `README.md`, seção "Em aberto").
 - **BALANÇO** — bloqueado pela definição de estrutura de linhas/subtotais.
-- Login/autenticação do papel `cliente` (hoje só testado com
-  `master`/`analista`).
-- Endpoint de "esqueci minha senha" (adiado, ver `GUIA-MAKE-RESET-SENHA.md`).
+- Endpoint de "esqueci minha senha" por e-mail (adiado, ver
+  `GUIA-MAKE-RESET-SENHA.md`) — troca de senha *estando logado* já existe
+  (`POST /api/auth/alterar-senha`).
