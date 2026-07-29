@@ -9,6 +9,32 @@ function bytesParaHex(bytes) {
     .join("");
 }
 
+const ITERACOES_PADRAO = 100_000;
+
+// Gera um hash novo — usado quando o master cria o login de um cliente pela
+// interface (a senha nunca é salva "pura", só o resultado embaralhado).
+export async function criarHashSenha(senha, iteracoes = ITERACOES_PADRAO) {
+  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+  const saltHex = bytesParaHex(saltBytes);
+  const salt = new TextEncoder().encode(saltHex); // mesma convenção do verificarSenha, abaixo
+
+  const chaveBase = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(senha),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const bitsDerivados = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: iteracoes },
+    chaveBase,
+    256
+  );
+
+  return `pbkdf2$${iteracoes}$${saltHex}$${bytesParaHex(bitsDerivados)}`;
+}
+
 export async function verificarSenha(senhaDigitada, hashArmazenado) {
   const [algoritmo, iteracoesStr, saltHex, hashEsperadoHex] = hashArmazenado.split("$");
   if (algoritmo !== "pbkdf2") return false;

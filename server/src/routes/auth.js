@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { buscarUsuarioPorEmail } from "../db/usuarios.js";
-import { verificarSenha } from "../auth/senha.js";
+import { buscarUsuarioPorEmail, buscarUsuarioPorId, atualizarSenha } from "../db/usuarios.js";
+import { verificarSenha, criarHashSenha } from "../auth/senha.js";
 import { criarSessao, lerSessao, encerrarSessao } from "../auth/sessao.js";
 
 export const authRoutes = new Hono();
@@ -45,5 +45,31 @@ authRoutes.get("/me", async (c) => {
 
 authRoutes.post("/logout", (c) => {
   encerrarSessao(c);
+  return c.json({ ok: true });
+});
+
+authRoutes.post("/alterar-senha", async (c) => {
+  const sessao = await lerSessao(c, c.env.JWT_SECRET);
+  if (!sessao) {
+    return c.json({ erro: "Não autenticado." }, 401);
+  }
+
+  const { senha_atual, senha_nova } = await c.req.json();
+  if (!senha_atual || !senha_nova) {
+    return c.json({ erro: "Senha atual e nova senha são obrigatórias." }, 400);
+  }
+  if (senha_nova.length < 8) {
+    return c.json({ erro: "A nova senha precisa ter pelo menos 8 caracteres." }, 400);
+  }
+
+  const usuario = await buscarUsuarioPorId(c.env.DB, sessao.sub);
+  const senhaAtualCorreta = await verificarSenha(senha_atual, usuario.senha_hash);
+  if (!senhaAtualCorreta) {
+    return c.json({ erro: "Senha atual incorreta." }, 401);
+  }
+
+  const novoHash = await criarHashSenha(senha_nova);
+  await atualizarSenha(c.env.DB, usuario.id, novoHash);
+
   return c.json({ ok: true });
 });
