@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { exigirPapel } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
+import { resolverPeriodo } from "../utils/periodo.js";
 import {
   buscarContasAPagar,
   buscarContasAReceber,
@@ -9,21 +10,9 @@ import {
 
 export const homeRoutes = new Hono();
 
-function periodoPadrao() {
-  const hoje = new Date();
-  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-  const formatar = (d) => d.toISOString().slice(0, 10);
-  return { de: formatar(primeiroDia), ate: formatar(ultimoDia) };
-}
-
 homeRoutes.get("/:clienteId/home", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
-  const { de, ate } = {
-    de: c.req.query("de"),
-    ate: c.req.query("ate"),
-    ...(!c.req.query("de") && !c.req.query("ate") ? periodoPadrao() : {}),
-  };
+  const { de, ate } = resolverPeriodo(c);
 
   const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
   if (!accessToken) {

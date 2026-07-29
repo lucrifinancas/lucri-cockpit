@@ -4,6 +4,7 @@ import { authRoutes } from "./routes/auth.js";
 import { clientesRoutes } from "./routes/clientes.js";
 import { contaazulOnboardingRoutes } from "./routes/contaazulOnboarding.js";
 import { homeRoutes } from "./routes/home.js";
+import { financeiroRoutes } from "./routes/financeiro.js";
 
 const app = new Hono();
 
@@ -25,5 +26,6 @@ app.route("/api/auth", authRoutes);
 app.route("/api/clientes", clientesRoutes);
 app.route("/api/contaazul", contaazulOnboardingRoutes);
 app.route("/api/clientes", homeRoutes);
+app.route("/api/clientes", financeiroRoutes);
 
 export default app;
