@@ -15,6 +15,7 @@ export function normalizarLancamento(item, tipo) {
     data_vencimento: item.data_vencimento,
     data_competencia: item.data_competencia,
     categoria: item.categorias?.[0]?.nome ?? null,
+    categoria_id: item.categorias?.[0]?.id ?? null,
     contraparte: contraparte?.nome ?? null,
   };
 }
