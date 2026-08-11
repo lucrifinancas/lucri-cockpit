@@ -63,3 +63,8 @@ export function buscarContasBancarias(accessToken) {
 export function buscarCategorias(accessToken) {
   return chamarApiPaginado("/categorias", accessToken);
 }
+
+export async function buscarSaldoConta(accessToken, contaId) {
+  const dados = await chamarApi(`/conta-financeira/${contaId}/saldo-atual`, accessToken);
+  return dados.saldo_atual;
+}

@@ -6,6 +6,7 @@ import {
   buscarContasAPagar,
   buscarContasAReceber,
   buscarContasBancarias,
+  buscarSaldoConta,
 } from "../contaazul/api.js";
 
 export const homeRoutes = new Hono();
@@ -25,18 +26,30 @@ homeRoutes.get("/:clienteId/home", exigirPapel("master", "analista"), async (c) 
     buscarContasBancarias(accessToken),
   ]);
 
-  return c.json({
-    periodo: { de, ate },
-    contas_a_pagar: contasAPagar.totais,
-    contas_a_receber: contasAReceber.totais,
-    // Só contas ativas — o Conta Azul mantém conta desativada (ex: Asaas)
-    // na listagem mesmo assim, e não deve entrar em saldo/soma nenhuma.
-    contas_bancarias: contasBancarias.itens.filter((conta) => conta.ativo).map((conta) => ({
+  // Só contas ativas — o Conta Azul mantém conta desativada (ex: Asaas)
+  // na listagem mesmo assim, e não deve entrar em saldo/soma nenhuma.
+  const contasAtivas = contasBancarias.itens.filter((conta) => conta.ativo);
+
+  // O saldo não vem junto da listagem — é um endpoint próprio por conta
+  // (GET /conta-financeira/:id/saldo-atual), por isso a busca separada.
+  const contasComSaldo = await Promise.all(
+    contasAtivas.map(async (conta) => ({
       id: conta.id,
       banco: conta.nome,
       agencia: conta.agencia,
       numero: conta.numero,
       tipo: conta.tipo,
-    })),
+      saldo: await buscarSaldoConta(accessToken, conta.id),
+    }))
+  );
+
+  const saldoTotal = contasComSaldo.reduce((soma, conta) => soma + conta.saldo, 0);
+
+  return c.json({
+    periodo: { de, ate },
+    contas_a_pagar: contasAPagar.totais,
+    contas_a_receber: contasAReceber.totais,
+    contas_bancarias: contasComSaldo,
+    saldo_total: saldoTotal,
   });
 });
