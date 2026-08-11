@@ -67,3 +67,58 @@ financeiroRoutes.get("/:clienteId/caixa", exigirPapel("master", "analista"), asy
     saldo_periodo: totalEntradasPago - totalSaidasPago,
   });
 });
+
+const MESES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function chaveMes(dataISO) {
+  return dataISO.slice(0, 7); // "2026-08-15" -> "2026-08"
+}
+
+// Contas a receber vencidas, somadas por mês de vencimento — busca contas a
+// receber numa janela larga (últimos N meses) numa chamada só, em vez de
+// 1 chamada por mês, e agrupa localmente.
+//
+// NOTA: só cobre "vencidas por mês" por enquanto. Receitas x Despesas e
+// Resultado histórico (lucro/prejuízo) dependem de Despesas, que outra
+// pessoa está construindo em paralelo (categorização manual de categoria,
+// ver DEMANDAS-PARA-FINALIZAR.md item 4) — não duplicar aqui, esperar
+// aquilo terminar e então estender este endpoint com receitas/despesas.
+financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "analista"), async (c) => {
+  const clienteId = Number(c.req.param("clienteId"));
+  const meses = Math.min(Math.max(Number(c.req.query("meses")) || 12, 1), 24);
+
+  const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
+  if (!accessToken) {
+    return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
+  }
+
+  const hoje = new Date();
+  const primeiroMes = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1);
+  const de = primeiroMes.toISOString().slice(0, 10);
+  const ate = hoje.toISOString().slice(0, 10);
+  const hojeISO = ate;
+
+  const contasAReceber = await buscarContasAReceber(accessToken, { de, ate });
+
+  const buckets = new Map();
+  for (const item of contasAReceber.itens) {
+    if ((item.nao_pago ?? 0) <= 0 || item.data_vencimento >= hojeISO) continue;
+    const chave = chaveMes(item.data_vencimento);
+    buckets.set(chave, (buckets.get(chave) ?? 0) + item.nao_pago);
+  }
+
+  const mesesLista = Array.from({ length: meses }, (_, i) => {
+    const ref = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1 - i), 1);
+    const chave = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, "0")}`;
+    return {
+      mes: chave,
+      label: MESES[ref.getMonth()],
+      vencidas: buckets.get(chave) ?? 0,
+    };
+  });
+
+  return c.json({ meses: mesesLista });
+});

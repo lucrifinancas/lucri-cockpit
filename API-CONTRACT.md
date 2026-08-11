@@ -332,6 +332,36 @@ Protegida (`master`, `analista`). Resumo consolidado de fluxo de caixa
 
 ---
 
+## `GET /api/clientes/:id/historico-mensal`
+
+Protegida (`master`, `analista`). Últimos N meses de **contas a receber
+vencidas**, somadas por mês de vencimento — pensado pro gráfico "Contas a
+receber vencidas por mês" da Home. Busca contas a receber numa janela larga
+(1 chamada só) e agrupa localmente, em vez de 1 chamada por mês.
+
+**Parâmetros de query (opcionais):** `meses` (padrão `12`, máximo `24`).
+
+**Resposta `200`:**
+```json
+{
+  "meses": [
+    { "mes": "2025-09", "label": "Setembro", "vencidas": 663.0 },
+    { "mes": "2025-10", "label": "Outubro", "vencidas": 3470.0 }
+  ]
+}
+```
+`vencidas` = soma de `valor_em_aberto` dos lançamentos com `data_vencimento`
+no passado e ainda não totalmente pagos, agrupados pelo mês do vencimento.
+
+⚠️ **Só cobre "vencidas" por enquanto.** Não retorna `receitas`/`despesas`/
+`resultado` — esses dependem do endpoint de DESPESAS (ver abaixo), que
+outra pessoa está construindo em paralelo. Quando isso for concluído, este
+endpoint deve ser estendido (não recriado) pra incluir receitas/despesas
+por mês, alimentando também "Receitas x Despesas — Histórico mensal" e
+"Resultado histórico (lucro/prejuízo)".
+
+---
+
 ## Endpoints ainda não implementados
 
 - **DESPESAS** e **DRE** — bloqueados pela definição de categorização
