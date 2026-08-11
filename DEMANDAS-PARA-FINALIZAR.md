@@ -40,14 +40,13 @@ conforme for resolvendo.
 
 ## 4. Decisões em aberto (bloqueiam layout final de outras telas)
 
-- [x] Categorização de DESPESAS — **backend pronto e publicado (12/08)**:
-  `GET /api/clientes/:id/categorias` (proxy + status de marcação),
-  `PUT /api/clientes/:id/categorias/despesas` (só master),
-  `GET /api/clientes/:id/despesas` (filtrado, regime de caixa). Ver
-  `API-CONTRACT.md`. **Falta só o front**: tela em Ajustes pra listar/marcar
-  categorias, e `useFinanceData.js` trocar o mock de despesas pelo fetch
-  real — ver `PROXIMOS-PASSOS-BACKEND-DESPESAS-2026-08-11.md`, seção
-  "Depois disso (lado front)".
+- [x] Categorização de DESPESAS — **completo, backend + front (11/08)**:
+  `GET /api/clientes/:id/categorias`, `PUT /api/clientes/:id/categorias/despesas`
+  (só master), `GET /api/clientes/:id/despesas` (filtrado, regime de caixa) —
+  ver `API-CONTRACT.md`. Front: seção "Categorias de Despesa" em Ajustes
+  (só master, por cliente ativo) e `useFinanceData.js` já busca despesas
+  reais. **Sem nenhuma categoria marcada ainda para nenhum cliente** — até
+  alguém entrar em Ajustes e marcar, Despesas aparece zerada (não é bug).
 - [ ] Estrutura de linhas/subtotais do BALANÇO (ativo circulante/não
   circulante etc.)
 - [ ] Estrutura de níveis de subtotal do DRE

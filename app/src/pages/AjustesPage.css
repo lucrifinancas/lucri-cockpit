@@ -208,3 +208,19 @@
   cursor: pointer;
   white-space: nowrap;
 }
+
+.categoria-search {
+  width: 100%;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.settings-list-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}

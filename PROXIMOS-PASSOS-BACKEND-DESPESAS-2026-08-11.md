@@ -5,6 +5,15 @@ que você mandou. Objetivo: sair do mock de Despesas usando marcação manual
 de categoria (feita por `master` em Ajustes) em vez de depender do
 `entrada_dre` do Conta Azul — mais simples e mais rápido de entregar.
 
+> ⚠️ **Nota (11/08, à noite):** cheguei a prototipar isso e vi que a tabela
+> `categoria_despesa` **já existe** no D1 de produção — parece que você já
+> começou essa frente em paralelo. Removi meu protótipo (não cheguei a subir
+> pro GitHub) pra não conflitar com o que você já está fazendo. Só um detalhe
+> que reparei: a tabela existente tem `is_despesa INTEGER NOT NULL DEFAULT 1`
+> (categoria nova já nasce marcada como despesa) — confirma se é esse o
+> comportamento que você quer, porque o instinto seria o oposto (nascer
+> desmarcada, só virar despesa quando alguém confirmar explicitamente).
+
 ---
 
 ## 1. Deploy do fix da conta bancária inativa

@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowCircleDown, ArrowCircleUp, HandCoins, WarningCircle } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
-import { useMonthlyHistory } from "../hooks/useMonthlyHistory";
-import { useOverdueHistory } from "../hooks/useOverdueHistory";
+import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
 import { sumValores, groupByCategoria, CATEGORY_PALETTE } from "../data/mockFinance";
 import { useActiveClient } from "../context/ClientContext";
 import { useHomeCardPrefs } from "../hooks/useHomeCardPrefs";
@@ -15,8 +14,8 @@ import HorizontalBarChart from "../components/charts/HorizontalBarChart";
 import "../styles/page.css";
 
 // Top N categorias de uma lista `{categoria, valor}[]` já ordenada, com o
-// resto agrupado em "Outros" — usado tanto pra receitas (real) quanto
-// despesas (mock).
+// resto agrupado em "Outros" — usado tanto pra receitas quanto despesas
+// (as duas já são dado real, ver API-CONTRACT.md).
 function topCategorias(porCategoria, n = 10) {
   const top = porCategoria.slice(0, n);
   const resto = porCategoria.slice(n);
@@ -29,8 +28,7 @@ function topCategorias(porCategoria, n = 10) {
 
 export default function HomePage() {
   const { home, entradas, saidas, despesas, loading, error } = useFinanceData();
-  const monthlyHistory = useMonthlyHistory();
-  const overdueHistory = useOverdueHistory();
+  const historico = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
 
@@ -93,13 +91,17 @@ export default function HomePage() {
   const receitasChart = topCategorias(receitasPorCategoria);
   const receitasTabela = receitasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
 
-  // Despesas por categoria: segue mockado (sem endpoint real ainda, ver
-  // GUIA-INTEGRACAO-DADOS-REAIS.md item 3).
+  // Despesas por categoria: dado real, filtrado pelas categorias marcadas
+  // em Ajustes → Categorias de Despesa (ver API-CONTRACT.md /despesas).
   const despesasPorCategoria = groupByCategoria(despesas);
   const despesasChart = topCategorias(despesasPorCategoria);
   const despesasTabela = despesasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
 
-  const resultadoHistorico = monthlyHistory.map((m) => ({ month: m.month, resultado: m.receitas - m.despesas }));
+  // Histórico mensal (Receitas x Despesas, Resultado, Vencidas): 1 fetch só
+  // (useHistoricoMensal), reaproveitado nos 3 gráficos abaixo.
+  const monthlyHistory = historico.map((m) => ({ month: m.label, receitas: m.receitas, despesas: m.despesas }));
+  const resultadoHistorico = historico.map((m) => ({ month: m.label, resultado: m.resultado }));
+  const overdueHistory = historico.map((m) => ({ month: m.label, valor: m.vencidas }));
 
   return (
     <div className="page">
@@ -180,9 +182,8 @@ export default function HomePage() {
       </section>
 
       <p className="pending-notice">
-        Despesas e histórico mensal ainda são dado mockado — sem endpoint real
-        no backend (ver GUIA-INTEGRACAO-DADOS-REAIS.md). Saldo em conta segue
-        oculto até o Conta Azul expor esse dado.
+        Saldo em conta segue oculto até o Conta Azul expor esse dado (ver
+        DADOS-CONTA-AZUL-API.md).
       </p>
     </div>
   );
