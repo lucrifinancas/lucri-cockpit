@@ -10,6 +10,23 @@ reais. Base URL (produção): `https://lucri-cockpit-server.lucrifinancas-54e.wo
   ser enviado/recebido (domínios diferentes entre front e back).
 - Rotas marcadas como **protegidas** retornam `401` se não houver sessão
   válida, e `403` se o papel do usuário não tiver permissão para aquela ação.
+- Qualquer endpoint que dependa da conexão com o Conta Azul (HOME, ENTRADAS,
+  SAÍDAS, CAIXA) pode retornar `409 {"erro": "conta_azul_desconectada"}` se
+  a conexão do cliente não puder mais ser renovada — nesse caso, o cliente
+  precisa refazer a autorização OAuth (tela de onboarding). Diferente de um
+  `500`: isso é esperado acontecer eventualmente (tokens podem ser
+  revogados), não é bug — o front deve tratar mostrando algo como
+  "reconecte o Conta Azul desse cliente".
+
+## ⚠️ Regime de caixa — decidido
+
+Todos os totais de "quanto entrou/saiu" (HOME, ENTRADAS, SAÍDAS, CAIXA)
+devem usar o campo **`pago`** dos `totais` (ex.: `totais.pago.valor`), **não**
+`totais.todos` — `todos` inclui lançamentos vencidos/pendentes que ainda não
+aconteceram de verdade. O mesmo vale por lançamento individual: some
+`valor_pago`, não `valor` (que é o valor total do título, pago ou não).
+Decisão: mostrar regime de **caixa** (o que realmente entrou/saiu), não
+competência.
 
 ---
 
