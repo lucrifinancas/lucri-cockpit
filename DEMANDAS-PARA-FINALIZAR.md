@@ -40,9 +40,11 @@ conforme for resolvendo.
 
 ## 4. Decisões em aberto (bloqueiam layout final de outras telas)
 
-- [ ] Categorização fixo/variável de DESPESAS — Conta Azul já traz
-  `entrada_dre` pronto por categoria; confirmar se dispensa tela própria de
-  mapeamento
+- [ ] Categorização de DESPESAS — **decidido: marcação manual por master em
+  Ajustes** (não usar `entrada_dre` do Conta Azul). Precisa de: endpoint
+  `GET /categorias` (proxy), tabela nova no D1 pra guardar a marcação,
+  endpoint pra salvar (só master) e o `/despesas` de verdade filtrando por
+  ela. Detalhado em `PROXIMOS-PASSOS-BACKEND-DESPESAS-2026-08-11.md`.
 - [ ] Estrutura de linhas/subtotais do BALANÇO (ativo circulante/não
   circulante etc.)
 - [ ] Estrutura de níveis de subtotal do DRE

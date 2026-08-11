@@ -29,7 +29,9 @@ homeRoutes.get("/:clienteId/home", exigirPapel("master", "analista"), async (c) 
     periodo: { de, ate },
     contas_a_pagar: contasAPagar.totais,
     contas_a_receber: contasAReceber.totais,
-    contas_bancarias: contasBancarias.itens.map((conta) => ({
+    // Só contas ativas — o Conta Azul mantém conta desativada (ex: Asaas)
+    // na listagem mesmo assim, e não deve entrar em saldo/soma nenhuma.
+    contas_bancarias: contasBancarias.itens.filter((conta) => conta.ativo).map((conta) => ({
       id: conta.id,
       banco: conta.nome,
       agencia: conta.agencia,
