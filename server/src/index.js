@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { authRoutes } from "./routes/auth.js";
+import { authGoogleRoutes } from "./routes/authGoogle.js";
 import { clientesRoutes } from "./routes/clientes.js";
 import { contaazulOnboardingRoutes } from "./routes/contaazulOnboarding.js";
 import { homeRoutes } from "./routes/home.js";
@@ -44,6 +45,7 @@ app.get("/api/health", (c) => {
 });
 
 app.route("/api/auth", authRoutes);
+app.route("/api/auth/google", authGoogleRoutes);
 app.route("/api/clientes", clientesRoutes);
 app.route("/api/contaazul", contaazulOnboardingRoutes);
 app.route("/api/clientes", homeRoutes);
