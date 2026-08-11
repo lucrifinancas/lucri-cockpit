@@ -11,10 +11,16 @@ Balanço, DRE.
 ## ✅ Pronto
 
 - [x] Auth completo (login, sessão, trocar senha, papéis master/analista/cliente)
+- [x] Login com Google (12/08) — alternativa sem senha, só autentica e-mail
+  já cadastrado (não cria conta nova). Falta só o botão no front — ver
+  `API-CONTRACT.md`.
 - [x] Onboarding de cliente (cadastro, OAuth Conta Azul, criar login de cliente)
+- [x] **Saldo em conta bancária (12/08)** — resolvido, endpoint próprio
+  achado fora da doc oficial (`/conta-financeira/:id/saldo-atual`).
+  `GET /home` já retorna `saldo` por conta + `saldo_total`.
 - [x] **HOME** 100% real: Entradas, Saídas, Despesas (total e por categoria),
   Contas vencidas, Inadimplência, Receitas x Despesas histórico, Resultado
-  histórico, Vencidas por mês — só falta Saldo em Conta (ver pendências)
+  histórico, Vencidas por mês, Saldo em Conta
 - [x] **AJUSTES**: perfil, trocar senha, tema, conexões Conta Azul por
   cliente, cards visíveis na Home, cadastro de cliente, categorias de
   despesa (marcação manual, só master)
@@ -32,10 +38,6 @@ Balanço, DRE.
   não circulante, passivo, PL) antes de fixar layout ou construir endpoint
 - [ ] **Estrutura do DRE** — decidir níveis de subtotal antes de fixar layout
   ou construir endpoint
-- [ ] **Saldo em conta bancária** — `GET /conta-financeira` não traz saldo;
-  confirmar com o Conta Azul se existe em outro endpoint ou se precisa ser
-  calculado (somar lançamentos por conta)
-
 ## 🟡 Telas que existem mas não estão roteadas/finalizadas
 
 - [ ] **ENTRADAS** — página já busca dado real (`useFinanceData`), mas não
@@ -60,10 +62,8 @@ Balanço, DRE.
   deployar o `server/` a partir do push no `main`, igual o front já faz
   com Cloudflare Pages — ou pelo menos combinar "sempre `git pull` antes
   de `wrangler deploy`" como regra da equipe.
-- [ ] **Limpar cliente de teste** — "Cliente Teste Playwright" (id 3) ficou
-  no banco de produção desde o teste de integração de 06/08, sem conexão
-  Conta Azul. Decidir se apaga ou deixa (aparece na lista de clientes pra
-  quem for master/analista).
+- [x] **Limpar cliente de teste** — "Cliente Teste Playwright" (id 3)
+  removido do banco de produção (12/08).
 
 ## ⚪ Fora de escopo v1.0 / adiado (não bloqueia)
 
