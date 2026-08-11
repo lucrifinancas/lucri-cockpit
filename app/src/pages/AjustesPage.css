@@ -63,13 +63,12 @@
   border-radius: 50%;
 }
 
-.status-pending {
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
+.status-ok {
+  color: var(--lucri-mint);
 }
 
-.status-pending .status-badge-dot {
-  background: var(--text-muted);
+.status-error {
+  color: var(--chart-despesa);
 }
 
 .toggle-switch {

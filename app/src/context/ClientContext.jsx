@@ -1,26 +1,55 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { isInternalRole } from "../auth/roles";
-import { MOCK_CLIENTS } from "../data/mockClients";
+import { apiFetch } from "../api/client";
 
 // Cliente "ativo" na tela: master/analista escolhem qual cliente ver (seletor
-// no header); cliente final está sempre travado no próprio tenant.
+// no header, lista vem de `GET /api/clientes`); cliente final está sempre
+// travado no próprio tenant (`user.cliente_id`, sem lista pra buscar).
 
 const ClientContext = createContext(null);
 
 export function ClientProvider({ children }) {
   const { user } = useAuth();
-  const [selectedClientId, setSelectedClientId] = useState(MOCK_CLIENTS[0].id);
+  const isEquipe = isInternalRole(user?.papel);
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(isEquipe);
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
-  const activeClientId = user?.role === "cliente" ? user.clientId : selectedClientId;
+  useEffect(() => {
+    if (!isEquipe) {
+      setClients([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingClients(true);
+    apiFetch("/api/clientes")
+      .then((lista) => {
+        if (cancelled) return;
+        const normalizados = lista.map((c) => ({ id: c.id, name: c.nome, logoUrl: null }));
+        setClients(normalizados);
+        setSelectedClientId((prev) => prev ?? normalizados[0]?.id ?? null);
+      })
+      .finally(() => !cancelled && setLoadingClients(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [isEquipe]);
+
+  const activeClientId = user?.papel === "cliente" ? user.cliente_id : selectedClientId;
+  const activeClient = clients.find((c) => c.id === activeClientId) ?? null;
 
   const value = useMemo(
     () => ({
+      clients,
+      loadingClients,
       activeClientId,
-      canSwitchClient: isInternalRole(user?.role),
+      activeClient,
+      canSwitchClient: isEquipe,
       setSelectedClientId,
+      addClient: (cliente) => setClients((prev) => [...prev, cliente]),
     }),
-    [activeClientId, user?.role]
+    [clients, loadingClients, activeClientId, activeClient, isEquipe]
   );
 
   return <ClientContext.Provider value={value}>{children}</ClientContext.Provider>;

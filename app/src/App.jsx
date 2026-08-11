@@ -14,7 +14,11 @@ import UnderConstructionPage from "./pages/UnderConstructionPage";
 // src/pages/ com dado mockado, só não estão roteadas ainda.
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, checkingSession } = useAuth();
+
+  if (checkingSession) {
+    return null;
+  }
 
   if (!user) {
     return <LoginPage />;

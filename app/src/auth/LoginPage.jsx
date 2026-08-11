@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { ROLE_LABELS } from "./roles";
-import { MOCK_CLIENTS } from "../data/mockClients";
 import logo from "../assets/lucri-logo.png";
 import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
 import "./LoginPage.css";
@@ -68,9 +66,10 @@ const SLIDES = [
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [role, setRole] = useState("master");
-  const [clientId, setClientId] = useState(MOCK_CLIENTS[0].id);
-  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
 
   useEffect(() => {
@@ -82,13 +81,17 @@ export default function LoginPage() {
 
   const slide = SLIDES[slideIndex];
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    login({ role, clientId, name: name || ROLE_LABELS[role] });
-  }
-
-  function handleDevLogin() {
-    login({ role: "master", clientId: MOCK_CLIENTS[0].id, name: "Dev" });
+    setErro(null);
+    setLoading(true);
+    try {
+      await login({ email, senha });
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -97,43 +100,35 @@ export default function LoginPage() {
         <form className="login-form-pane" onSubmit={handleSubmit}>
           <img src={logo} alt="Lucri" className="login-logo" />
           <h1>Entrar no dashboard</h1>
-          <p className="login-hint">
-            Login mockado — sem backend de auth real ainda. Qualquer nome é aceito.
-          </p>
+
+          {erro && <p className="login-error">{erro}</p>}
 
           <label className="login-field">
-            Nome
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
+            E-mail
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@empresa.com"
+              autoComplete="username"
+              required
+            />
           </label>
 
           <label className="login-field">
-            Perfil de acesso
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="master">Master (vê todos os clientes, cadastra novos)</option>
-              <option value="analista">Analista (vê todos os clientes)</option>
-              <option value="cliente">Cliente final (vê só os próprios dados)</option>
-            </select>
+            Senha
+            <input
+              type="password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Sua senha"
+              autoComplete="current-password"
+              required
+            />
           </label>
 
-          {role === "cliente" && (
-            <label className="login-field">
-              Qual cliente você é
-              <select value={clientId} onChange={(e) => setClientId(e.target.value)}>
-                {MOCK_CLIENTS.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <button type="submit" className="login-submit">
-            Entrar
-          </button>
-
-          <button type="button" className="login-dev" onClick={handleDevLogin}>
-            Entrar como DEV
+          <button type="submit" className="login-submit" disabled={loading}>
+            {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
 

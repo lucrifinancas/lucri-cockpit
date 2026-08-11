@@ -21,11 +21,20 @@ app.onError((erro, c) => {
 });
 
 // Só o front oficial (definido em APP_URL) pode chamar essa API, e só ele
-// pode mandar/receber o cookie de sessão (credentials).
+// pode mandar/receber o cookie de sessão (credentials). Localhost e IPs de
+// rede local também são liberados pra permitir rodar o front em dev contra
+// o backend publicado ou testar em outra máquina na mesma rede.
 app.use(
   "*",
   cors({
-    origin: (origin, c) => (origin === c.env.APP_URL ? origin : ""),
+    origin: (origin, c) =>
+      origin === c.env.APP_URL ||
+      /^http:\/\/localhost:\d+$/.test(origin) ||
+      /^http:\/\/(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+:\d+$/.test(
+        origin
+      )
+        ? origin
+        : "",
     credentials: true,
   })
 );

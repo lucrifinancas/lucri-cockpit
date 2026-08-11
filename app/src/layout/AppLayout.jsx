@@ -14,7 +14,7 @@ import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
-import { MOCK_CLIENTS, getClientById } from "../data/mockClients";
+import { useLocalProfile } from "../hooks/useLocalProfile";
 import PeriodSelector from "../components/PeriodSelector";
 import ClientAvatar from "../components/ClientAvatar";
 import "./AppLayout.css";
@@ -32,8 +32,8 @@ const NAV_ITEMS = [
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
-  const { activeClientId, canSwitchClient, setSelectedClientId } = useActiveClient();
-  const activeClient = getClientById(activeClientId);
+  const { clients, activeClientId, activeClient, canSwitchClient, setSelectedClientId } = useActiveClient();
+  const profile = useLocalProfile(user?.email);
 
   return (
     <div className="app-shell">
@@ -67,10 +67,10 @@ export default function AppLayout() {
             {canSwitchClient ? (
               <div className="select-wrap">
                 <select
-                  value={activeClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
+                  value={activeClientId ?? ""}
+                  onChange={(e) => setSelectedClientId(Number(e.target.value))}
                 >
-                  {MOCK_CLIENTS.map((c) => (
+                  {clients.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -79,17 +79,17 @@ export default function AppLayout() {
                 <CaretDown size={14} weight="bold" className="select-caret" />
               </div>
             ) : (
-              <strong>{activeClient?.name}</strong>
+              <strong>{activeClient?.name ?? "Sua empresa"}</strong>
             )}
           </div>
 
           <PeriodSelector />
 
           <div className="app-header-user">
-            <ClientAvatar client={{ name: user?.name, logoUrl: user?.avatarUrl }} size={36} />
+            <ClientAvatar client={{ name: profile.name, logoUrl: profile.avatarUrl }} size={36} />
             <div className="app-header-user-text">
-              <strong>{user?.name}</strong>
-              <span>{ROLE_LABELS[user?.role] ?? user?.role}</span>
+              <strong>{profile.name}</strong>
+              <span>{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
             </div>
           </div>
         </header>
