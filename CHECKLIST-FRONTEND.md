@@ -78,15 +78,14 @@ recorrente/pontual) que não têm origem real ainda.
 
 ## 🐛 Correções pendentes (achadas no relatório de bugs de 11/08)
 
-- [ ] **Totais somando valor errado** — `SaidasPage.jsx`, `EntradasPage.jsx`
-  e a Home somam o campo `valor` (total do título, pago ou não). **Decidido:
-  regime de caixa** — trocar para somar `valor_pago` por lançamento, e usar
-  `totais.pago.valor` (não `totais.todos`) nos cards agregados. Ver seção
-  "⚠️ Regime de caixa" no topo do `API-CONTRACT.md`.
-- [ ] **Tratar erro `409 conta_azul_desconectada`** — agora que o backend
-  responde esse erro de forma específica (antes virava `500` cru), o front
-  deve capturar esse caso e mostrar algo como "Conexão com o Conta Azul
-  perdida — reconecte em Ajustes", em vez de uma tela de erro genérica.
+- [x] **Totais somando valor errado** — corrigido em `00fb1bd`.
+  `SaidasPage.jsx`, `EntradasPage.jsx` e a Home agora somam `valor_pago`
+  por lançamento e usam `totais.pago.valor` (não `totais.todos`) nos cards
+  agregados. Ver seção "⚠️ Regime de caixa" no topo do `API-CONTRACT.md`.
+- [x] **Tratar erro `409 conta_azul_desconectada`** — corrigido em `00fb1bd`.
+  A Home captura esse caso e mostra "A conexão desse cliente com o Conta
+  Azul caiu — precisa reconectar", com link pra Ajustes (mesma UI do caso
+  "nunca conectou").
 
 ## Em aberto — não fixar layout ainda
 

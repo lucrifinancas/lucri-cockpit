@@ -48,15 +48,17 @@ export default function HomePage() {
   }
 
   if (error || !home) {
-    const isDesconectado = error === "Cliente ainda não conectou o Conta Azul.";
+    const nuncaConectou = error === "Cliente ainda não conectou o Conta Azul.";
+    const desconectou = error === "conta_azul_desconectada";
+    const precisaReconectar = nuncaConectou || desconectou;
     return (
       <div className="page">
         <h1 className="page-title">Home</h1>
         <p className="pending-notice">
-          {isDesconectado
-            ? "Esse cliente ainda não conectou o Conta Azul."
-            : `Não deu pra carregar os dados: ${error ?? "erro desconhecido"}.`}
-          {isDesconectado && (
+          {nuncaConectou && "Esse cliente ainda não conectou o Conta Azul."}
+          {desconectou && "A conexão desse cliente com o Conta Azul caiu — precisa reconectar."}
+          {!precisaReconectar && `Não deu pra carregar os dados: ${error ?? "erro desconhecido"}.`}
+          {precisaReconectar && (
             <span className="pending-notice-actions">
               <Link to="/ajustes" className="pending-notice-link">Conectar em Ajustes →</Link>
             </span>
@@ -66,11 +68,14 @@ export default function HomePage() {
     );
   }
 
-  const totalEntradas = entradas?.totais?.todos ?? 0;
-  const totalSaidas = saidas?.totais?.todos ?? 0;
+  // Regime de caixa (ver "⚠️ Regime de caixa" no topo do API-CONTRACT.md):
+  // totais.pago.valor (o que realmente entrou/saiu), não totais.todos
+  // (inclui vencimento futuro/em aberto que ainda não aconteceu de verdade).
+  const totalEntradas = entradas?.totais?.pago?.valor ?? 0;
+  const totalSaidas = saidas?.totais?.pago?.valor ?? 0;
   const totalDespesas = sumValores(despesas);
 
-  // "Contas a receber do mês" e "Inadimplência" vêm direto dos totais
+  // "Contas vencidas (Valores a receber)" e "Inadimplência" vêm direto dos totais
   // agregados de `contas_a_receber` da HOME (mesma janela do seletor de
   // período) — mais confiável que reclassificar lançamento por lançamento.
   const contasAReceber = home.contas_a_receber;
@@ -80,7 +85,11 @@ export default function HomePage() {
   // Receitas por categoria: dado real (`categoria` do lançamento, ver
   // API-CONTRACT.md /entradas) — substitui a antiga divisão recorrente/
   // pontual/outro, que era inventada no mock e não existe na API real.
-  const receitasPorCategoria = groupByCategoria(entradas?.lancamentos ?? []);
+  // Regime de caixa: soma valor_pago por lançamento, não valor (total do
+  // título, pago ou não) — ver "⚠️ Regime de caixa" no API-CONTRACT.md.
+  const receitasPorCategoria = groupByCategoria(
+    (entradas?.lancamentos ?? []).map((l) => ({ ...l, valor: l.valor_pago }))
+  );
   const receitasChart = topCategorias(receitasPorCategoria);
   const receitasTabela = receitasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
 
@@ -102,7 +111,7 @@ export default function HomePage() {
           <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} invertDeltaColor />
         )}
         {isVisible("contasAReceberMes") && (
-          <StatCard label="Contas a receber do mês" value={totalAReceberNoMes} icon={HandCoins} />
+          <StatCard label="Contas vencidas (Valores a receber)" value={totalAReceberNoMes} icon={HandCoins} />
         )}
         {isVisible("inadimplencia") && (
           <StatCard
