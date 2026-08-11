@@ -107,6 +107,29 @@ Protegida. Encerra a sessão (apaga o cookie).
 
 ---
 
+## `GET /api/auth/google/iniciar`
+
+Pública. Início do login com Google — **não é fetch comum, é navegação de
+página inteira** (o front deve fazer `window.location.href = ...` ou um
+link `<a>` normal, não `fetch`). Redireciona pro Google.
+
+## `GET /api/auth/google/callback`
+
+Pública (chamada pelo Google, não pelo front). Processa o retorno do login
+Google e redireciona o navegador de volta pro front:
+- Sucesso: `{APP_URL}/` (sessão já criada, mesmo cookie do login normal)
+- Erros possíveis, todos como `{APP_URL}/?google=<motivo>`:
+  - `erro` — falha genérica no fluxo OAuth
+  - `email_nao_verificado` — conta Google sem e-mail verificado
+  - `conta_nao_encontrada` — e-mail da conta Google não corresponde a
+    nenhum usuário cadastrado (login com Google **não cria conta nova**,
+    só autentica quem o master já cadastrou)
+
+O front deve ler esse parâmetro `google` na URL ao carregar e mostrar um
+aviso apropriado, mesmo padrão do `?contaazul=sucesso/erro` no onboarding.
+
+---
+
 ## `POST /api/auth/alterar-senha`
 
 Protegida (qualquer papel). O usuário logado troca a própria senha —

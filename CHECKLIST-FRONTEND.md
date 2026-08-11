@@ -69,12 +69,29 @@ vai entregar.
 - [x] Onboarding de cliente (cadastro + OAuth Conta Azul + criar login do
   cliente)
 - [x] HOME, ENTRADAS, SAÍDAS, CAIXA — dados reais do Conta Azul
-- [ ] DESPESAS, DRE, BALANÇO — bloqueados (ver "Em aberto")
+- [x] Saldo por conta bancária (`saldo` em cada conta + `saldo_total` na
+  HOME) — resolvido em 12/08, endpoint achado fora da doc oficial
+- [x] DESPESAS (categorização manual + endpoint filtrado) — falta só a UI
+  em Ajustes pra marcar categorias
+- [x] Login com Google (alternativa ao e-mail/senha) — ver seção própria
+  abaixo
+- [ ] DRE, BALANÇO — bloqueados, estrutura de linhas/subtotais ainda não
+  definida (ver "Em aberto")
 
 **Beta 1 (foco atual): só HOME e AJUSTES precisam sair do mock.** Ver
 `GUIA-INTEGRACAO-DADOS-REAIS.md` — passo a passo arquivo por arquivo do que
-trocar, incluindo duas lacunas de dado (saldo por conta, classificação
-recorrente/pontual) que não têm origem real ainda.
+trocar. A lacuna de "classificação recorrente/pontual" segue sem origem
+real (não existe no Conta Azul); a de saldo já foi resolvida.
+
+## 🔐 Login com Google
+
+- [ ] Botão "Entrar com Google" na tela de login — não é fetch, é navegação
+  de página inteira: `window.location.href = "https://lucri-cockpit-server.lucrifinancas-54e.workers.dev/api/auth/google/iniciar"`
+- [ ] Ler o parâmetro `?google=<motivo>` na URL ao carregar a página (volta
+  pra `/` depois do fluxo) e mostrar aviso se for `erro`,
+  `email_nao_verificado` ou `conta_nao_encontrada` — ver `API-CONTRACT.md`
+- [ ] Em caso de sucesso, a sessão já está criada (mesmo cookie do login
+  normal) — só precisa chamar `/api/auth/me` como já faz hoje
 
 ## 🐛 Correções pendentes (achadas no relatório de bugs de 11/08)
 
