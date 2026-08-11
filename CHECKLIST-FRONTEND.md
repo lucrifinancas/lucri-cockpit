@@ -90,10 +90,13 @@ recorrente/pontual) que não têm origem real ainda.
 ## Em aberto — não fixar layout ainda
 
 - Conteúdo definitivo da HOME
-- Categorização fixo/variável de DESPESAS (pode virar tela extra de
-  mapeamento por cliente)
 - Estrutura de linhas/subtotais de BALANÇO e DRE
-- **Gráfico de resultado histórico (lucro/prejuízo)** — decidido: receita
-  realizada − despesa realizada (regime de caixa, ver `API-CONTRACT.md`).
-  Continua mockado até o endpoint de DESPESAS existir (mesmo bloqueio
-  acima).
+- **Gráfico "Contas a receber vencidas por mês"** — já é dado real (11/08,
+  `GET /historico-mensal`).
+- **"Receitas x Despesas — Histórico mensal" e "Resultado histórico
+  (lucro/prejuízo)"** — continuam mockados. A categorização de DESPESAS já
+  saiu do papel (backend + front, 11/08), mas o endpoint
+  `/historico-mensal` só agrega "vencidas" por mês ainda — falta estender
+  pra somar receita/despesa por mês também (o endpoint já busca contas a
+  receber numa janela larga, só falta fazer o mesmo pra contas a pagar
+  filtradas por categoria de despesa e juntar no mesmo agrupamento).

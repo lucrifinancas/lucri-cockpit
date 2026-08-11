@@ -107,15 +107,11 @@ function chaveMes(dataISO) {
   return dataISO.slice(0, 7); // "2026-08-15" -> "2026-08"
 }
 
-// Contas a receber vencidas, somadas por mês de vencimento — busca contas a
-// receber numa janela larga (últimos N meses) numa chamada só, em vez de
-// 1 chamada por mês, e agrupa localmente.
-//
-// NOTA: só cobre "vencidas por mês" por enquanto. Receitas x Despesas e
-// Resultado histórico (lucro/prejuízo) dependem de Despesas, que outra
-// pessoa está construindo em paralelo (categorização manual de categoria,
-// ver DEMANDAS-PARA-FINALIZAR.md item 4) — não duplicar aqui, esperar
-// aquilo terminar e então estender este endpoint com receitas/despesas.
+// Histórico dos últimos N meses — Receitas x Despesas, Resultado
+// (lucro/prejuízo) e Contas a receber vencidas, tudo por mês de
+// vencimento. Busca contas a receber/pagar numa janela larga (2 chamadas
+// no total, em vez de 1 por mês) e agrupa localmente. Regime de caixa em
+// tudo (ver "⚠️ Regime de caixa" no API-CONTRACT.md).
 financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const meses = Math.min(Math.max(Number(c.req.query("meses")) || 12, 1), 24);
@@ -131,22 +127,46 @@ financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "anal
   const ate = hoje.toISOString().slice(0, 10);
   const hojeISO = ate;
 
-  const contasAReceber = await buscarContasAReceber(accessToken, { de, ate });
+  const [contasAReceber, contasAPagar, categoriaIdsDespesa] = await Promise.all([
+    buscarContasAReceber(accessToken, { de, ate }),
+    buscarContasAPagar(accessToken, { de, ate }),
+    listarCategoriaIdsDespesa(c.env.DB, clienteId),
+  ]);
 
   const buckets = new Map();
+  function bucket(dataVencimento) {
+    const chave = chaveMes(dataVencimento);
+    if (!buckets.has(chave)) {
+      buckets.set(chave, { receitas: 0, despesas: 0, vencidas: 0 });
+    }
+    return buckets.get(chave);
+  }
+
   for (const item of contasAReceber.itens) {
-    if ((item.nao_pago ?? 0) <= 0 || item.data_vencimento >= hojeISO) continue;
-    const chave = chaveMes(item.data_vencimento);
-    buckets.set(chave, (buckets.get(chave) ?? 0) + item.nao_pago);
+    const b = bucket(item.data_vencimento);
+    b.receitas += item.pago ?? 0;
+    if ((item.nao_pago ?? 0) > 0 && item.data_vencimento < hojeISO) {
+      b.vencidas += item.nao_pago;
+    }
+  }
+
+  for (const item of contasAPagar.itens) {
+    const categoriaId = item.categorias?.[0]?.id;
+    if (!categoriaId || !categoriaIdsDespesa.has(categoriaId)) continue;
+    bucket(item.data_vencimento).despesas += item.pago ?? 0;
   }
 
   const mesesLista = Array.from({ length: meses }, (_, i) => {
     const ref = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1 - i), 1);
     const chave = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, "0")}`;
+    const b = buckets.get(chave) ?? { receitas: 0, despesas: 0, vencidas: 0 };
     return {
       mes: chave,
       label: MESES[ref.getMonth()],
-      vencidas: buckets.get(chave) ?? 0,
+      receitas: b.receitas,
+      despesas: b.despesas,
+      resultado: b.receitas - b.despesas,
+      vencidas: b.vencidas,
     };
   });
 

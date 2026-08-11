@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { MoonStars, Plugs, SquaresFour, Sun, UserCircle, UserPlus } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { MoonStars, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
@@ -12,6 +12,108 @@ import "../styles/page.css";
 import "./AjustesPage.css";
 
 const contaAzulParam = new URLSearchParams(window.location.search).get("contaazul");
+
+// Marcação manual de quais categorias do plano de contas (Conta Azul) contam
+// como despesa operacional — define o que aparece em "Despesas" no
+// dashboard (ver DEMANDAS-PARA-FINALIZAR.md item 4 e API-CONTRACT.md).
+function CategoriasDespesaSection({ clienteId, clienteNome }) {
+  const [categorias, setCategorias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    if (!clienteId) return;
+    let cancelled = false;
+    setLoading(true);
+    setErro(null);
+    apiFetch(`/api/clientes/${clienteId}/categorias`)
+      .then((data) => {
+        if (!cancelled) setCategorias(data.filter((cat) => cat.tipo === "DESPESA"));
+      })
+      .catch((err) => {
+        if (!cancelled) setErro(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clienteId]);
+
+  function toggle(id) {
+    setCategorias((prev) => prev.map((cat) => (cat.id === id ? { ...cat, is_despesa: !cat.is_despesa } : cat)));
+  }
+
+  async function handleSalvar() {
+    setSalvando(true);
+    setErro(null);
+    try {
+      const marcadas = categorias
+        .filter((cat) => cat.is_despesa)
+        .map((cat) => ({ categoria_id: cat.id, categoria_nome: cat.nome }));
+      await apiFetch(`/api/clientes/${clienteId}/categorias/despesas`, {
+        method: "PUT",
+        body: JSON.stringify({ categorias: marcadas }),
+      });
+      setSalvo(true);
+      setTimeout(() => setSalvo(false), 2000);
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  const categoriasFiltradas = categorias.filter((cat) =>
+    cat.nome.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  return (
+    <section className="settings-card">
+      <h2 className="settings-card-title">
+        <Receipt size={18} weight="regular" />
+        Categorias de Despesa{clienteNome ? ` — ${clienteNome}` : ""}
+      </h2>
+      <p className="settings-hint">
+        Marca quais categorias do plano de contas do Conta Azul contam como despesa
+        operacional. Só o que estiver marcado aqui aparece em "Despesas" no dashboard.
+      </p>
+      {loading && <p className="settings-hint">Carregando categorias...</p>}
+      {erro && <p className="settings-hint status-error">{erro}</p>}
+      {!loading && !erro && categorias.length === 0 && (
+        <p className="settings-hint">Nenhuma categoria de despesa encontrada no Conta Azul.</p>
+      )}
+      {!loading && !erro && categorias.length > 0 && (
+        <>
+          <input
+            className="categoria-search"
+            placeholder="Buscar categoria..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <div className="settings-list settings-list-scroll">
+            {categoriasFiltradas.map((cat) => (
+              <label key={cat.id} className="settings-row settings-row-toggle">
+                <span>{cat.nome}</span>
+                <span className="toggle-switch">
+                  <input type="checkbox" checked={cat.is_despesa} onChange={() => toggle(cat.id)} />
+                  <span className="toggle-switch-track" />
+                </span>
+              </label>
+            ))}
+          </div>
+          <button type="button" className="profile-save" onClick={handleSalvar} disabled={salvando}>
+            {salvando ? "Salvando..." : salvo ? "Salvo!" : "Salvar"}
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
 
 export default function AjustesPage() {
   const { user, alterarSenha } = useAuth();
@@ -240,6 +342,10 @@ export default function AjustesPage() {
           </div>
           <p className="settings-hint">Marca só o que quer ver na Home desse cliente.</p>
         </section>
+      )}
+
+      {isMaster && activeClientId && (
+        <CategoriasDespesaSection clienteId={activeClientId} clienteNome={activeClient?.name} />
       )}
 
       {isMaster && (

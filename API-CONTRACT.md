@@ -413,10 +413,11 @@ Protegida (`master`, `analista`). Resumo consolidado de fluxo de caixa
 
 ## `GET /api/clientes/:id/historico-mensal`
 
-Protegida (`master`, `analista`). Últimos N meses de **contas a receber
-vencidas**, somadas por mês de vencimento — pensado pro gráfico "Contas a
-receber vencidas por mês" da Home. Busca contas a receber numa janela larga
-(1 chamada só) e agrupa localmente, em vez de 1 chamada por mês.
+Protegida (`master`, `analista`). Últimos N meses de receitas, despesas,
+resultado (lucro/prejuízo) e contas a receber vencidas, agrupados por mês
+de vencimento — alimenta os 3 gráficos históricos da Home. Busca contas a
+receber e contas a pagar numa janela larga (2 chamadas no total) e agrupa
+localmente, em vez de 1 chamada por mês.
 
 **Parâmetros de query (opcionais):** `meses` (padrão `12`, máximo `24`).
 
@@ -424,27 +425,24 @@ receber vencidas por mês" da Home. Busca contas a receber numa janela larga
 ```json
 {
   "meses": [
-    { "mes": "2025-09", "label": "Setembro", "vencidas": 663.0 },
-    { "mes": "2025-10", "label": "Outubro", "vencidas": 3470.0 }
+    { "mes": "2025-09", "label": "Setembro", "receitas": 12345.0, "despesas": 8000.0, "resultado": 4345.0, "vencidas": 663.0 },
+    { "mes": "2025-10", "label": "Outubro", "receitas": 15200.0, "despesas": 9100.0, "resultado": 6100.0, "vencidas": 3470.0 }
   ]
 }
 ```
-`vencidas` = soma de `valor_em_aberto` dos lançamentos com `data_vencimento`
-no passado e ainda não totalmente pagos, agrupados pelo mês do vencimento.
-
-⚠️ **Só cobre "vencidas" por enquanto.** Não retorna `receitas`/`despesas`/
-`resultado` — esses dependem do endpoint de DESPESAS (ver abaixo), que
-outra pessoa está construindo em paralelo. Quando isso for concluído, este
-endpoint deve ser estendido (não recriado) pra incluir receitas/despesas
-por mês, alimentando também "Receitas x Despesas — Histórico mensal" e
-"Resultado histórico (lucro/prejuízo)".
+- `receitas`/`despesas` = soma de `valor_pago` do mês (regime de caixa).
+  `despesas` só conta lançamentos cuja categoria está marcada em
+  `PUT /categorias/despesas` — sem nenhuma marcada, vem `0`.
+- `resultado` = `receitas - despesas`.
+- `vencidas` = soma de `valor_em_aberto` dos lançamentos com `data_vencimento`
+  no passado e ainda não totalmente pagos.
 
 ---
 
 ## Endpoints ainda não implementados
 
-- **DESPESAS** e **DRE** — bloqueados pela definição de categorização
-  fixo/variável (ver `README.md`, seção "Em aberto").
+- **DRE** — bloqueado pela definição de estrutura de níveis de subtotal
+  (DESPESAS em si já está implementado, ver acima).
 - **BALANÇO** — bloqueado pela definição de estrutura de linhas/subtotais.
 - Endpoint de "esqueci minha senha" por e-mail (adiado, ver
   `GUIA-MAKE-RESET-SENHA.md`) — troca de senha *estando logado* já existe
