@@ -3,6 +3,9 @@ import { exigirPapel } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
 import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
+import { salvarCategoriasDespesa, listarCategoriaIdsDespesa } from "../db/categoriaDespesa.js";
+import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
+import { buscarCategorias } from "../contaazul/api.js";
 
 export const clientesRoutes = new Hono();
 
@@ -49,4 +52,42 @@ clientesRoutes.post("/:id/login", exigirPapel("master"), async (c) => {
   const usuario = await criarUsuarioCliente(c.env.DB, clienteId, email, senhaHash);
 
   return c.json(usuario, 201);
+});
+
+// Lista o plano de contas do cliente, com um campo extra `is_despesa`
+// indicando o que o master já marcou (usado na tela de Ajustes).
+clientesRoutes.get("/:id/categorias", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+
+  const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
+  if (!accessToken) {
+    return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
+  }
+
+  const [categorias, marcadas] = await Promise.all([
+    buscarCategorias(accessToken),
+    listarCategoriaIdsDespesa(c.env.DB, clienteId),
+  ]);
+
+  return c.json(
+    categorias.itens.map((cat) => ({
+      id: cat.id,
+      nome: cat.nome,
+      tipo: cat.tipo,
+      is_despesa: marcadas.has(cat.id),
+    }))
+  );
+});
+
+// Salva quais categorias contam como "despesa operacional" — só master.
+clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { categorias } = await c.req.json();
+
+  if (!Array.isArray(categorias)) {
+    return c.json({ erro: "Campo 'categorias' precisa ser uma lista." }, 400);
+  }
+
+  await salvarCategoriasDespesa(c.env.DB, clienteId, categorias);
+  return c.json({ ok: true });
 });

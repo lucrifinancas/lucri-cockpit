@@ -3,6 +3,7 @@
 // se precisa renovar é quem chama estas funções.
 
 const BASE_URL = "https://api-v2.contaazul.com/v1";
+const TAMANHO_PAGINA = 200; // maior página aceita nos testes; suficiente pra não precisar paginar na prática
 
 async function chamarApi(path, accessToken, params = {}) {
   const url = new URL(`${BASE_URL}${path}`);
@@ -21,20 +22,44 @@ async function chamarApi(path, accessToken, params = {}) {
   return resp.json();
 }
 
+// O Conta Azul pagina as listas por padrão (10 itens por página, mesmo
+// quando `itens_totais` é maior) — sem isso, listas com mais de 10
+// lançamentos ficavam silenciosamente cortadas. Busca todas as páginas
+// necessárias e junta num só resultado, mantendo os outros campos
+// (ex.: `totais`) da primeira resposta.
+async function chamarApiPaginado(path, accessToken, params = {}) {
+  const primeira = await chamarApi(path, accessToken, { ...params, tamanho_pagina: TAMANHO_PAGINA, pagina: 1 });
+
+  const itens = [...primeira.itens];
+  let pagina = 2;
+  while (itens.length < primeira.itens_totais) {
+    const proxima = await chamarApi(path, accessToken, { ...params, tamanho_pagina: TAMANHO_PAGINA, pagina });
+    if (!proxima.itens?.length) break; // segurança contra loop infinito se a API parar de devolver itens
+    itens.push(...proxima.itens);
+    pagina++;
+  }
+
+  return { ...primeira, itens };
+}
+
 export function buscarContasAPagar(accessToken, { de, ate }) {
-  return chamarApi("/financeiro/eventos-financeiros/contas-a-pagar/buscar", accessToken, {
+  return chamarApiPaginado("/financeiro/eventos-financeiros/contas-a-pagar/buscar", accessToken, {
     data_vencimento_de: de,
     data_vencimento_ate: ate,
   });
 }
 
 export function buscarContasAReceber(accessToken, { de, ate }) {
-  return chamarApi("/financeiro/eventos-financeiros/contas-a-receber/buscar", accessToken, {
+  return chamarApiPaginado("/financeiro/eventos-financeiros/contas-a-receber/buscar", accessToken, {
     data_vencimento_de: de,
     data_vencimento_ate: ate,
   });
 }
 
 export function buscarContasBancarias(accessToken) {
-  return chamarApi("/conta-financeira", accessToken);
+  return chamarApiPaginado("/conta-financeira", accessToken);
+}
+
+export function buscarCategorias(accessToken) {
+  return chamarApiPaginado("/categorias", accessToken);
 }
