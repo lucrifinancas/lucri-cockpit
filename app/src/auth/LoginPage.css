@@ -87,19 +87,19 @@
   opacity: 0.92;
 }
 
-.login-dev {
-  background: none;
-  border: 1px dashed var(--border-subtle);
+.login-error {
+  background: rgba(255, 107, 74, 0.12);
+  border: 1px solid var(--chart-despesa);
   border-radius: var(--radius-md);
-  padding: 10px;
-  color: var(--text-secondary);
+  padding: 10px 12px;
+  color: var(--chart-despesa);
   font-size: 13px;
-  cursor: pointer;
+  margin: 0;
 }
 
-.login-dev:hover {
-  color: var(--lucri-sky);
-  border-color: var(--lucri-sky);
+.login-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .login-showcase-pane {

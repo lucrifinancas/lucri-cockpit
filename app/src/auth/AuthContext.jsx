@@ -1,39 +1,45 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { apiFetch } from "../api/client";
 
-// Auth mock — decidido em conversa com o usuário: tela de login mockada
-// (aceita qualquer credencial) enquanto o backend de auth real não existe.
-// Troca de lugar quando a API real estiver pronta: manter a mesma forma de
-// `user` ({ role, clientId, name }) para não precisar reescrever telas.
-
-const STORAGE_KEY = "lucri-dash.auth";
+// Auth real (backend documentado em API-CONTRACT.md) — sessão via cookie
+// httpOnly, não localStorage. `user` = { email, papel, cliente_id }. Ao
+// carregar a aplicação, `GET /api/auth/me` diz se já existe sessão válida.
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    else localStorage.removeItem(STORAGE_KEY);
-  }, [user]);
+    apiFetch("/api/auth/me")
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setCheckingSession(false));
+  }, []);
 
-  function login({ role, clientId, name }) {
-    setUser({ role, clientId: role === "cliente" ? clientId : null, name });
+  async function login({ email, senha }) {
+    const dados = await apiFetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, senha }),
+    });
+    setUser(dados);
   }
 
-  function logout() {
+  async function logout() {
+    await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     setUser(null);
   }
 
-  function updateProfile({ name, avatarUrl }) {
-    setUser((prev) => (prev ? { ...prev, name, avatarUrl: avatarUrl ?? prev.avatarUrl } : prev));
+  async function alterarSenha({ senhaAtual, senhaNova }) {
+    await apiFetch("/api/auth/alterar-senha", {
+      method: "POST",
+      body: JSON.stringify({ senha_atual: senhaAtual, senha_nova: senhaNova }),
+    });
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, checkingSession, login, logout, alterarSenha }}>
       {children}
     </AuthContext.Provider>
   );

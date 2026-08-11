@@ -4,56 +4,110 @@ import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
 import { useTheme } from "../context/ThemeContext";
-import { MOCK_CLIENTS, getClientById } from "../data/mockClients";
+import { useLocalProfile } from "../hooks/useLocalProfile";
 import { HOME_CARDS, useHomeCardPrefs } from "../hooks/useHomeCardPrefs";
+import { apiFetch } from "../api/client";
 import ClientAvatar from "../components/ClientAvatar";
 import "../styles/page.css";
 import "./AjustesPage.css";
 
+const contaAzulParam = new URLSearchParams(window.location.search).get("contaazul");
+
 export default function AjustesPage() {
-  const { user, updateProfile } = useAuth();
+  const { user, alterarSenha } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const isEquipe = isInternalRole(user?.role);
-  const isMaster = user?.role === "master";
-  const [clients, setClients] = useState(MOCK_CLIENTS);
-  const [newName, setNewName] = useState("");
-  const [profileName, setProfileName] = useState(user?.name ?? "");
-  const [profileAvatar, setProfileAvatar] = useState(user?.avatarUrl ?? null);
+  const isEquipe = isInternalRole(user?.papel);
+  const isMaster = user?.papel === "master";
+  const { clients, addClient, activeClientId, activeClient } = useActiveClient();
+  const profile = useLocalProfile(user?.email);
+
+  const [profileName, setProfileName] = useState(profile.name);
   const [profileSaved, setProfileSaved] = useState(false);
   const avatarInputRef = useRef(null);
+
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [senhaNova, setSenhaNova] = useState("");
+  const [senhaMsg, setSenhaMsg] = useState(null);
+  const [senhaErro, setSenhaErro] = useState(null);
+
+  const [newName, setNewName] = useState("");
+  const [criandoCliente, setCriandoCliente] = useState(false);
+  const [erroCliente, setErroCliente] = useState(null);
+
+  const [conectando, setConectando] = useState(null);
+
+  const { isVisible, setOverride } = useHomeCardPrefs(activeClientId);
 
   function handleAvatarChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setProfileAvatar(reader.result);
+    reader.onload = () => profile.save({ name: profileName, avatarUrl: reader.result });
     reader.readAsDataURL(file);
-  }
-  const { activeClientId } = useActiveClient();
-  const activeClient = getClientById(activeClientId);
-  const { isVisible, setOverride } = useHomeCardPrefs(activeClientId, activeClient?.tipo);
-
-  const visibleClients = isEquipe ? clients : clients.filter((c) => c.id === user.clientId);
-
-  function handleAddClient(e) {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    const id = newName.trim().toLowerCase().replace(/\s+/g, "-");
-    setClients((prev) => [...prev, { id, name: newName.trim(), tipo: "produto" }]);
-    setNewName("");
   }
 
   function handleSaveProfile(e) {
     e.preventDefault();
     if (!profileName.trim()) return;
-    updateProfile({ name: profileName.trim(), avatarUrl: profileAvatar });
+    profile.save({ name: profileName.trim() });
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 2000);
+  }
+
+  async function handleAlterarSenha(e) {
+    e.preventDefault();
+    setSenhaMsg(null);
+    setSenhaErro(null);
+    try {
+      await alterarSenha({ senhaAtual, senhaNova });
+      setSenhaMsg("Senha alterada com sucesso.");
+      setSenhaAtual("");
+      setSenhaNova("");
+    } catch (err) {
+      setSenhaErro(err.message);
+    }
+  }
+
+  async function handleAddClient(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setErroCliente(null);
+    setCriandoCliente(true);
+    try {
+      const criado = await apiFetch("/api/clientes", {
+        method: "POST",
+        body: JSON.stringify({ nome: newName.trim() }),
+      });
+      addClient({ id: criado.id, name: criado.nome, logoUrl: null });
+      setNewName("");
+    } catch (err) {
+      setErroCliente(err.message);
+    } finally {
+      setCriandoCliente(false);
+    }
+  }
+
+  async function handleConectarContaAzul(clienteId) {
+    setConectando(clienteId);
+    try {
+      const { url } = await apiFetch(`/api/contaazul/autorizar/${clienteId}`);
+      window.location.href = url;
+    } catch {
+      setConectando(null);
+    }
   }
 
   return (
     <div className="page">
       <h1 className="page-title">Ajustes</h1>
+
+      {contaAzulParam && (
+        <p className={`settings-hint ${contaAzulParam === "sucesso" ? "status-ok" : "status-error"}`}>
+          {contaAzulParam === "sucesso"
+            ? "Conta Azul conectado com sucesso."
+            : "Não foi possível conectar o Conta Azul. Tenta de novo."}
+        </p>
+      )}
 
       <section className="settings-card">
         <h2 className="settings-card-title">
@@ -61,7 +115,7 @@ export default function AjustesPage() {
           Meu perfil
         </h2>
         <div className="profile-avatar-row">
-          <ClientAvatar client={{ name: profileName || user?.name, logoUrl: profileAvatar }} size={64} />
+          <ClientAvatar client={{ name: profileName || profile.name, logoUrl: profile.avatarUrl }} size={64} />
           <div>
             <button type="button" className="profile-avatar-btn" onClick={() => avatarInputRef.current?.click()}>
               Alterar foto
@@ -81,13 +135,44 @@ export default function AjustesPage() {
             <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Seu nome" />
           </label>
           <div className="profile-field">
+            E-mail
+            <span className="status-badge status-role">{user?.email}</span>
+          </div>
+          <div className="profile-field">
             Perfil de acesso
-            <span className="status-badge status-role">{ROLE_LABELS[user?.role] ?? user?.role}</span>
+            <span className="status-badge status-role">{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
           </div>
           <button type="submit" className="profile-save">
             {profileSaved ? "Salvo!" : "Salvar"}
           </button>
         </form>
+
+        <form className="profile-form" onSubmit={handleAlterarSenha}>
+          <label className="profile-field">
+            Senha atual
+            <input
+              type="password"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+              autoComplete="current-password"
+            />
+          </label>
+          <label className="profile-field">
+            Nova senha
+            <input
+              type="password"
+              value={senhaNova}
+              onChange={(e) => setSenhaNova(e.target.value)}
+              autoComplete="new-password"
+              placeholder="Mín. 8 caracteres"
+            />
+          </label>
+          <button type="submit" className="profile-save">
+            Trocar senha
+          </button>
+        </form>
+        {senhaMsg && <p className="settings-hint status-ok">{senhaMsg}</p>}
+        {senhaErro && <p className="settings-hint status-error">{senhaErro}</p>}
       </section>
 
       <section className="settings-card">
@@ -105,27 +190,32 @@ export default function AjustesPage() {
         <p className="settings-hint">Alterna entre tema claro e escuro em todo o dashboard.</p>
       </section>
 
-      <section className="settings-card">
-        <h2 className="settings-card-title">
-          <Plugs size={18} weight="regular" />
-          Conexões (Conta Azul)
-        </h2>
-        <div className="settings-list">
-          {visibleClients.map((c) => (
-            <div key={c.id} className="settings-row">
-              <span>{c.name}</span>
-              <span className="status-badge status-pending">
-                <span className="status-badge-dot" />
-                Aguardando credenciais
-              </span>
-            </div>
-          ))}
-        </div>
-        <p className="settings-hint">
-          Status real depende do acesso à API do Conta Azul, ainda não solicitado
-          — todos os clientes aparecem como pendente até lá.
-        </p>
-      </section>
+      {isEquipe && (
+        <section className="settings-card">
+          <h2 className="settings-card-title">
+            <Plugs size={18} weight="regular" />
+            Conexões (Conta Azul)
+          </h2>
+          <div className="settings-list">
+            {clients.map((c) => (
+              <div key={c.id} className="settings-row">
+                <span>{c.name}</span>
+                <button
+                  type="button"
+                  className="profile-avatar-btn"
+                  disabled={conectando === c.id}
+                  onClick={() => handleConectarContaAzul(c.id)}
+                >
+                  {conectando === c.id ? "Redirecionando..." : "Conectar Conta Azul"}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="settings-hint">
+            Abre o login do Conta Azul pra autorizar o acesso desse cliente.
+          </p>
+        </section>
+      )}
 
       {isEquipe && (
         <section className="settings-card">
@@ -148,11 +238,7 @@ export default function AjustesPage() {
               </label>
             ))}
           </div>
-          <p className="settings-hint">
-            Marca só o que quer ver na Home desse cliente. Sem marcar nada,
-            usa o padrão automático (cards de recorrência só aparecem pra
-            cliente tipo "serviço").
-          </p>
+          <p className="settings-hint">Marca só o que quer ver na Home desse cliente.</p>
         </section>
       )}
 
@@ -160,7 +246,7 @@ export default function AjustesPage() {
         <section className="settings-card">
           <h2 className="settings-card-title">
             <UserPlus size={18} weight="regular" />
-            Cadastrar cliente novo (admin)
+            Cadastrar cliente novo
           </h2>
           <form className="onboarding-form" onSubmit={handleAddClient}>
             <input
@@ -168,11 +254,14 @@ export default function AjustesPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
-            <button type="submit">Cadastrar e iniciar conexão Conta Azul</button>
+            <button type="submit" disabled={criandoCliente}>
+              {criandoCliente ? "Cadastrando..." : "Cadastrar"}
+            </button>
           </form>
+          {erroCliente && <p className="settings-hint status-error">{erroCliente}</p>}
           <p className="settings-hint">
-            Mock local (não persiste) — no backend real esse fluxo cria o
-            registro do cliente e inicia o redirect OAuth do Conta Azul dele.
+            Depois de cadastrado, use "Conectar Conta Azul" acima pra autorizar o acesso aos dados
+            financeiros desse cliente.
           </p>
         </section>
       )}

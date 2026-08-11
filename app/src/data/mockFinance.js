@@ -12,8 +12,9 @@ function seededRandom(seed) {
 }
 
 function hashSeed(clientId) {
+  const s = String(clientId ?? "");
   let h = 0;
-  for (let i = 0; i < clientId.length; i++) h = (h * 31 + clientId.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
   return Math.abs(h) || 1;
 }
 
@@ -203,13 +204,14 @@ export function generateOverdueByMonth(clientId, months = 12) {
   });
 }
 
-// Agrupa itens com campo `categoria` (ex: despesas) somando `valor` por
-// categoria, ordenado do maior pro menor. `categoria` agora é objeto
-// `{nome,tipo,entradaDre}` (forma real do Conta Azul) — agrupa pelo nome.
+// Agrupa itens com campo `categoria` somando `valor` por categoria, ordenado
+// do maior pro menor. `categoria` pode ser string (forma real do Conta Azul
+// em /entradas e /saidas) ou objeto `{nome,tipo,entradaDre}` (mock de
+// despesas, ver DADOS-CONTA-AZUL-API.md).
 export function groupByCategoria(items) {
   const totals = new Map();
   for (const item of items) {
-    const key = item.categoria?.nome ?? "Outros";
+    const key = typeof item.categoria === "string" ? item.categoria : (item.categoria?.nome ?? "Outros");
     totals.set(key, (totals.get(key) ?? 0) + item.valor);
   }
   return Array.from(totals, ([categoria, valor]) => ({ categoria, valor })).sort((a, b) => b.valor - a.valor);

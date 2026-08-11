@@ -1,35 +1,27 @@
 import { useEffect, useState } from "react";
 
 // Preferência de quais stat cards da Home aparecem, por cliente — editável
-// em Ajustes. Sem override salvo, cai no padrão automático por tipo de
-// cliente (servico/produto) que já existia antes desta tela.
+// em Ajustes. Sem override salvo, todos os cards aparecem (não existe mais
+// distinção por "tipo" de cliente — esse campo não existe no backend real).
 const STORAGE_PREFIX = "lucri-dash.home-cards.";
 
+// Cards de recorrente/pontual/outro e ticket médio foram removidos: a API
+// real do Conta Azul não classifica lançamentos dessa forma (só `categoria`,
+// ver GUIA-INTEGRACAO-DADOS-REAIS.md), então esses cards eram baseados em
+// dado inventado no mock.
 export const HOME_CARDS = [
   { id: "entradas", label: "Entradas" },
   { id: "saidas", label: "Saídas" },
-  { id: "saldo", label: "Saldo em conta" },
   { id: "contasAReceberMes", label: "Contas a receber do mês" },
-  { id: "qtdRecorrentes", label: "Qtd. recebimentos recorrentes" },
-  { id: "qtdPontuais", label: "Qtd. recebimentos pontuais" },
-  { id: "ticketRecorrente", label: "Ticket médio recorrentes" },
-  { id: "ticketPontual", label: "Ticket médio pontuais" },
   { id: "inadimplencia", label: "Inadimplência do mês" },
 ];
-
-// Padrão quando não há override manual: cards de recorrência só pra quem é
-// tipo "servico" (assinatura/contrato) — mesma regra de antes desta tela.
-function defaultVisible(cardId, tipo) {
-  if ((cardId === "qtdRecorrentes" || cardId === "ticketRecorrente") && tipo !== "servico") return false;
-  return true;
-}
 
 function readOverrides(clientId) {
   const raw = localStorage.getItem(STORAGE_PREFIX + clientId);
   return raw ? JSON.parse(raw) : {};
 }
 
-export function useHomeCardPrefs(clientId, tipo) {
+export function useHomeCardPrefs(clientId) {
   const [overrides, setOverrides] = useState(() => readOverrides(clientId));
 
   useEffect(() => {
@@ -55,7 +47,7 @@ export function useHomeCardPrefs(clientId, tipo) {
   }
 
   function isVisible(cardId) {
-    return overrides[cardId] ?? defaultVisible(cardId, tipo);
+    return overrides[cardId] ?? true;
   }
 
   return { overrides, isVisible, setOverride, clearOverride };

@@ -29,8 +29,14 @@
   gap: 8px;
 }
 
-.stat-card-hoverable:hover .stat-card-tooltip {
+.stat-card-hoverable:hover .stat-card-tooltip,
+.stat-card-hoverable:focus-visible .stat-card-tooltip {
   display: flex;
+}
+
+.stat-card-hoverable:focus-visible {
+  outline: 2px solid var(--lucri-mint);
+  outline-offset: 2px;
 }
 
 .stat-card-tooltip-row {

@@ -1,9 +1,9 @@
-import { Wallet, ArrowCircleDown, ArrowCircleUp, Receipt, Ticket, WarningCircle, HandCoins } from "@phosphor-icons/react";
+import { Link } from "react-router-dom";
+import { ArrowCircleDown, ArrowCircleUp, HandCoins, WarningCircle } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useMonthlyHistory } from "../hooks/useMonthlyHistory";
 import { useOverdueHistory } from "../hooks/useOverdueHistory";
-import { sumValores, sumSaldoContas, filterByPeriod, periodDelta, groupByCategoria, CATEGORY_PALETTE } from "../data/mockFinance";
-import { getClientById } from "../data/mockClients";
+import { sumValores, groupByCategoria, CATEGORY_PALETTE } from "../data/mockFinance";
 import { useActiveClient } from "../context/ClientContext";
 import { useHomeCardPrefs } from "../hooks/useHomeCardPrefs";
 import StatCard from "../components/StatCard";
@@ -14,115 +14,96 @@ import ProportionDonut from "../components/charts/ProportionDonut";
 import HorizontalBarChart from "../components/charts/HorizontalBarChart";
 import "../styles/page.css";
 
-// "YYYY-MM-DD" -> {start, end} do mês em que a data cai.
-function monthBoundsOf(dateStr) {
-  const d = new Date(dateStr);
-  const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
-  return { start, end };
+// Top N categorias de uma lista `{categoria, valor}[]` já ordenada, com o
+// resto agrupado em "Outros" — usado tanto pra receitas (real) quanto
+// despesas (mock).
+function topCategorias(porCategoria, n = 10) {
+  const top = porCategoria.slice(0, n);
+  const resto = porCategoria.slice(n);
+  const restoValor = sumValores(resto.map((d) => ({ valor: d.valor })));
+  return [
+    ...top.map((d, i) => ({ categoria: d.categoria, valor: d.valor, color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length] })),
+    ...(resto.length ? [{ categoria: "Outros", valor: restoValor, color: "var(--text-secondary)" }] : []),
+  ];
 }
 
 export default function HomePage() {
-  const { entradas, saidas, despesas, contasAReceber, contasBancarias, raw, range } = useFinanceData();
+  const { home, entradas, saidas, despesas, loading, error } = useFinanceData();
   const monthlyHistory = useMonthlyHistory();
   const overdueHistory = useOverdueHistory();
   const { activeClientId } = useActiveClient();
-  const clientTipo = getClientById(activeClientId)?.tipo;
-  // Quais stat cards aparecem — editável em Ajustes por cliente; sem
-  // override manual, cai no padrão automático por tipo (servico/produto).
-  const { isVisible } = useHomeCardPrefs(activeClientId, clientTipo);
+  const { isVisible } = useHomeCardPrefs(activeClientId);
 
-  const totalEntradas = sumValores(entradas);
-  const totalSaidas = sumValores(saidas);
+  if (loading) {
+    return (
+      <div className="page">
+        <h1 className="page-title">Home</h1>
+        <div className="skeleton-row">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton-card" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !home) {
+    const isDesconectado = error === "Cliente ainda não conectou o Conta Azul.";
+    return (
+      <div className="page">
+        <h1 className="page-title">Home</h1>
+        <p className="pending-notice">
+          {isDesconectado
+            ? "Esse cliente ainda não conectou o Conta Azul."
+            : `Não deu pra carregar os dados: ${error ?? "erro desconhecido"}.`}
+          {isDesconectado && (
+            <span className="pending-notice-actions">
+              <Link to="/ajustes" className="pending-notice-link">Conectar em Ajustes →</Link>
+            </span>
+          )}
+        </p>
+      </div>
+    );
+  }
+
+  const totalEntradas = entradas?.totais?.todos ?? 0;
+  const totalSaidas = saidas?.totais?.todos ?? 0;
   const totalDespesas = sumValores(despesas);
-  // "Saldo em conta" = soma das contas bancárias reais (`GET /conta-
-  // financeira`), não entradas-saídas do período — é o saldo de agora, não
-  // depende do seletor de período. Beta 1.1: por enquanto é só a soma; uma
-  // visão por conta individual fica pra depois.
-  const saldo = sumSaldoContas(contasBancarias);
 
-  const entradasRecorrentes = entradas.filter((e) => e.tipo === "recorrente");
-  const entradasPontuais = entradas.filter((e) => e.tipo === "pontual");
-  const entradasOutros = entradas.filter((e) => e.tipo === "outro");
-  const recorrentes = sumValores(entradasRecorrentes);
-  const pontuais = sumValores(entradasPontuais);
-  const outros = sumValores(entradasOutros);
-  const ticketRecorrente = entradasRecorrentes.length ? recorrentes / entradasRecorrentes.length : 0;
-  const ticketPontual = entradasPontuais.length ? pontuais / entradasPontuais.length : 0;
+  // "Contas a receber do mês" e "Inadimplência" vêm direto dos totais
+  // agregados de `contas_a_receber` da HOME (mesma janela do seletor de
+  // período) — mais confiável que reclassificar lançamento por lançamento.
+  const contasAReceber = home.contas_a_receber;
+  const totalAReceberNoMes = Math.max(contasAReceber.todos - contasAReceber.pago.valor, 0);
+  const inadimplenciaPct = contasAReceber.todos > 0 ? (contasAReceber.vencido.valor / contasAReceber.todos) * 100 : 0;
 
-  // Inadimplência do mês: deriva o mês do início do período selecionado
-  // (funciona igual pra "Este mês" ou "Mês específico"); sem período
-  // definido (ex: "Todos os dados"), cai no mês corrente.
-  const mesReferencia = range.start ? monthBoundsOf(range.start) : monthBoundsOf(new Date().toISOString().slice(0, 10));
-  const contasReceberNoMes = filterByPeriod(contasAReceber, mesReferencia);
-  const contasReceberVencidasNoMes = contasReceberNoMes.filter((c) => c.status === "VENCIDO");
-  const totalNoMes = sumValores(contasReceberNoMes);
-  const inadimplenciaPct = totalNoMes > 0 ? (sumValores(contasReceberVencidasNoMes) / totalNoMes) * 100 : 0;
-  // "Contas a receber do mês" — o que ainda falta entrar (exclui o que já
-  // foi PAGO, mas inclui pendente/vence hoje/vencido: ainda é dinheiro que
-  // falta receber, só que parte já passou do prazo).
-  const totalAReceberNoMes = sumValores(contasReceberNoMes.filter((c) => c.status !== "PAGO"));
+  // Receitas por categoria: dado real (`categoria` do lançamento, ver
+  // API-CONTRACT.md /entradas) — substitui a antiga divisão recorrente/
+  // pontual/outro, que era inventada no mock e não existe na API real.
+  const receitasPorCategoria = groupByCategoria(entradas?.lancamentos ?? []);
+  const receitasChart = topCategorias(receitasPorCategoria);
+  const receitasTabela = receitasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
 
+  // Despesas por categoria: segue mockado (sem endpoint real ainda, ver
+  // GUIA-INTEGRACAO-DADOS-REAIS.md item 3).
   const despesasPorCategoria = groupByCategoria(despesas);
-  const despesasDonut = despesasPorCategoria.map((d, i) => ({
-    name: d.categoria,
-    value: d.valor,
-    color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length],
-  }));
-  const despesasTabela = despesasPorCategoria.map((d, i) => ({
-    label: d.categoria,
-    value: d.valor,
-    color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length],
-  }));
-
-  const top10 = despesasPorCategoria.slice(0, 10);
-  const restoTop10 = despesasPorCategoria.slice(10);
-  const restoTop10Valor = sumValores(restoTop10.map((d) => ({ valor: d.valor })));
-  const top10Chart = [
-    ...top10.map((d, i) => ({ categoria: d.categoria, valor: d.valor, color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length] })),
-    ...(restoTop10.length ? [{ categoria: "Outros", valor: restoTop10Valor, color: "var(--text-secondary)" }] : []),
-  ];
+  const despesasChart = topCategorias(despesasPorCategoria);
+  const despesasTabela = despesasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
 
   const resultadoHistorico = monthlyHistory.map((m) => ({ month: m.month, resultado: m.receitas - m.despesas }));
-
-  const entradasDelta = periodDelta((r) => sumValores(filterByPeriod(raw.entradas, r)), range);
-  const saidasDelta = periodDelta((r) => sumValores(filterByPeriod(raw.saidas, r)), range);
-  // Sem delta pro saldo: agora é saldo bancário (foto de agora), não soma de
-  // fluxo do período — não tem "período anterior" pra comparar.
 
   return (
     <div className="page">
       <h1 className="page-title">Home</h1>
 
       <div className="stat-row stat-row-grid">
-        {isVisible("entradas") && (
-          <StatCard label="Entradas" value={totalEntradas} icon={ArrowCircleDown} delta={entradasDelta} />
-        )}
+        {isVisible("entradas") && <StatCard label="Entradas" value={totalEntradas} icon={ArrowCircleDown} />}
         {isVisible("saidas") && (
-          <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} delta={saidasDelta} invertDeltaColor />
-        )}
-        {isVisible("saldo") && (
-          <StatCard
-            label="Saldo em conta"
-            value={saldo}
-            tone={saldo >= 0 ? "positive" : "negative"}
-            icon={Wallet}
-            breakdown={contasBancarias.map((c) => ({ label: c.nome, value: c.saldo }))}
-          />
+          <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} invertDeltaColor />
         )}
         {isVisible("contasAReceberMes") && (
           <StatCard label="Contas a receber do mês" value={totalAReceberNoMes} icon={HandCoins} />
         )}
-        {isVisible("qtdRecorrentes") && (
-          <StatCard label="Qtd. recebimentos recorrentes" value={entradasRecorrentes.length} format="count" icon={Receipt} />
-        )}
-        {isVisible("qtdPontuais") && (
-          <StatCard label="Qtd. recebimentos pontuais" value={entradasPontuais.length} format="count" icon={Receipt} />
-        )}
-        {isVisible("ticketRecorrente") && (
-          <StatCard label="Ticket médio recorrentes" value={ticketRecorrente} icon={Ticket} />
-        )}
-        {isVisible("ticketPontual") && <StatCard label="Ticket médio pontuais" value={ticketPontual} icon={Ticket} />}
         {isVisible("inadimplencia") && (
           <StatCard
             label="Inadimplência do mês"
@@ -134,22 +115,15 @@ export default function HomePage() {
         )}
       </div>
 
-      <section className="page-section" style={{ marginTop: "15px" }}>
+      <section className="page-section">
         <div className="chart-row chart-row-2">
           <div>
-            <h2 className="section-title" style={{ marginBottom: "15px" }}>Receitas totais</h2>
-            <EntradasSummaryTable
-              rows={[
-                { label: "Receitas Recorrentes", value: recorrentes, color: "var(--chart-caixa)" },
-                { label: "Receitas Pontuais", value: pontuais, color: "var(--chart-receita)" },
-                { label: "Outros", value: outros, color: "var(--chart-saldo)" },
-              ]}
-              total={totalEntradas}
-            />
+            <h2 className="section-title">Receitas por categoria</h2>
+            <EntradasSummaryTable rows={receitasTabela} total={totalEntradas} />
           </div>
 
           <div>
-            <h2 className="section-title" style={{ marginBottom: "16px" }}>Despesas totais</h2>
+            <h2 className="section-title">Despesas totais</h2>
             <EntradasSummaryTable rows={despesasTabela} total={totalDespesas} />
           </div>
         </div>
@@ -181,32 +155,25 @@ export default function HomePage() {
         <div className="chart-row chart-row-2">
           <div className="chart-row-item">
             <h3 className="subsection-title">Receitas por categoria</h3>
-            <ProportionDonut
-              data={[
-                { name: "Recorrentes", value: recorrentes, color: "var(--chart-caixa)" },
-                { name: "Pontuais", value: pontuais, color: "var(--chart-receita)" },
-                { name: "Outros", value: outros, color: "var(--chart-saldo)" },
-              ]}
-            />
+            <ProportionDonut data={receitasChart.map((d) => ({ name: d.categoria, value: d.valor, color: d.color }))} />
           </div>
 
           <div className="chart-row-item">
             <h3 className="subsection-title">Despesas por categoria</h3>
-            <ProportionDonut data={despesasDonut} />
+            <ProportionDonut data={despesasChart.map((d) => ({ name: d.categoria, value: d.valor, color: d.color }))} />
           </div>
         </div>
       </section>
 
       <section className="page-section">
         <h2 className="section-title">Top 10 gastos por categoria</h2>
-        <HorizontalBarChart data={top10Chart} />
+        <HorizontalBarChart data={despesasChart} />
       </section>
 
       <p className="pending-notice">
-        Conteúdo definitivo da Home ainda não fechado com o usuário — este é um
-        primeiro recorte no padrão visual dos relatórios mensais da Lucri
-        (pílulas, barras, donuts). Ver README.md da pasta{" "}
-        <code>10.DASH LUCRI</code> para o que falta decidir.
+        Despesas e histórico mensal ainda são dado mockado — sem endpoint real
+        no backend (ver GUIA-INTEGRACAO-DADOS-REAIS.md). Saldo em conta segue
+        oculto até o Conta Azul expor esse dado.
       </p>
     </div>
   );

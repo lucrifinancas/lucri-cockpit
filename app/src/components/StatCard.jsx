@@ -13,7 +13,11 @@ export default function StatCard({ label, value, tone = "neutral", format = "cur
   // continua mostrando a direção real do número.
   const sentiment = delta && (invertDeltaColor ? (delta.direction === "up" ? "down" : "up") : delta.direction);
   return (
-    <div className={`stat-card ${breakdown ? "stat-card-hoverable" : ""}`}>
+    <div
+      className={`stat-card ${breakdown ? "stat-card-hoverable" : ""}`}
+      tabIndex={breakdown ? 0 : undefined}
+      aria-describedby={breakdown ? `${label}-breakdown` : undefined}
+    >
       <span className="stat-card-label">
         {Icon && <Icon size={16} weight="regular" className="stat-card-icon" />}
         {label}
@@ -27,7 +31,7 @@ export default function StatCard({ label, value, tone = "neutral", format = "cur
       )}
 
       {breakdown && (
-        <div className="stat-card-tooltip">
+        <div className="stat-card-tooltip" id={`${label}-breakdown`} role="tooltip">
           {breakdown.map((item) => (
             <div className="stat-card-tooltip-row" key={item.label}>
               <span>{item.label}</span>
