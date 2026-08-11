@@ -12,7 +12,7 @@ const STORAGE_PREFIX = "lucri-dash.home-cards.";
 export const HOME_CARDS = [
   { id: "entradas", label: "Entradas" },
   { id: "saidas", label: "Saídas" },
-  { id: "contasAReceberMes", label: "Contas a receber do mês" },
+  { id: "contasAReceberMes", label: "Contas vencidas (Valores a receber)" },
   { id: "inadimplencia", label: "Inadimplência do mês" },
 ];
 

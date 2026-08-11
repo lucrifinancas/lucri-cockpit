@@ -75,7 +75,7 @@ export default function HomePage() {
   const totalSaidas = saidas?.totais?.pago?.valor ?? 0;
   const totalDespesas = sumValores(despesas);
 
-  // "Contas a receber do mês" e "Inadimplência" vêm direto dos totais
+  // "Contas vencidas (Valores a receber)" e "Inadimplência" vêm direto dos totais
   // agregados de `contas_a_receber` da HOME (mesma janela do seletor de
   // período) — mais confiável que reclassificar lançamento por lançamento.
   const contasAReceber = home.contas_a_receber;
@@ -111,7 +111,7 @@ export default function HomePage() {
           <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} invertDeltaColor />
         )}
         {isVisible("contasAReceberMes") && (
-          <StatCard label="Contas a receber do mês" value={totalAReceberNoMes} icon={HandCoins} />
+          <StatCard label="Contas vencidas (Valores a receber)" value={totalAReceberNoMes} icon={HandCoins} />
         )}
         {isVisible("inadimplencia") && (
           <StatCard
