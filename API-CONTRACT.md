@@ -28,6 +28,17 @@ aconteceram de verdade. O mesmo vale por lançamento individual: some
 Decisão: mostrar regime de **caixa** (o que realmente entrou/saiu), não
 competência.
 
+**Gráfico de resultado histórico (lucro/prejuízo por mês)**: mesma lógica —
+resultado = **receita realizada − despesa realizada** (ambos em regime de
+caixa). ⏳ Ainda não dá pra implementar com dado real: hoje esse gráfico
+(`useMonthlyHistory` / `generateMonthlyHistory`) é 100% mockado, porque a
+parte de "despesa realizada" depende do endpoint de DESPESAS, que segue
+bloqueado pela definição de categorização fixo/variável (ver
+`DECISOES-E-ESCOPO.md`). A parte de receita já poderia ser calculada com
+dado real hoje (somando `valor_pago` de `/entradas` agrupado por mês) — mas
+sem a despesa, o gráfico ficaria incompleto, então recomendo manter mockado
+até o endpoint de DESPESAS existir.
+
 ---
 
 ## `GET /api/health`

@@ -93,3 +93,7 @@ recorrente/pontual) que não têm origem real ainda.
 - Categorização fixo/variável de DESPESAS (pode virar tela extra de
   mapeamento por cliente)
 - Estrutura de linhas/subtotais de BALANÇO e DRE
+- **Gráfico de resultado histórico (lucro/prejuízo)** — decidido: receita
+  realizada − despesa realizada (regime de caixa, ver `API-CONTRACT.md`).
+  Continua mockado até o endpoint de DESPESAS existir (mesmo bloqueio
+  acima).
