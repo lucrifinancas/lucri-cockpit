@@ -91,12 +91,13 @@ No cliente de teste: **3 contas** cadastradas.
 }
 ```
 
-> ⚠️ **Pendente confirmar:** esse payload não tem campo de saldo. A Home do
-> front agora mostra (hover no card "Saldo em conta") o detalhamento por
-> conta bancária, o que exige um valor de saldo por conta. Confirmar se
-> `GET /conta-financeira` retorna saldo em outro campo/endpoint, ou se
-> precisa ser calculado (ex: somar lançamentos daquela conta) — normalizar
-> como `{ ...conta, saldo }` pro front antes de expor.
+> ✅ **Resolvido (12/08):** esse payload de fato não tem saldo, mas existe
+> um endpoint próprio pra isso, não documentado nas páginas públicas que
+> já tínhamos visto — achado via busca externa:
+> `GET /conta-financeira/{id}/saldo-atual` → `{ "saldo_atual": 2141.87 }`.
+> É uma chamada por conta (não vem junto da listagem). Já implementado em
+> `GET /api/clientes/:id/home` (`server/src/contaazul/api.js`,
+> `buscarSaldoConta`) — ver `API-CONTRACT.md`.
 
 ### Pessoas (clientes e fornecedores)
 `GET /pessoas`

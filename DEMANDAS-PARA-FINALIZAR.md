@@ -51,9 +51,11 @@ conforme for resolvendo.
 - [ ] Estrutura de linhas/subtotais do BALANÇO (ativo circulante/não
   circulante etc.)
 - [ ] Estrutura de níveis de subtotal do DRE
-- [ ] Origem do saldo por conta bancária — `GET /conta-financeira` não traz
-  esse campo hoje; confirmar com o Conta Azul se existe em outro endpoint
-  ou se precisa ser calculado
+- [x] **Origem do saldo por conta bancária — resolvido (12/08).** Existe
+  endpoint próprio, não documentado nas páginas que já tínhamos visto:
+  `GET /conta-financeira/:id/saldo-atual` (um saldo por vez, não vem junto
+  da listagem). `GET /api/clientes/:id/home` já retorna `saldo` por conta
+  (só ativas) e `saldo_total`. Ver `API-CONTRACT.md`.
 
 ## 5. Telas ainda em mock (fora do escopo do Beta 1)
 

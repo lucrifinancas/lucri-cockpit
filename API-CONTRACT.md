@@ -300,20 +300,29 @@ sem eles, usa o mês atual.
       "banco": "Conta PJ Conta Azul IP",
       "agencia": "0001",
       "numero": "24622",
-      "tipo": "CONTA_CORRENTE"
+      "tipo": "CONTA_CORRENTE",
+      "saldo": 0
+    },
+    {
+      "id": "81bc5ca1-...",
+      "banco": "Sicredi - Nick",
+      "agencia": "0730",
+      "numero": "820852",
+      "tipo": "CONTA_CORRENTE",
+      "saldo": 2141.87
     }
-  ]
+  ],
+  "saldo_total": 2141.87
 }
 ```
+Só contas **ativas** entram em `contas_bancarias` (uma conta desativada no
+Conta Azul, ex. um gateway de pagamento não usado mais, não deve contar no
+saldo). `saldo_total` é a soma de `saldo` de todas as contas retornadas.
 
 **Resposta `404`** (cliente existe mas nunca conectou o Conta Azul):
 ```json
 { "erro": "Cliente ainda não conectou o Conta Azul." }
 ```
-
-⚠️ **Pendente**: não existe campo de saldo por conta bancária no payload do
-Conta Azul — `contas_bancarias` hoje não inclui `saldo`. Ver
-`DADOS-CONTA-AZUL-API.md`.
 
 ---
 
