@@ -40,11 +40,14 @@ conforme for resolvendo.
 
 ## 4. Decisões em aberto (bloqueiam layout final de outras telas)
 
-- [ ] Categorização de DESPESAS — **decidido: marcação manual por master em
-  Ajustes** (não usar `entrada_dre` do Conta Azul). Precisa de: endpoint
-  `GET /categorias` (proxy), tabela nova no D1 pra guardar a marcação,
-  endpoint pra salvar (só master) e o `/despesas` de verdade filtrando por
-  ela. Detalhado em `PROXIMOS-PASSOS-BACKEND-DESPESAS-2026-08-11.md`.
+- [x] Categorização de DESPESAS — **backend pronto e publicado (12/08)**:
+  `GET /api/clientes/:id/categorias` (proxy + status de marcação),
+  `PUT /api/clientes/:id/categorias/despesas` (só master),
+  `GET /api/clientes/:id/despesas` (filtrado, regime de caixa). Ver
+  `API-CONTRACT.md`. **Falta só o front**: tela em Ajustes pra listar/marcar
+  categorias, e `useFinanceData.js` trocar o mock de despesas pelo fetch
+  real — ver `PROXIMOS-PASSOS-BACKEND-DESPESAS-2026-08-11.md`, seção
+  "Depois disso (lado front)".
 - [ ] Estrutura de linhas/subtotais do BALANÇO (ativo circulante/não
   circulante etc.)
 - [ ] Estrutura de níveis de subtotal do DRE

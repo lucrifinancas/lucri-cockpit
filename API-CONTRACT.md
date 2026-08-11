@@ -3,6 +3,15 @@
 Formato de request/response de cada endpoint do backend, testado com dados
 reais. Base URL (produção): `https://lucri-cockpit-server.lucrifinancas-54e.workers.dev`
 
+## ⚠️ Bug corrigido: paginação do Conta Azul (12/08)
+
+A API do Conta Azul limita listas a 10 itens por página por padrão, mesmo
+quando `itens_totais` reporta um número maior — ENTRADAS e SAÍDAS chegaram
+a mostrar listas cortadas silenciosamente (ex.: cliente com 35 saídas no
+mês, só 10 apareciam). **Corrigido no backend** (busca todas as páginas
+automaticamente) — o front não precisa se preocupar com isso, os
+`lancamentos` retornados já vêm completos.
+
 ## Autenticação geral
 
 - Sessão via cookie (`lucri_sessao`), setado automaticamente no login.
@@ -192,6 +201,47 @@ automaticamente ou digitada) e repassa pro cliente por fora do sistema
 
 ---
 
+## `GET /api/clientes/:id/categorias`
+
+Protegida (`master`, `analista`). Lista o plano de contas do cliente (via
+Conta Azul), com um campo extra `is_despesa` indicando se aquela categoria
+já foi marcada como despesa operacional — usado pra montar a tela de
+Ajustes onde o master marca/desmarca.
+
+**Resposta `200`:**
+```json
+[
+  { "id": "1fc3a9ae-...", "nome": "Pró-labore", "tipo": "DESPESA", "is_despesa": true },
+  { "id": "30f602d7-...", "nome": "Adiantamentos para AFAC", "tipo": "RECEITA", "is_despesa": false }
+]
+```
+
+---
+
+## `PUT /api/clientes/:id/categorias/despesas`
+
+Protegida — **só `master`**. Substitui a marcação inteira do cliente pela
+lista enviada (não é um "adicionar", é um "isso é tudo que está marcado
+agora" — o front deve mandar a lista completa dos IDs marcados a cada
+salvamento).
+
+**Corpo da requisição:**
+```json
+{
+  "categorias": [
+    { "categoria_id": "1fc3a9ae-...", "categoria_nome": "Pró-labore" },
+    { "categoria_id": "94fbc5c4-...", "categoria_nome": "Remuneração - Operação" }
+  ]
+}
+```
+
+**Resposta `200`:**
+```json
+{ "ok": true }
+```
+
+---
+
 ## `GET /api/contaazul/autorizar/:clienteId`
 
 Protegida (`master`, `analista`). Gera o link de autorização OAuth do Conta
@@ -289,6 +339,7 @@ Protegida (`master`, `analista`). Lista detalhada de recebimentos.
       "data_vencimento": "2026-07-01",
       "data_competencia": "2026-07-01",
       "categoria": "Receitas de Serviços",
+      "categoria_id": "7a851b36-...",
       "contraparte": "DONA VIOLETA SITIO CERCADO"
     }
   ]
@@ -309,6 +360,34 @@ tudo que sai do caixa (não só despesa operacional — inclui qualquer débito)
 `"RECEBIDO"` mesmo para lançamentos de saída (parece inconsistência deles,
 não normalizamos esse valor). Sugestão: o front pode tratar visualmente
 `RECEBIDO` como "PAGO" quando for uma saída, já que semanticamente é isso.
+
+---
+
+## `GET /api/clientes/:id/despesas`
+
+Protegida (`master`, `analista`). Subconjunto de SAÍDAS: só os lançamentos
+cuja categoria foi marcada como despesa operacional (ver
+`PUT /categorias/despesas` acima). Categorização é manual — não usa o
+`entrada_dre` automático do Conta Azul (decisão registrada em
+`DEMANDAS-PARA-FINALIZAR.md`, item 4).
+
+**Parâmetros de query (opcionais):** `de`, `ate`.
+
+**Resposta `200`:**
+```json
+{
+  "periodo": { "de": "2026-08-01", "ate": "2026-08-31" },
+  "total_pago": 3101.94,
+  "lancamentos": [
+    { "id": "...", "descricao": "...", "valor_pago": 1500, "categoria": "Pró-labore", "categoria_id": "1fc3a9ae-..." }
+  ]
+}
+```
+Diferente de HOME/ENTRADAS/SAÍDAS, aqui **não existe um `totais` vindo
+direto do Conta Azul** (a API deles não sabe quais categorias você marcou
+como despesa) — `total_pago` é calculado somando `valor_pago` só dos
+lançamentos filtrados. Se o cliente ainda não tiver nenhuma categoria
+marcada, retorna lista vazia e `total_pago: 0` (não é erro).
 
 ---
 
