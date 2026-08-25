@@ -29,15 +29,23 @@ Balanço, DRE.
 - [x] Erro 409 `conta_azul_desconectada` tratado com mensagem amigável (Home)
 - [x] Bug de paginação do Conta Azul corrigido (listas > 10 itens)
 - [x] Bug de regime de caixa corrigido (valor vs. valor_pago)
+- [x] CI/CD do backend (25/08) — GitHub Actions publica sozinho a cada
+  push em `server/`, resolve o bug de "código no repo, não no ar" (achado
+  na mesma sessão)
+- [x] **DRE (25/08)** — `GET /api/clientes/:id/dre`, usa a estrutura
+  oficial `financeiro/categorias-dre` do próprio Conta Azul (configurada
+  pelo contador da empresa) em vez de regra própria. Falta só o front
+  renderizar (tabela contábil hierárquica).
 
 ---
 
 ## 🔴 Bloqueadores de v1.0 (faltam decisão + implementação)
 
 - [ ] **Estrutura do BALANÇO** — decidir linhas/subtotais (ativo circulante/
-  não circulante, passivo, PL) antes de fixar layout ou construir endpoint
-- [ ] **Estrutura do DRE** — decidir níveis de subtotal antes de fixar layout
-  ou construir endpoint
+  não circulante, passivo, PL) antes de fixar layout ou construir endpoint.
+  Vale checar primeiro se existe um `financeiro/categorias-balanco` ou
+  equivalente no Conta Azul, no mesmo espírito do que resolveu o DRE.
+
 ## 🟡 Telas que existem mas não estão roteadas/finalizadas
 
 - [ ] **ENTRADAS** — página já busca dado real (`useFinanceData`), mas não

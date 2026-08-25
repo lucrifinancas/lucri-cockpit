@@ -52,7 +52,11 @@ vai entregar.
 - [ ] **CAIXA** — pode começar com dado mockado
 - [ ] **BALANÇO** — **aguardar definição de estrutura** antes de fixar layout
   (relatório contábil hierárquico, não cards soltos)
-- [ ] **DRE** — mesma observação do BALANÇO ⏳
+- [ ] **DRE** — backend pronto (`GET /api/clientes/:id/dre`, ver
+  `API-CONTRACT.md`), usa a estrutura oficial do Conta Azul (grupos,
+  subgrupos, totalizadores em cascata). Componente de "tabela contábil
+  hierárquica" (mencionado em `DIRETRIZES-FRONTEND.md`) pode renderizar
+  direto a partir de `linhas`/`subitens` da resposta.
 
 ## Componentes transversais
 
@@ -75,7 +79,9 @@ vai entregar.
   em Ajustes pra marcar categorias
 - [x] Login com Google (alternativa ao e-mail/senha) — ver seção própria
   abaixo
-- [ ] DRE, BALANÇO — bloqueados, estrutura de linhas/subtotais ainda não
+- [x] DRE (`GET /dre`) — usa a árvore oficial do Conta Azul
+  (`categorias-dre`), testado com dados reais, subtotais em cascata batendo
+- [ ] BALANÇO — bloqueado, estrutura de linhas/subtotais ainda não
   definida (ver "Em aberto")
 
 **Beta 1 (foco atual): só HOME e AJUSTES precisam sair do mock.** Ver
@@ -107,7 +113,7 @@ real (não existe no Conta Azul); a de saldo já foi resolvida.
 ## Em aberto — não fixar layout ainda
 
 - Conteúdo definitivo da HOME
-- Estrutura de linhas/subtotais de BALANÇO e DRE
+- Estrutura de linhas/subtotais de BALANÇO (DRE já resolvido, ver acima)
 - **Gráfico "Contas a receber vencidas por mês"** — já é dado real (11/08,
   `GET /historico-mensal`).
 - **"Receitas x Despesas — Histórico mensal" e "Resultado histórico

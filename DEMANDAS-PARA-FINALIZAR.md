@@ -49,7 +49,11 @@ conforme for resolvendo.
   alguém entrar em Ajustes e marcar, Despesas aparece zerada (não é bug).
 - [ ] Estrutura de linhas/subtotais do BALANÇO (ativo circulante/não
   circulante etc.)
-- [ ] Estrutura de níveis de subtotal do DRE
+- [x] **Estrutura de níveis de subtotal do DRE — resolvido (25/08).** O
+  Conta Azul já tem a árvore oficial pronta (configurada pelo contador),
+  em `GET /financeiro/categorias-dre`. `GET /api/clientes/:id/dre` já
+  monta o relatório completo com subtotais em cascata. Ver
+  `API-CONTRACT.md`. Falta só a UI do front.
 - [x] **Origem do saldo por conta bancária — resolvido (12/08).** Existe
   endpoint próprio, não documentado nas páginas que já tínhamos visto:
   `GET /conta-financeira/:id/saldo-atual` (um saldo por vez, não vem junto
@@ -60,10 +64,11 @@ conforme for resolvendo.
 
 - [ ] ENTRADAS
 - [ ] SAÍDAS
-- [ ] DESPESAS — não fixar layout até o item 4 resolver
+- [ ] DESPESAS — backend/decisão resolvidos, só falta rotear/roupar a tela
 - [ ] CAIXA
-- [ ] BALANÇO — não fixar layout até o item 4 resolver
-- [ ] DRE — não fixar layout até o item 4 resolver
+- [ ] BALANÇO — não fixar layout até estrutura ser decidida
+- [ ] DRE — backend pronto (ver item 4), só falta a tela (tabela contábil
+  hierárquica com `linhas`/`subitens`)
 
 ## Referência rápida
 

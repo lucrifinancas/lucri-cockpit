@@ -471,10 +471,59 @@ localmente, em vez de 1 chamada por mês.
 
 ---
 
+## `GET /api/clientes/:id/dre`
+
+Protegida (`master`, `analista`). Demonstrativo de Resultado completo,
+usando a **estrutura oficial de DRE configurada no próprio Conta Azul**
+para aquele cliente (normalmente feita pelo contador da empresa) — não é
+uma regra de categorização nossa, é a árvore contábil real, com cada
+categoria financeira já encaixada no grupo certo.
+
+⚠️ **Diferente de `/despesas`** (que usa a marcação manual da tabela
+`categoria_despesa`): o DRE usa a árvore completa do Conta Azul
+(`GET /financeiro/categorias-dre`), que já cobre receitas, deduções,
+custos, despesas, financeiro e não operacional — não só despesas.
+
+**Parâmetros de query (opcionais):** `de`, `ate`.
+
+**Resposta `200`:**
+```json
+{
+  "periodo": { "de": "2026-01-01", "ate": "2026-08-25" },
+  "resultado_final": -2096.19,
+  "linhas": [
+    {
+      "codigo": "01",
+      "descricao": "Receitas Operacionais",
+      "totalizador": false,
+      "valor": 147638.87,
+      "subitens": [
+        { "codigo": "01.1", "descricao": "Receita de Vendas de Produtos e Serviços", "valor": 147638.87 },
+        { "codigo": "01.2", "descricao": "Receita de Fretes e Entregas", "valor": 0 }
+      ]
+    },
+    { "codigo": null, "descricao": "Receita Bruta de Vendas", "totalizador": true, "valor": 147638.87 },
+    { "codigo": "02", "descricao": "Deduções da Receita Bruta", "totalizador": false, "valor": -3097.94, "subitens": [ "..." ] },
+    { "codigo": null, "descricao": "Receita Líquida de Vendas", "totalizador": true, "valor": 144540.93 }
+  ]
+}
+```
+- Linhas com `"totalizador": true` são subtotais (Receita Bruta, Receita
+  Líquida, Lucro Bruto, Lucro/Prejuízo Operacional, Líquido e Final) — o
+  `valor` delas é o acumulado de tudo que veio antes, não têm `subitens`.
+  Linhas normais (`totalizador: false`) são os 7 grupos da estrutura
+  (Receitas Operacionais, Deduções, Custos, Despesas Operacionais,
+  Financeiras, Outras Receitas/Despesas, Investimentos/Empréstimos), cada
+  uma com seus `subitens`.
+- Valores já vêm com o sinal certo: receita positiva, despesa/dedução
+  negativa — dá pra somar direto sem lógica extra no front.
+- `resultado_final` é atalho pro valor da última linha (`Lucro/Prejuízo
+  Final`), sem precisar procurar no array.
+
+---
+
 ## Endpoints ainda não implementados
 
-- **DRE** — bloqueado pela definição de estrutura de níveis de subtotal
-  (DESPESAS em si já está implementado, ver acima).
 - **BALANÇO** — bloqueado pela definição de estrutura de linhas/subtotais.
 - Endpoint de "esqueci minha senha" por e-mail (adiado, ver
   `GUIA-MAKE-RESET-SENHA.md`) — troca de senha *estando logado* já existe
