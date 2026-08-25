@@ -1,0 +1,29 @@
+name: Deploy Backend
+
+# Roda sozinho sempre que algo dentro de server/ for enviado pro main —
+# resolve o problema de "código no repositório, mas não no ar" (já
+# aconteceu de verdade nesta sessão: um endpoint ficou dias no GitHub sem
+# ninguém rodar `wrangler deploy`).
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "server/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências
+        working-directory: server
+        run: npm ci
+
+      - name: Deploy no Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: server
