@@ -2,8 +2,9 @@ import { Hono } from "hono";
 import { exigirPapel } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { resolverPeriodo } from "../utils/periodo.js";
-import { buscarContasAPagar, buscarContasAReceber } from "../contaazul/api.js";
+import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre } from "../contaazul/api.js";
 import { normalizarLancamento } from "../contaazul/normalizar.js";
+import { montarDre } from "../contaazul/dre.js";
 import { listarCategoriaIdsDespesa } from "../db/categoriaDespesa.js";
 
 export const financeiroRoutes = new Hono();
@@ -96,6 +97,44 @@ financeiroRoutes.get("/:clienteId/caixa", exigirPapel("master", "analista"), asy
     saidas: saidas.totais,
     saldo_periodo: totalEntradasPago - totalSaidasPago,
   });
+});
+
+// DRE completo, usando a estrutura oficial (grupos/subgrupos) que já vem
+// configurada no Conta Azul pra esse cliente — não é uma regra nossa,
+// é a árvore contábil de verdade, com cada categoria já encaixada no
+// lugar certo (ver DECISOES-E-ESCOPO.md e API-CONTRACT.md).
+financeiroRoutes.get("/:clienteId/dre", exigirPapel("master", "analista"), async (c) => {
+  const clienteId = Number(c.req.param("clienteId"));
+  const { de, ate } = resolverPeriodo(c);
+
+  const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
+  if (!accessToken) {
+    return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
+  }
+
+  const [estrutura, contasAPagar, contasAReceber] = await Promise.all([
+    buscarEstruturaDre(accessToken),
+    buscarContasAPagar(accessToken, { de, ate }),
+    buscarContasAReceber(accessToken, { de, ate }),
+  ]);
+
+  // Cada categoria já entra com o sinal certo: contas a receber somam
+  // positivo, contas a pagar somam negativo — regime de caixa (valor_pago).
+  const valorPorCategoria = new Map();
+  for (const item of contasAPagar.itens) {
+    const l = normalizarLancamento(item, "saida");
+    if (!l.categoria_id) continue;
+    valorPorCategoria.set(l.categoria_id, (valorPorCategoria.get(l.categoria_id) ?? 0) - l.valor_pago);
+  }
+  for (const item of contasAReceber.itens) {
+    const l = normalizarLancamento(item, "entrada");
+    if (!l.categoria_id) continue;
+    valorPorCategoria.set(l.categoria_id, (valorPorCategoria.get(l.categoria_id) ?? 0) + l.valor_pago);
+  }
+
+  const dre = montarDre(estrutura, valorPorCategoria);
+
+  return c.json({ periodo: { de, ate }, ...dre });
 });
 
 const MESES = [

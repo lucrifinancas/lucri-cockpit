@@ -68,3 +68,11 @@ export async function buscarSaldoConta(accessToken, contaId) {
   const dados = await chamarApi(`/conta-financeira/${contaId}/saldo-atual`, accessToken);
   return dados.saldo_atual;
 }
+
+// Estrutura oficial de DRE do cliente (grupos, subgrupos e quais categorias
+// financeiras pertencem a cada um) — configurada no próprio Conta Azul,
+// normalmente pelo contador da empresa. Não é uma lista paginada, é uma
+// árvore só, por isso não usa chamarApiPaginado.
+export function buscarEstruturaDre(accessToken) {
+  return chamarApi("/financeiro/categorias-dre", accessToken);
+}
