@@ -10,6 +10,7 @@ on:
       - main
     paths:
       - "server/**"
+  workflow_dispatch: {} # permite disparar manualmente, sem precisar mexer em server/
 
 jobs:
   deploy:
