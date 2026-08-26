@@ -265,6 +265,63 @@ salvamento).
 
 ---
 
+## `GET /api/clientes/:id/categorias-pai`
+
+Protegida (`master`, `analista`). Lista as categorias-**pai** (grupos como
+"Despesas Administrativas") encontradas no plano de contas do cliente.
+
+⚠️ **A API do Conta Azul não devolve o nome da categoria-pai** — confirmado
+pelo suporte oficial deles como limitação conhecida, registrada na lista de
+melhorias deles, sem previsão de correção. Só o **ID** aparece (no campo
+`categoria_pai` de cada categoria filha). Por isso este endpoint devolve,
+pra cada `categoria_pai_id`, uma amostra das categorias filhas (
+`categorias_filhas`) — o master usa isso pra identificar visualmente qual
+grupo é qual (comparando com a tela de Categorias do próprio Conta Azul) e
+digitar o nome uma vez.
+
+**Resposta `200`:**
+```json
+[
+  {
+    "categoria_pai_id": "82529007-a072-4bd0-a3e9-3d2a7b3650db",
+    "nome": "Despesas Administrativas",
+    "categorias_filhas": ["Água e Saneamento", "Aluguel", "Alvará de Funcionamento", "..."]
+  },
+  {
+    "categoria_pai_id": "6f0ea43b-f8ac-4410-a4bc-834ade0dc341",
+    "nome": null,
+    "categorias_filhas": ["13º Salário - 1ª Parcela", "13º Salário - 2ª Parcela", "..."]
+  }
+]
+```
+`nome: null` significa que ninguém cadastrou ainda — nesse caso, o endpoint
+`/despesas` cai de volta pra mostrar a subcategoria em vez do grupo (ver
+abaixo).
+
+---
+
+## `PUT /api/clientes/:id/categorias-pai`
+
+Protegida — **só `master`**. Cadastra/atualiza o nome de uma ou mais
+categorias-pai. Diferente de `/categorias/despesas`, aqui é um upsert
+incremental (não substitui a lista inteira) — só afeta os IDs enviados.
+
+**Corpo da requisição:**
+```json
+{
+  "categorias_pai": [
+    { "categoria_pai_id": "82529007-a072-4bd0-a3e9-3d2a7b3650db", "nome": "Despesas Administrativas" }
+  ]
+}
+```
+
+**Resposta `200`:**
+```json
+{ "ok": true }
+```
+
+---
+
 ## `GET /api/contaazul/autorizar/:clienteId`
 
 Protegida (`master`, `analista`). Gera o link de autorização OAuth do Conta
@@ -420,6 +477,14 @@ direto do Conta Azul** (a API deles não sabe quais categorias você marcou
 como despesa) — `total_pago` é calculado somando `valor_pago` só dos
 lançamentos filtrados. Se o cliente ainda não tiver nenhuma categoria
 marcada, retorna lista vazia e `total_pago: 0` (não é erro).
+
+⚠️ **Campo `categoria` aqui é diferente de ENTRADAS/SAÍDAS**: em vez da
+subcategoria específica, vem o nome da **categoria-pai** (ex: "Despesas
+Administrativas"), quando o master já cadastrou esse nome (ver
+`/categorias-pai` acima) — decisão do usuário, pra agrupar por categoria
+ampla, não por subcategoria. Categorias sem pai nomeado ainda mostram a
+subcategoria mesmo (fallback), pra nunca ficar em branco. Se o front for
+agrupar/somar por `categoria`, não precisa de lógica extra — já vem certo.
 
 ---
 

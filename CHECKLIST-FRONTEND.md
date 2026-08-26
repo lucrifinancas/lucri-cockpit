@@ -75,8 +75,16 @@ vai entregar.
 - [x] HOME, ENTRADAS, SAÍDAS, CAIXA — dados reais do Conta Azul
 - [x] Saldo por conta bancária (`saldo` em cada conta + `saldo_total` na
   HOME) — resolvido em 12/08, endpoint achado fora da doc oficial
-- [x] DESPESAS (categorização manual + endpoint filtrado) — falta só a UI
-  em Ajustes pra marcar categorias
+- [x] DESPESAS (categorização manual + endpoint filtrado)
+- [ ] **Categorias-pai (25/08)** — `GET/PUT /categorias-pai`, pra o master
+  nomear os grupos (ex: "Despesas Administrativas") usados no agrupamento
+  de Despesas — a API do Conta Azul não devolve esse nome (limitação
+  confirmada pelo suporte deles). Sugestão: adicionar na mesma seção
+  "Categorias de Despesa" já existente em Ajustes — uma tela extra
+  (ou aba) listando cada `categoria_pai_id` com as `categorias_filhas`
+  de exemplo, e um campo pra digitar o nome. Sem isso preenchido, o campo
+  `categoria` de `/despesas` cai de volta pra subcategoria (funciona, só
+  não fica agrupado como o master queria).
 - [x] Login com Google (alternativa ao e-mail/senha) — ver seção própria
   abaixo
 - [x] DRE (`GET /dre`) — usa a árvore oficial do Conta Azul
