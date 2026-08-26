@@ -4,6 +4,7 @@ import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes
 import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
 import { salvarCategoriasDespesa, listarCategoriaIdsDespesa } from "../db/categoriaDespesa.js";
+import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { buscarCategorias } from "../contaazul/api.js";
 
@@ -89,5 +90,53 @@ clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) 
   }
 
   await salvarCategoriasDespesa(c.env.DB, clienteId, categorias);
+  return c.json({ ok: true });
+});
+
+// Lista as categorias-pai encontradas no plano de contas do cliente — a API
+// do Conta Azul não devolve o nome delas (limitação confirmada pelo
+// suporte), só o ID dentro de cada categoria filha. Aqui devolvemos cada
+// categoria-pai com o nome já cadastrado (se houver) e uma amostra das
+// categorias filhas, pra o master conseguir identificar qual é qual
+// olhando a tela do próprio Conta Azul.
+clientesRoutes.get("/:id/categorias-pai", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+
+  const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
+  if (!accessToken) {
+    return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
+  }
+
+  const [categorias, nomesPai] = await Promise.all([
+    buscarCategorias(accessToken),
+    listarNomesPai(c.env.DB, clienteId),
+  ]);
+
+  const filhasPorPai = new Map();
+  for (const cat of categorias.itens) {
+    if (!cat.categoria_pai) continue;
+    if (!filhasPorPai.has(cat.categoria_pai)) filhasPorPai.set(cat.categoria_pai, []);
+    filhasPorPai.get(cat.categoria_pai).push(cat.nome);
+  }
+
+  const paisOrdenados = [...filhasPorPai.entries()].map(([paiId, filhas]) => ({
+    categoria_pai_id: paiId,
+    nome: nomesPai.get(paiId) ?? null,
+    categorias_filhas: filhas,
+  }));
+
+  return c.json(paisOrdenados);
+});
+
+// Salva o nome de uma ou mais categorias-pai — só master.
+clientesRoutes.put("/:id/categorias-pai", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { categorias_pai } = await c.req.json();
+
+  if (!Array.isArray(categorias_pai)) {
+    return c.json({ erro: "Campo 'categorias_pai' precisa ser uma lista." }, 400);
+  }
+
+  await salvarNomesPai(c.env.DB, clienteId, categorias_pai);
   return c.json({ ok: true });
 });
