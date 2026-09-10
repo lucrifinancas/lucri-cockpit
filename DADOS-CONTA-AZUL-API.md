@@ -155,11 +155,36 @@ de teste não usa centro de custo (0 cadastrados).
 `GET /orcamentos`
 Estrutura confirmada, mas o cliente de teste não tinha orçamentos (0).
 
-### Notas fiscais e Contratos — não finalizados
-`GET /notas-fiscais` e `GET /contratos` existem, mas exigem parâmetros
-obrigatórios que ainda não descobrimos (erro 400 pedindo "campos obrigatórios"
-sem especificar quais). Não são essenciais pro fluxo de caixa/DRE já priorizado
-— revisitar só se entrarem na lista de métricas da v1.
+### Notas fiscais e Contratos
+
+> ✅ **Pista encontrada (10/09):** um projeto terceiro open-source
+> (`douglac/contaazul-mcp`, MCP publicado 02/09/2026, github.com/douglac/contaazul-mcp)
+> documenta os parâmetros que faltavam pra esses dois endpoints. Não testamos
+> ainda contra nosso próprio token — vale confirmar antes de confiar 100%.
+
+`GET /notas-fiscais` — parâmetros prováveis: `data_emissao_inicio`,
+`data_emissao_fim`, `status`, além de `tamanho_pagina`/`pagina`.
+
+`GET /contratos` — parâmetros prováveis: `cliente_id`, `status`, além de
+`tamanho_pagina`/`pagina`.
+
+Não são essenciais pro fluxo de caixa/DRE já priorizado — revisitar só se
+entrarem na lista de métricas da v1, mas agora já sabemos por onde começar
+em vez de tentar às cegas como antes.
+
+### Quitação de parcela — dado que existe mas não é consultável (10/09)
+
+Achado relacionado à limitação de "Total pago no período" documentada em
+`API-CONTRACT.md`: o mesmo projeto terceiro tem uma ferramenta de **quitar**
+parcela que grava `data_pagamento` (`{"parcela_id", "conta_financeira_id",
+"valor_pago", "data_pagamento"}`) — confirma que o Conta Azul guarda a data
+real de pagamento internamente. Só que a ferramenta de **listar** parcelas
+dele (equivalente ao nosso `/contas-a-receber/buscar`) também só filtra por
+`data_vencimento_inicio/fim` — mesma limitação que a gente já tinha
+confirmado testando direto. Ou seja: o dado existe no Conta Azul, mas não
+existe endpoint público pra consultar por data de pagamento — nem esse
+projeto terceiro, que tem acesso de escrita completo, conseguiu contornar
+isso.
 
 ## O que dá pra montar na dashboard com esses dados
 
