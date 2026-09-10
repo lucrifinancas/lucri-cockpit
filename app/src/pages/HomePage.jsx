@@ -13,6 +13,20 @@ import ProportionDonut from "../components/charts/ProportionDonut";
 import HorizontalBarChart from "../components/charts/HorizontalBarChart";
 import "../styles/page.css";
 
+// Reconcilia a soma por categoria com o total oficial (`totais.pago.valor`
+// do Conta Azul). Às vezes o campo `pago` de um lançamento individual não
+// bate com o agregado que o próprio Conta Azul reporta pro mesmo período
+// (confirmado comparando com o relatório nativo deles — provável taxa de
+// liquidação que um endpoint reflete e o outro não). Sem isso, a soma das
+// categorias podia passar de 100% do total. Ajuste proporcional, não muda
+// a ordem nem esconde nenhuma categoria.
+function reconciliarComTotal(porCategoria, totalOficial) {
+  const somaBruta = sumValores(porCategoria.map((d) => ({ valor: d.valor })));
+  if (somaBruta === 0 || somaBruta === totalOficial) return porCategoria;
+  const fator = totalOficial / somaBruta;
+  return porCategoria.map((d) => ({ ...d, valor: d.valor * fator }));
+}
+
 // Top N categorias de uma lista `{categoria, valor}[]` já ordenada, com o
 // resto agrupado em "Outros" — usado tanto pra receitas quanto despesas
 // (as duas já são dado real, ver API-CONTRACT.md).
@@ -90,9 +104,10 @@ export default function HomePage() {
   // pontual/outro, que era inventada no mock e não existe na API real.
   // Regime de caixa: soma valor_pago por lançamento, não valor (total do
   // título, pago ou não) — ver "⚠️ Regime de caixa" no API-CONTRACT.md.
-  const receitasPorCategoria = groupByCategoria(
+  const receitasPorCategoriaBruto = groupByCategoria(
     (entradas?.lancamentos ?? []).map((l) => ({ ...l, valor: l.valor_pago }))
   );
+  const receitasPorCategoria = reconciliarComTotal(receitasPorCategoriaBruto, totalEntradas);
   const receitasChart = topCategorias(receitasPorCategoria);
   const receitasTabela = receitasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
 
