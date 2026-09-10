@@ -18,29 +18,43 @@ debugRoutes.get("/:clienteId/debug-nfe-contratos", exigirPapel("master"), async 
 
   const tentativas = [
     {
-      nome: "notas-fiscais (sem params)",
-      path: "/notas-fiscais",
-      params: { tamanho_pagina: "10", pagina: "1" },
-    },
-    {
-      nome: "notas-fiscais (data_emissao)",
+      nome: "notas-fiscais (data_emissao _de/_ate)",
       path: "/notas-fiscais",
       params: {
         tamanho_pagina: "10",
         pagina: "1",
-        data_emissao_inicio: "2025-01-01",
-        data_emissao_fim: "2026-09-10",
+        data_emissao_de: "2025-01-01",
+        data_emissao_ate: "2026-09-10",
       },
     },
     {
-      nome: "contratos (sem params)",
-      path: "/contratos",
-      params: { tamanho_pagina: "10", pagina: "1" },
+      nome: "notas-fiscais (data_criacao _de/_ate)",
+      path: "/notas-fiscais",
+      params: {
+        tamanho_pagina: "10",
+        pagina: "1",
+        data_criacao_de: "2025-01-01",
+        data_criacao_ate: "2026-09-10",
+      },
     },
     {
-      nome: "contratos (com status)",
+      nome: "contratos (data_inicio_recorrencia)",
       path: "/contratos",
-      params: { tamanho_pagina: "10", pagina: "1", status: "ATIVO" },
+      params: {
+        tamanho_pagina: "10",
+        pagina: "1",
+        data_inicio_recorrencia: "2025-01-01",
+      },
+    },
+    {
+      nome: "contratos (data_inicio_recorrencia_de/ate)",
+      path: "/contratos",
+      params: {
+        tamanho_pagina: "10",
+        pagina: "1",
+        data_inicio_recorrencia_de: "2025-01-01",
+        data_inicio_recorrencia_ate: "2026-09-10",
+      },
     },
   ];
 
