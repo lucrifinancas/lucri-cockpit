@@ -7,29 +7,26 @@ import "../styles/page.css";
 const COLUMNS = [
   { key: "data", label: "Data" },
   { key: "descricao", label: "Descrição" },
-  { key: "tipo", label: "Tipo" },
+  { key: "categoria", label: "Categoria" },
   { key: "valor", label: "Valor" },
 ];
 
+// A categorização "fixa/variável" que essa página tinha antes nunca existiu
+// de verdade — o Conta Azul não classifica assim, só por `categoria` (ver
+// GUIA-INTEGRACAO-DADOS-REAIS.md). `despesas` já vem filtrado pelas
+// categorias marcadas em Ajustes → Categorias de Despesa.
 export default function DespesasPage() {
   const { despesas } = useFinanceData();
-  const fixas = despesas.filter((d) => d.tipo === "fixa");
-  const variaveis = despesas.filter((d) => d.tipo === "variavel");
-  const rows = [...despesas].sort((a, b) => b.data.localeCompare(a.data));
+  const rows = [...despesas]
+    .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))
+    .map((d) => ({ id: d.id, data: d.data_vencimento, descricao: d.descricao, categoria: d.categoria, valor: d.valor }));
 
   return (
     <div className="page">
       <h1 className="page-title">Despesas</h1>
-      <p className="pending-notice">
-        <strong>Em aberto:</strong> ainda não sabemos se o Conta Azul já traz a
-        categorização fixo/variável pronta ou se essa página vai precisar de uma
-        tela própria de mapeamento por cliente. A separação abaixo é só ilustrativa
-        com dado mockado — não fechar esse schema antes de confirmar a origem.
-      </p>
       <div className="stat-row">
-        <StatCard label="Despesas fixas" value={sumValores(fixas)} />
-        <StatCard label="Despesas variáveis" value={sumValores(variaveis)} />
-        <StatCard label="Total" value={sumValores(despesas)} tone="negative" />
+        <StatCard label="Total no período" value={sumValores(despesas)} tone="negative" />
+        <StatCard label="Nº de lançamentos" value={despesas.length} format="count" />
       </div>
       <DataTable columns={COLUMNS} rows={rows} />
     </div>

@@ -8,11 +8,15 @@ import HomePage from "./pages/HomePage";
 import AjustesPage from "./pages/AjustesPage";
 import EntradasPage from "./pages/EntradasPage";
 import SaidasPage from "./pages/SaidasPage";
-import UnderConstructionPage from "./pages/UnderConstructionPage";
+import DespesasPage from "./pages/DespesasPage";
+import CaixaPage from "./pages/CaixaPage";
+import BalancoPage from "./pages/BalancoPage";
+import DrePage from "./pages/DrePage";
 
-// Beta 1.1: Home, Ajustes, Entradas e Saídas preenchidos com dado real.
-// Despesas, Caixa, Balanço e DRE continuam em src/pages/ com dado
-// mockado/stub, ainda não roteados.
+// Beta 1.2: as 8 abas do escopo todas roteadas. Home/Ajustes/Entradas/
+// Saídas/Despesas/Caixa com dado real; Balanço/DRE ainda são só o aviso
+// "em aberto" — faltam decisão de estrutura (Balanço) e front da tabela
+// contábil (DRE, que já tem endpoint pronto no backend).
 
 export default function App() {
   const { user, checkingSession } = useAuth();
@@ -33,10 +37,10 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/entradas" element={<EntradasPage />} />
             <Route path="/saidas" element={<SaidasPage />} />
-            <Route path="/despesas" element={<UnderConstructionPage title="Despesas" />} />
-            <Route path="/caixa" element={<UnderConstructionPage title="Caixa" />} />
-            <Route path="/balanco" element={<UnderConstructionPage title="Balanço" />} />
-            <Route path="/dre" element={<UnderConstructionPage title="DRE" />} />
+            <Route path="/despesas" element={<DespesasPage />} />
+            <Route path="/caixa" element={<CaixaPage />} />
+            <Route path="/balanco" element={<BalancoPage />} />
+            <Route path="/dre" element={<DrePage />} />
             <Route path="/ajustes" element={<AjustesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
