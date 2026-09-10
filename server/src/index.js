@@ -6,7 +6,6 @@ import { clientesRoutes } from "./routes/clientes.js";
 import { contaazulOnboardingRoutes } from "./routes/contaazulOnboarding.js";
 import { homeRoutes } from "./routes/home.js";
 import { financeiroRoutes } from "./routes/financeiro.js";
-import { debugRoutes } from "./routes/debug.js";
 import { ContaAzulDesconectadaError } from "./contaazul/errors.js";
 
 const app = new Hono();
@@ -51,6 +50,5 @@ app.route("/api/clientes", clientesRoutes);
 app.route("/api/contaazul", contaazulOnboardingRoutes);
 app.route("/api/clientes", homeRoutes);
 app.route("/api/clientes", financeiroRoutes);
-app.route("/api/clientes", debugRoutes);
 
 export default app;

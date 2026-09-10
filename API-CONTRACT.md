@@ -48,6 +48,36 @@ dado real hoje (somando `valor_pago` de `/entradas` agrupado por mês) — mas
 sem a despesa, o gráfico ficaria incompleto, então recomendo manter mockado
 até o endpoint de DESPESAS existir.
 
+### ⚠️ Limitação encontrada (10/09): nosso total pode divergir do relatório nativo do Conta Azul
+
+`buscarContasAReceber`/`buscarContasAPagar` filtram só por
+`data_vencimento_de/ate` — é o **único** filtro de data que esse endpoint
+aceita (confirmado testando direto contra a API: `data_pagamento_de`,
+`data_recebimento_de`, `data_baixa_de`, `data_liquidacao_de` e
+`data_competencia_de` todos voltam 400 "parâmetro obrigatório
+data_vencimento_de não foi informado" — ou seja, nem existem como filtro
+nesse endpoint).
+
+Isso significa: um título que **venceu num mês mas foi pago em outro**
+não aparece no nosso total daquele mês de pagamento (nem no de
+vencimento, porque group by aqui é sempre por vencimento). O relatório
+nativo do Conta Azul ("Relatórios → Análise de recebimentos") não bate
+com o nosso `totais.pago.valor` quando isso acontece — testado com o
+cliente Nick Publicidade, mês de agosto/2026: nosso total deu R$
+16.549,64, o relatório nativo deles deu R$ 17.989,64 pro mesmo período
+(print comparado lado a lado).
+
+Como o relatório nativo deles claramente usa outro critério (ou outro
+endpoint, não documentado nessa API v1 pública), isso é uma limitação
+da API que temos acesso, não um bug de cálculo nosso — nosso
+`pago.valor` já é exatamente o que a Conta Azul devolve, sem
+recalcularmos nada. Não tentei resolver sozinho porque muda o contrato
+usado por HOME/ENTRADAS/SAÍDAS/histórico-mensal inteiros — @Diogo, vale
+perguntar pro suporte do Conta Azul se existe algum endpoint de
+relatório equivalente ao "Análise de recebimentos" que a gente possa
+chamar diretamente, no mesmo espírito da resposta que eles já deram
+sobre categoria-pai.
+
 ---
 
 ## `GET /api/health`
