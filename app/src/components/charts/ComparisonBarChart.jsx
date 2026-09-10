@@ -8,7 +8,7 @@ export default function ComparisonBarChart({ data, series }) {
   return (
     <div className="chart-block">
       <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barCategoryGap="16%" barGap={4}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 0 }} barCategoryGap="16%" barGap={4}>
           <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
           <XAxis
             dataKey="month"

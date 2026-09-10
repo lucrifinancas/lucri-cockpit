@@ -28,7 +28,7 @@ export default function HistoryBarChart({ data, dataKey, color, label, colorBySi
         </div>
       )}
       <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 24, right: 8, left: 0, bottom: 8 }}>
+        <BarChart data={data} margin={{ top: 24, right: 8, left: 4, bottom: 8 }}>
           <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
           <XAxis
             dataKey="month"
