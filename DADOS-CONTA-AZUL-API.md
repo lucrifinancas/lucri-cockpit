@@ -155,22 +155,20 @@ de teste não usa centro de custo (0 cadastrados).
 `GET /orcamentos`
 Estrutura confirmada, mas o cliente de teste não tinha orçamentos (0).
 
-### Notas fiscais e Contratos
+### Notas fiscais e Contratos — não finalizados
 
-> ✅ **Pista encontrada (10/09):** um projeto terceiro open-source
-> (`douglac/contaazul-mcp`, MCP publicado 02/09/2026, github.com/douglac/contaazul-mcp)
-> documenta os parâmetros que faltavam pra esses dois endpoints. Não testamos
-> ainda contra nosso próprio token — vale confirmar antes de confiar 100%.
-
-`GET /notas-fiscais` — parâmetros prováveis: `data_emissao_inicio`,
-`data_emissao_fim`, `status`, além de `tamanho_pagina`/`pagina`.
-
-`GET /contratos` — parâmetros prováveis: `cliente_id`, `status`, além de
-`tamanho_pagina`/`pagina`.
-
-Não são essenciais pro fluxo de caixa/DRE já priorizado — revisitar só se
-entrarem na lista de métricas da v1, mas agora já sabemos por onde começar
-em vez de tentar às cegas como antes.
+`GET /notas-fiscais` e `GET /contratos` existem, mas exigem parâmetros
+obrigatórios que ainda não descobrimos (erro 400 "campos obrigatórios não
+informados" pra notas fiscais; contratos revela um pouco mais — "Data de
+início da recorrência não pode ser nula" — mas nem `data_inicio_recorrencia`
+nem `data_inicio_recorrencia_de/ate` resolveram, testado em 10/09 contra o
+token real do Nick Publicidade). Um projeto terceiro
+(`douglac/contaazul-mcp`) sugeria `data_emissao_inicio/fim` (notas fiscais)
+e `cliente_id`/`status` (contratos) — nenhum dos dois resolveu o erro
+também, então descarto essa pista. Não são essenciais pro fluxo de
+caixa/DRE já priorizado — revisitar só se entrarem na lista de métricas da
+v1; exigiria mais tempo de tentativa/erro ou contato com o suporte do
+Conta Azul pra descobrir os campos certos.
 
 ### Quitação de parcela — dado que existe mas não é consultável (10/09)
 
