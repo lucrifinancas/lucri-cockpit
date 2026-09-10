@@ -6,12 +6,13 @@ import { PeriodProvider } from "./context/PeriodContext";
 import AppLayout from "./layout/AppLayout";
 import HomePage from "./pages/HomePage";
 import AjustesPage from "./pages/AjustesPage";
+import EntradasPage from "./pages/EntradasPage";
+import SaidasPage from "./pages/SaidasPage";
 import UnderConstructionPage from "./pages/UnderConstructionPage";
 
-// Beta 1.1: Home e Ajustes preenchidos — Ajustes voltou a ser roteado pra
-// abrigar o checklist de "cards visíveis na Home" por cliente. As demais
-// abas (EntradasPage, SaidasPage, DespesasPage, CaixaPage) continuam em
-// src/pages/ com dado mockado, só não estão roteadas ainda.
+// Beta 1.1: Home, Ajustes, Entradas e Saídas preenchidos com dado real.
+// Despesas, Caixa, Balanço e DRE continuam em src/pages/ com dado
+// mockado/stub, ainda não roteados.
 
 export default function App() {
   const { user, checkingSession } = useAuth();
@@ -30,8 +31,8 @@ export default function App() {
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/entradas" element={<UnderConstructionPage title="Entradas" />} />
-            <Route path="/saidas" element={<UnderConstructionPage title="Saídas" />} />
+            <Route path="/entradas" element={<EntradasPage />} />
+            <Route path="/saidas" element={<SaidasPage />} />
             <Route path="/despesas" element={<UnderConstructionPage title="Despesas" />} />
             <Route path="/caixa" element={<UnderConstructionPage title="Caixa" />} />
             <Route path="/balanco" element={<UnderConstructionPage title="Balanço" />} />
