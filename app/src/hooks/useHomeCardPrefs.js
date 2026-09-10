@@ -14,6 +14,7 @@ export const HOME_CARDS = [
   { id: "saidas", label: "Saídas" },
   { id: "contasAReceberMes", label: "Contas vencidas (Valores a receber)" },
   { id: "inadimplencia", label: "Inadimplência do mês" },
+  { id: "saldoConta", label: "Saldo em conta" },
 ];
 
 function readOverrides(clientId) {

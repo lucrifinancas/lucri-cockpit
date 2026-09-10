@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowCircleDown, ArrowCircleUp, HandCoins, WarningCircle } from "@phosphor-icons/react";
+import { ArrowCircleDown, ArrowCircleUp, HandCoins, Wallet, WarningCircle } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
 import { sumValores, groupByCategoria, CATEGORY_PALETTE } from "../data/mockFinance";
@@ -80,6 +80,11 @@ export default function HomePage() {
   const totalAReceberNoMes = Math.max(contasAReceber.todos - contasAReceber.pago.valor, 0);
   const inadimplenciaPct = contasAReceber.todos > 0 ? (contasAReceber.vencido.valor / contasAReceber.todos) * 100 : 0;
 
+  // Saldo em conta: foto de agora (não depende do período selecionado),
+  // soma de todas as contas bancárias ativas do cliente no Conta Azul.
+  const saldoTotal = home.saldo_total ?? 0;
+  const saldoPorConta = (home.contas_bancarias ?? []).map((conta) => ({ label: conta.banco, value: conta.saldo }));
+
   // Receitas por categoria: dado real (`categoria` do lançamento, ver
   // API-CONTRACT.md /entradas) — substitui a antiga divisão recorrente/
   // pontual/outro, que era inventada no mock e não existe na API real.
@@ -108,6 +113,15 @@ export default function HomePage() {
       <h1 className="page-title">Home</h1>
 
       <div className="stat-row stat-row-grid">
+        {isVisible("saldoConta") && (
+          <StatCard
+            label="Saldo em conta"
+            value={saldoTotal}
+            icon={Wallet}
+            breakdown={saldoPorConta}
+            tone={saldoTotal < 0 ? "negative" : "neutral"}
+          />
+        )}
         {isVisible("entradas") && <StatCard label="Entradas" value={totalEntradas} icon={ArrowCircleDown} />}
         {isVisible("saidas") && (
           <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} invertDeltaColor />
@@ -180,11 +194,6 @@ export default function HomePage() {
         <h2 className="section-title">Top 10 gastos por categoria</h2>
         <HorizontalBarChart data={despesasChart} />
       </section>
-
-      <p className="pending-notice">
-        Saldo em conta segue oculto até o Conta Azul expor esse dado (ver
-        DADOS-CONTA-AZUL-API.md).
-      </p>
     </div>
   );
 }
