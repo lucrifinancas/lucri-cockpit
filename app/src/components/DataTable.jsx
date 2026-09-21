@@ -2,7 +2,7 @@ import "./DataTable.css";
 
 const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-export default function DataTable({ columns, rows }) {
+export default function DataTable({ columns, rows, emptyMessage = "Nenhum lançamento no período selecionado." }) {
   return (
     <div className="data-table-wrap">
       <table className="data-table">
@@ -17,7 +17,7 @@ export default function DataTable({ columns, rows }) {
           {rows.length === 0 && (
             <tr>
               <td colSpan={columns.length} className="data-table-empty">
-                Nenhum lançamento no período selecionado.
+                {emptyMessage}
               </td>
             </tr>
           )}

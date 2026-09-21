@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowCircleDown, ArrowCircleUp, HandCoins, Wallet, WarningCircle } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
-import { sumValores, groupByCategoria, CATEGORY_PALETTE } from "../data/mockFinance";
+import { sumValores, groupByCategoria, CATEGORY_PALETTE, computeDelta } from "../data/mockFinance";
 import { useActiveClient } from "../context/ClientContext";
 import { useHomeCardPrefs } from "../hooks/useHomeCardPrefs";
 import StatCard from "../components/StatCard";
@@ -40,8 +40,34 @@ function topCategorias(porCategoria, n = 10) {
   ];
 }
 
+// Faixas de atraso (Ageing) pra contas a receber vencidas — padrão de
+// dashboards financeiros (ex: Apex Finance Receivables), ver
+// [[referencias-ui-dashboard-lucri]]. Referência é "hoje", não o período
+// selecionado: é sobre o quão atrasado está CADA título agora, não quando
+// ele venceu dentro da janela escolhida.
+const AGEING_BUCKETS = [
+  { label: "0-30 dias", max: 30 },
+  { label: "31-60 dias", max: 60 },
+  { label: "61-90 dias", max: 90 },
+  { label: "90+ dias", max: Infinity },
+];
+
+function buildAgeing(lancamentos) {
+  const hoje = new Date();
+  const buckets = AGEING_BUCKETS.map((b) => ({ ...b, valor: 0 }));
+  for (const l of lancamentos) {
+    if (l.status !== "ATRASADO" || !l.valor_em_aberto) continue;
+    const diasAtraso = Math.max(0, Math.floor((hoje - new Date(l.data_vencimento)) / 86400000));
+    const bucket = buckets.find((b) => diasAtraso <= b.max) ?? buckets[buckets.length - 1];
+    bucket.valor += l.valor_em_aberto;
+  }
+  return buckets
+    .filter((b) => b.valor > 0)
+    .map((b, i) => ({ categoria: b.label, valor: b.valor, color: CATEGORY_PALETTE[i] }));
+}
+
 export default function HomePage() {
-  const { home, entradas, saidas, despesas, loading, error } = useFinanceData();
+  const { home, entradas, saidas, despesas, previousHome, previousEntradas, previousSaidas, loading, error } = useFinanceData();
   const historico = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
@@ -94,6 +120,18 @@ export default function HomePage() {
   const totalAReceberNoMes = Math.max(contasAReceber.todos - contasAReceber.pago.valor, 0);
   const inadimplenciaPct = contasAReceber.todos > 0 ? (contasAReceber.vencido.valor / contasAReceber.todos) * 100 : 0;
 
+  // Delta "vs. período anterior" — só quando o hook trouxe o período
+  // anterior comparável (ver useFinanceData; null no preset "Todos os
+  // dados"). Saldo em conta e Inadimplência (%) ficam fora de propósito:
+  // saldo é foto de agora (não período), e delta de uma métrica que já é
+  // % vira "variação percentual de percentual", confuso pro usuário.
+  const deltaEntradas = previousEntradas ? computeDelta(totalEntradas, previousEntradas.totais.pago.valor) : null;
+  const deltaSaidas = previousSaidas ? computeDelta(totalSaidas, previousSaidas.totais.pago.valor) : null;
+  const prevAReceberNoMes = previousHome ? Math.max(previousHome.contas_a_receber.todos - previousHome.contas_a_receber.pago.valor, 0) : null;
+  const deltaAReceber = previousHome ? computeDelta(totalAReceberNoMes, prevAReceberNoMes) : null;
+
+  const ageingChart = buildAgeing(entradas?.lancamentos ?? []);
+
   // Saldo em conta: foto de agora (não depende do período selecionado),
   // soma de todas as contas bancárias ativas do cliente no Conta Azul.
   const saldoTotal = home.saldo_total ?? 0;
@@ -115,7 +153,23 @@ export default function HomePage() {
   // em Ajustes → Categorias de Despesa (ver API-CONTRACT.md /despesas).
   const despesasPorCategoria = groupByCategoria(despesas);
   const despesasChart = topCategorias(despesasPorCategoria);
-  const despesasTabela = despesasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
+  // Cada linha é uma categoria-mãe; ao abrir, as despesas dela (subcategoria).
+  // Marcações antigas, sem mãe, não têm o que abrir (mae === null).
+  const despesasPorMae = new Map();
+  for (const l of despesas) {
+    if (!l.mae) continue;
+    const filhas = despesasPorMae.get(l.mae) ?? new Map();
+    filhas.set(l.subcategoria, (filhas.get(l.subcategoria) ?? 0) + l.valor);
+    despesasPorMae.set(l.mae, filhas);
+  }
+  const despesasTabela = despesasChart.map((d) => ({
+    label: d.categoria,
+    value: d.valor,
+    color: d.color,
+    children: [...(despesasPorMae.get(d.categoria) ?? [])]
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value),
+  }));
 
   // Histórico mensal (Receitas x Despesas, Resultado, Vencidas): 1 fetch só
   // (useHistoricoMensal), reaproveitado nos 3 gráficos abaixo.
@@ -137,12 +191,20 @@ export default function HomePage() {
             tone={saldoTotal < 0 ? "negative" : "neutral"}
           />
         )}
-        {isVisible("entradas") && <StatCard label="Entradas" value={totalEntradas} icon={ArrowCircleDown} />}
+        {isVisible("entradas") && (
+          <StatCard label="Entradas" value={totalEntradas} icon={ArrowCircleDown} delta={deltaEntradas} />
+        )}
         {isVisible("saidas") && (
-          <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} invertDeltaColor />
+          <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} delta={deltaSaidas} invertDeltaColor />
         )}
         {isVisible("contasAReceberMes") && (
-          <StatCard label="Contas vencidas (Valores a receber)" value={totalAReceberNoMes} icon={HandCoins} />
+          <StatCard
+            label="Contas vencidas (Valores a receber)"
+            value={totalAReceberNoMes}
+            icon={HandCoins}
+            delta={deltaAReceber}
+            invertDeltaColor
+          />
         )}
         {isVisible("inadimplencia") && (
           <StatCard
@@ -188,6 +250,15 @@ export default function HomePage() {
       <section className="page-section">
         <h2 className="section-title">Contas a receber vencidas por mês</h2>
         <HistoryBarChart data={overdueHistory} dataKey="valor" color="var(--chart-despesa)" label="Vencidas" />
+      </section>
+
+      <section className="page-section">
+        <h2 className="section-title">Inadimplência por faixa de atraso (Ageing)</h2>
+        {ageingChart.length > 0 ? (
+          <HorizontalBarChart data={ageingChart} height={Math.max(160, ageingChart.length * 48)} />
+        ) : (
+          <p className="section-empty">Nenhuma conta vencida no período selecionado.</p>
+        )}
       </section>
 
       <section className="page-section">

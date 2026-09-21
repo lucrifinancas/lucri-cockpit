@@ -32,6 +32,18 @@ export function sumValores(items) {
   return items.reduce((acc, item) => acc + item.valor, 0);
 }
 
+// Busca por texto livre em lançamentos (descrição, contraparte, categoria) —
+// usado em Entradas/Saídas/Despesas. Case-insensitive; termo vazio devolve
+// tudo (não filtra).
+export function filterLancamentos(lancamentos, termo) {
+  const t = termo.trim().toLowerCase();
+  if (!t) return lancamentos;
+  return lancamentos.filter((l) => {
+    const categoria = typeof l.categoria === "string" ? l.categoria : (l.categoria?.nome ?? "");
+    return [l.descricao, l.contraparte, categoria].some((v) => v?.toLowerCase().includes(t));
+  });
+}
+
 export function filterByPeriod(items, { start, end }) {
   if (!start || !end) return items;
   return items.filter((item) => {
@@ -41,8 +53,10 @@ export function filterByPeriod(items, { start, end }) {
 }
 
 // Intervalo imediatamente anterior a `range`, com a mesma duração — usado
-// pra comparar "período atual vs. período anterior".
-function previousRange({ start, end }) {
+// pra comparar "período atual vs. período anterior". Exportada porque quem
+// busca dado real (useFinanceData) precisa desse range pra fazer o 2º
+// fetch da API com `de`/`ate` do período anterior.
+export function previousRange({ start, end }) {
   const startDate = new Date(start);
   const endDate = new Date(end);
   const durationDays = Math.round((endDate - startDate) / 86400000) + 1;
@@ -58,21 +72,12 @@ function previousRange({ start, end }) {
   };
 }
 
-// Variação % de um total (calculado por `totalFn`) entre o período atual e
-// o período imediatamente anterior. Sem período anterior comparável (ex:
-// preset "Todos os dados", sem start/end) retorna null — não inventa número
-// sem baseline. `totalFn(range)` deve retornar o total pro range recebido
-// (ex: soma de entradas, ou entradas - saídas pro saldo).
-export function periodDelta(totalFn, range) {
-  const { start, end } = range;
-  if (!start || !end) return null;
-
-  const prevRange = previousRange(range);
-  const currentTotal = totalFn(range);
-  const prevTotal = totalFn(prevRange);
-
-  if (prevTotal === 0) return null;
-
-  const pct = ((currentTotal - prevTotal) / prevTotal) * 100;
+// Variação % entre um valor do período atual e o mesmo valor no período
+// anterior (ver `previousRange`). Sem baseline comparável (período anterior
+// null/zero) retorna null — não inventa número sem base, ex: preset "Todos
+// os dados" (sem período anterior) ou cliente novo sem histórico.
+export function computeDelta(current, previous) {
+  if (!previous) return null;
+  const pct = ((current - previous) / previous) * 100;
   return { pct, direction: pct >= 0 ? "up" : "down" };
 }

@@ -37,6 +37,22 @@
   color: var(--text-primary);
 }
 
+.section-empty {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.table-search {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
 .pending-notice-actions {
   display: block;
   margin-top: 12px;
