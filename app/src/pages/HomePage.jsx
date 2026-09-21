@@ -13,6 +13,8 @@ import ProportionDonut from "../components/charts/ProportionDonut";
 import HorizontalBarChart from "../components/charts/HorizontalBarChart";
 import "../styles/page.css";
 
+const fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
 // Reconcilia a soma por categoria com o total oficial (`totais.pago.valor`
 // do Conta Azul). Às vezes o campo `pago` de um lançamento individual não
 // bate com o agregado que o próprio Conta Azul reporta pro mesmo período
@@ -154,20 +156,21 @@ export default function HomePage() {
   const despesasPorCategoria = groupByCategoria(despesas);
   const despesasChart = topCategorias(despesasPorCategoria);
   // Cada linha é uma categoria-mãe; ao abrir, as despesas dela (subcategoria).
-  // Marcações antigas, sem mãe, não têm o que abrir (mae === null).
+  // "Sem mãe" reúne as despesas ainda não classificadas em Ajustes.
   const despesasPorMae = new Map();
   for (const l of despesas) {
-    if (!l.mae) continue;
-    const filhas = despesasPorMae.get(l.mae) ?? new Map();
-    filhas.set(l.subcategoria, (filhas.get(l.subcategoria) ?? 0) + l.valor);
-    despesasPorMae.set(l.mae, filhas);
+    const filhas = despesasPorMae.get(l.categoria) ?? new Map();
+    filhas.set(l.subcategoria ?? l.categoria, (filhas.get(l.subcategoria ?? l.categoria) ?? 0) + l.valor);
+    despesasPorMae.set(l.categoria, filhas);
   }
+  const totalSemMae = sumValores(despesas.filter((l) => !l.mae));
   const despesasTabela = despesasChart.map((d) => ({
     label: d.categoria,
     value: d.valor,
     color: d.color,
     children: [...(despesasPorMae.get(d.categoria) ?? [])]
       .map(([label, value]) => ({ label, value }))
+      .filter((filho, _, todos) => !(todos.length === 1 && filho.label === d.categoria)) // sem mãe: abrir só repetiria a linha
       .sort((a, b) => b.value - a.value),
   }));
 
@@ -226,6 +229,14 @@ export default function HomePage() {
 
           <div>
             <h2 className="section-title">Despesas totais</h2>
+            {totalSemMae > 0 && (
+              <p className="pending-notice">
+                {fmtBRL.format(totalSemMae)} em despesas ainda sem mãe.
+                <span className="pending-notice-actions">
+                  <Link to="/ajustes" className="pending-notice-link">Classificar em Ajustes →</Link>
+                </span>
+              </p>
+            )}
             <EntradasSummaryTable rows={despesasTabela} total={totalDespesas} />
           </div>
         </div>

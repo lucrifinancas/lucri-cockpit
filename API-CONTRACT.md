@@ -257,23 +257,26 @@ automaticamente ou digitada) e repassa pro cliente por fora do sistema
 ## `GET /api/clientes/:id/categorias`
 
 Protegida (`master`, `analista`). Lista o plano de contas do cliente (via
-Conta Azul), com dois campos extras: `is_despesa` (a categoria já conta como
-despesa operacional) e `mae_id` (a categoria-mãe do cliente a que ela foi
-ligada, ver `/maes`; `null` se não tem mãe — nesse caso, se `is_despesa` for
-`true`, é uma marcação antiga, de antes da mãe existir). Usado pra montar a
-tela de Ajustes, onde o master escolhe a mãe de cada despesa.
+Conta Azul), com campos extras: `pai_id` (código do **grupo** dessa categoria no Conta
+Azul — é a "mãe" das despesas; ver `/categorias-pai`) e `is_despesa`/`mae_id`
+(marcação **antiga**, por despesa, que o front não usa mais; ver `PUT
+/categorias/despesas`).
 
 **Resposta `200`:**
 ```json
 [
-  { "id": "1fc3a9ae-...", "nome": "Pró-labore", "tipo": "DESPESA", "is_despesa": true, "mae_id": 1 },
-  { "id": "30f602d7-...", "nome": "Adiantamentos para AFAC", "tipo": "RECEITA", "is_despesa": false, "mae_id": null }
+  { "id": "1fc3a9ae-...", "nome": "Pró-labore", "tipo": "DESPESA", "pai_id": "82529007-...", "is_despesa": false, "mae_id": null },
+  { "id": "30f602d7-...", "nome": "Adiantamentos para AFAC", "tipo": "RECEITA", "pai_id": "9424c4c9-...", "is_despesa": false, "mae_id": null }
 ]
 ```
 
 ---
 
 ## `PUT /api/clientes/:id/categorias/despesas`
+
+> ⚠️ **Legado.** O front não usa mais: o dashboard passou a contar **toda**
+> categoria do tipo DESPESA, agrupada pela mãe do grupo (ver `/despesas`).
+> Continua no ar só por compatibilidade.
 
 Protegida — **só `master`**. Substitui a marcação inteira do cliente pela
 lista enviada (não é um "adicionar", é um "isso é tudo que está marcado
@@ -290,9 +293,7 @@ salvamento).
 }
 ```
 
-**Regra do produto:** ter mãe = conta como despesa. O front manda só as
-categorias que receberam uma mãe (`mae_id`); o que ficar de fora deixa de
-contar. `mae_id` precisa ser uma mãe **desse cliente** (`GET /maes`), senão
+`mae_id` (opcional) precisa ser uma mãe **desse cliente** (`GET /maes`), senão
 `400`.
 
 **Resposta `200`:**
@@ -304,10 +305,11 @@ contar. `mae_id` precisa ser uma mãe **desse cliente** (`GET /maes`), senão
 
 ## `GET /api/clientes/:id/categorias-pai`
 
-> ⚠️ **Legado.** O front não usa mais este endpoint nem o `PUT` abaixo: a mãe
-> agora é definida pelo cliente, despesa por despesa (`mae_id` em
-> `PUT /categorias/despesas`), e não pelo grupo-pai do Conta Azul. A tabela
-> `categoria_pai_nome` continua no banco, sem uso.
+> **A mãe das despesas é o grupo (categoria-pai) do Conta Azul.** Este endpoint
+> e o `PUT` abaixo são como o master dá o nome de cada grupo, uma vez. Toda
+> despesa do grupo — inclusive as criadas depois — herda esse nome em
+> `/despesas`. O front (Ajustes) mostra uma despesa de exemplo por grupo e o
+> master escolhe a mãe entre as cadastradas em `/maes`.
 
 
 Protegida (`master`, `analista`). Lista as categorias-**pai** (grupos como
@@ -403,7 +405,7 @@ Protegida — **só `master`**. Remove uma categoria-mãe da lista do cliente.
 **Resposta `200`:** `{ "ok": true }`
 
 **Erros:** `404` (não existe pra esse cliente) e `409` (a mãe está em uso por
-alguma despesa — troque a mãe dela antes de apagar).
+algum grupo em `categoria_pai_nome` — troque a mãe do grupo antes de apagar).
 
 ---
 
@@ -564,16 +566,18 @@ lançamentos filtrados. Se o cliente ainda não tiver nenhuma categoria
 marcada, retorna lista vazia e `total_pago: 0` (não é erro).
 
 ⚠️ **Campos `categoria`, `subcategoria` e `mae` aqui são diferentes de
-ENTRADAS/SAÍDAS.** Cada lançamento vem agrupado pela **categoria-mãe do
-cliente** (ex: "Despesas Fixas", ver `/maes`), escolhida despesa por despesa
-em Ajustes:
+ENTRADAS/SAÍDAS.** Cada lançamento vem agrupado pela **mãe do grupo dele**
+no Conta Azul (ex: "Despesas Administrativas"), nomeada em Ajustes
+(`/categorias-pai`, `/maes`):
 - `categoria`: o nome da **mãe** (é por ele que o front agrupa/soma);
 - `subcategoria`: a despesa original do Conta Azul (ex: "Aluguel"), pra abrir
   dentro da mãe;
-- `mae`: o nome da mãe (`null` numa marcação antiga, sem mãe — nesse caso
-  `categoria` continua sendo o nome da própria despesa, como antes).
+- `mae`: o nome da mãe (`null` enquanto o grupo ainda não foi nomeado — nesse
+  caso `categoria` vem como `"Sem mãe"`).
 
-Só entram categorias com mãe (ou marcações antigas, até serem reeditadas).
+**Toda** categoria do tipo DESPESA conta (então `/despesas` passa a somar o
+mesmo que as saídas em categorias de despesa). Grupo ainda sem nome aparece
+como "Sem mãe" em vez de sumir, pra o total nunca ficar errado em silêncio.
 
 ---
 

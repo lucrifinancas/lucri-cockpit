@@ -226,21 +226,6 @@
 }
 
 /* Lista de despesas com o seletor de mãe em cada linha. */
-.categoria-lista {
-  max-height: 480px;
-}
-
-.categoria-filtros {
-  display: flex;
-  gap: 8px;
-}
-
-.categoria-filtros .categoria-search {
-  margin-bottom: 0;
-  flex: 1;
-}
-
-.categoria-filtro,
 .categoria-mae-select {
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
@@ -267,12 +252,6 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-}
-
-.categoria-legado {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--chart-despesa);
 }
 
 /* Cadastro da lista de mães do cliente + seleção por grupo. */
@@ -353,4 +332,71 @@
 .mae-chip-remove:hover {
   background: var(--border-subtle);
   color: var(--text-primary);
+}
+
+/* Atribuição em lote: por grupo do Conta Azul e seleção múltipla. */
+.categoria-grupos-lista {
+  max-height: 240px;
+}
+
+.categoria-grupo-amostra {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoria-faltam {
+  color: var(--chart-despesa);
+  font-weight: 600;
+}
+
+/* Grupos do Conta Azul: uma despesa de exemplo + seletor da mãe. */
+.categoria-grupos-lista {
+  max-height: 520px;
+}
+
+.categoria-grupo-item {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.categoria-grupo-item:last-child {
+  border-bottom: none;
+}
+
+.categoria-grupo-item .categoria-linha {
+  border-bottom: none;
+}
+
+.categoria-grupo-exemplo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.categoria-grupo-ver {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.categoria-grupo-ver:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.categoria-grupo-despesas {
+  margin: 0 0 12px;
+  padding: 0 4px 0 20px;
+  list-style: disc;
+  font-size: 12px;
+  color: var(--text-secondary);
+  columns: 2;
+  column-gap: 24px;
 }

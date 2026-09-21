@@ -78,6 +78,7 @@ clientesRoutes.get("/:id/categorias", async (c) => {
       tipo: cat.tipo,
       is_despesa: marcadas.has(cat.id),
       mae_id: marcadas.get(cat.id)?.mae_id ?? null,
+      pai_id: cat.categoria_pai ?? null,
     }))
   );
 });
@@ -181,7 +182,7 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
     return c.json({ erro: "Categoria-mãe não encontrada." }, 404);
   }
   if (resultado === "em_uso") {
-    return c.json({ erro: "Essa mãe está em uso por alguma despesa. Troque a mãe dela antes de apagar." }, 409);
+    return c.json({ erro: "Essa mãe está em uso por algum grupo. Troque a mãe do grupo antes de apagar." }, 409);
   }
   return c.json({ ok: true });
 });

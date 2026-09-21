@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { exigirPapel } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { resolverPeriodo } from "../utils/periodo.js";
-import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre } from "../contaazul/api.js";
+import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre, buscarCategorias } from "../contaazul/api.js";
 import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
-import { listarCategoriaIdsDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
-import { classificarDespesas } from "../utils/despesas.js";
+import { listarNomesPai } from "../db/categoriaPaiNome.js";
+import { classificarDespesas, idsDeDespesa } from "../utils/despesas.js";
 
 export const financeiroRoutes = new Hono();
 
@@ -55,16 +55,26 @@ financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), 
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const [dados, marcadas] = await Promise.all([
+  const [dados, categorias, nomesPai] = await Promise.all([
     buscarContasAPagar(accessToken, { de, ate }),
-    listarMaesPorCategoria(c.env.DB, clienteId),
+    buscarCategorias(accessToken),
+    listarNomesPai(c.env.DB, clienteId),
   ]);
 
-  // Agrupa pela categoria-mãe do cliente (ex: "Despesas Fixas"), mantendo a
-  // despesa original em `subcategoria` — ver classificarDespesas.
+  // A mãe é o grupo (categoria-pai) do Conta Azul: o master dá o nome de cada
+  // grupo uma vez em Ajustes e toda despesa do grupo herda esse nome — inclusive
+  // as criadas depois. Só o código do grupo vem do Conta Azul, o nome não.
+  const maePorCategoria = new Map(
+    categorias.itens.map((cat) => [cat.id, { mae_nome: nomesPai.get(cat.categoria_pai) ?? null }])
+  );
+
+  // Toda categoria de despesa conta, agrupada pela mãe (ex: "Despesas
+  // Administrativas"), com a despesa original em `subcategoria`. Grupo ainda sem
+  // nome: "Sem mãe".
   const lancamentos = classificarDespesas(
     dados.itens.map((item) => normalizarLancamento(item, "saida")),
-    marcadas
+    idsDeDespesa(categorias.itens),
+    maePorCategoria
   );
 
   // Os `totais` do Conta Azul são de TODAS as saídas, não só das marcadas
@@ -170,11 +180,13 @@ financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "anal
   const ate = hoje.toISOString().slice(0, 10);
   const hojeISO = ate;
 
-  const [contasAReceber, contasAPagar, categoriaIdsDespesa] = await Promise.all([
+  const [contasAReceber, contasAPagar, categorias] = await Promise.all([
     buscarContasAReceber(accessToken, { de, ate }),
     buscarContasAPagar(accessToken, { de, ate }),
-    listarCategoriaIdsDespesa(c.env.DB, clienteId),
+    buscarCategorias(accessToken),
   ]);
+  // Mesma regra de /despesas: toda categoria do tipo DESPESA conta.
+  const categoriaIdsDespesa = idsDeDespesa(categorias.itens);
 
   const buckets = new Map();
   function bucket(dataVencimento) {
