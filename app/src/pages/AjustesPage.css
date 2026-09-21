@@ -224,3 +224,153 @@
   max-height: 320px;
   overflow-y: auto;
 }
+
+/* Categorias de despesa agrupadas por mãe (grupo recolhível com nome editável). */
+.categoria-grupos {
+  max-height: 480px;
+}
+
+.categoria-grupo {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 0;
+}
+
+.categoria-grupo:last-child {
+  border-bottom: none;
+}
+
+.categoria-grupo-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.categoria-grupo-caret {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.categoria-grupo-caret:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.mae-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.categoria-grupo-semmae {
+  flex: 1;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.categoria-grupo-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.categoria-filha {
+  padding: 10px 4px 10px 36px;
+}
+
+/* Cadastro da lista de mães do cliente + seleção por grupo. */
+.mae-cadastro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mae-cadastro-form {
+  display: flex;
+  gap: 8px;
+}
+
+.mae-cadastro-form .categoria-search {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.mae-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mae-add-btn:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+
+.mae-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mae-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mae-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mae-chip-remove {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.mae-chip-remove:hover {
+  background: var(--border-subtle);
+  color: var(--text-primary);
+}

@@ -1,4 +1,5 @@
-/* Identidade visual — ver ../../../1.MANUAL DA MARCA/MANUAL-DA-MARCA-LUCRI.md
+/* Identidade visual — base: Design System em ../../../1.MANUAL DA MARCA/
+   (index.html + css/tokens.css); manual em MANUAL-DA-MARCA-LUCRI.md.
    Tema claro (branco), padrão dos relatórios mensais que a Lucri já manda pros
    clientes — decisão explícita do usuário depois de ver os PNGs de referência. */
 :root {
@@ -30,8 +31,9 @@
   --chart-caixa: var(--lucri-sky);
   --chart-saldo: var(--lucri-night);
 
-  --font-title: "Ancress", "Montserrat", sans-serif;
-  --font-body: "Montserrat", sans-serif;
+  /* Inter em tudo, como no Design System (carregada em index.html). */
+  --font-title: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 
   --radius-md: 12px;
   --radius-lg: 20px;

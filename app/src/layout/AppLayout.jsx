@@ -8,9 +8,10 @@ import {
   Scales,
   FileText,
   GearSix,
+  SignOut,
   CaretDown,
 } from "@phosphor-icons/react";
-import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
+import logoSymbol from "../assets/lucri-logo.png";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
@@ -27,7 +28,6 @@ const NAV_ITEMS = [
   { to: "/caixa", label: "Caixa", icon: Vault },
   { to: "/balanco", label: "Balanço", icon: Scales },
   { to: "/dre", label: "DRE", icon: FileText },
-  { to: "/ajustes", label: "Ajustes", icon: GearSix },
 ];
 
 export default function AppLayout() {
@@ -39,8 +39,8 @@ export default function AppLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src={logoLockup} alt="Lucri Cockpit" className="sidebar-logo" />
-          <span className="sidebar-version">Beta 1.0</span>
+          <img src={logoSymbol} alt="" className="sidebar-logo" />
+          <span className="sidebar-name">Lucri Cockpit</span>
         </div>
         <nav className="sidebar-nav">
           {NAV_ITEMS.map((item) => (
@@ -50,14 +50,25 @@ export default function AppLayout() {
               end={item.end}
               className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
             >
-              <item.icon size={20} weight="regular" />
+              <item.icon size={20} weight="light" />
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <button className="sidebar-logout" onClick={logout}>
-          Sair
-        </button>
+        <span className="sidebar-version">Beta 1.0</span>
+        <div className="sidebar-footer">
+          <NavLink
+            to="/ajustes"
+            className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
+          >
+            <GearSix size={20} weight="light" />
+            Ajustes
+          </NavLink>
+          <button className="sidebar-link" onClick={logout}>
+            <SignOut size={20} weight="light" />
+            Sair
+          </button>
+        </div>
       </aside>
 
       <div className="app-main">

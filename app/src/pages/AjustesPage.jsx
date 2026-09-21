@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MoonStars, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus } from "@phosphor-icons/react";
+import { CaretDown, CaretRight, MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
@@ -13,13 +13,21 @@ import "./AjustesPage.css";
 
 const contaAzulParam = new URLSearchParams(window.location.search).get("contaazul");
 
-// Marcação manual de quais categorias do plano de contas (Conta Azul) contam
-// como despesa operacional — define o que aparece em "Despesas" no
-// dashboard (ver DEMANDAS-PARA-FINALIZAR.md item 4 e API-CONTRACT.md).
-function CategoriasDespesaSection({ clienteId, clienteNome }) {
+// Categorias de despesa agrupadas por "mãe". O Conta Azul só entrega as
+// subcategorias (filhas) e o código da mãe, sem o nome: o master dá o nome de
+// cada mãe aqui (uma vez por cliente) e marca quais filhas contam como despesa
+// operacional — só o que estiver marcado aparece em "Despesas" no dashboard,
+// agrupado pelo nome da mãe (ver API-CONTRACT.md: /categorias, /categorias-pai).
+const SEM_MAE = "__sem_mae__";
+
+function CategoriasSection({ clienteId, clienteNome }) {
   const [categorias, setCategorias] = useState([]);
+  const [maes, setMaes] = useState([]);
+  const [nomesMae, setNomesMae] = useState([]);
+  const [novaMae, setNovaMae] = useState("");
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
+  const [abertos, setAbertos] = useState(() => new Set());
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState(null);
@@ -29,9 +37,19 @@ function CategoriasDespesaSection({ clienteId, clienteNome }) {
     let cancelled = false;
     setLoading(true);
     setErro(null);
-    apiFetch(`/api/clientes/${clienteId}/categorias`)
-      .then((data) => {
-        if (!cancelled) setCategorias(data.filter((cat) => cat.tipo === "DESPESA"));
+    Promise.all([
+      apiFetch(`/api/clientes/${clienteId}/categorias`),
+      apiFetch(`/api/clientes/${clienteId}/categorias-pai`),
+      apiFetch(`/api/clientes/${clienteId}/maes`),
+    ])
+      .then(([cats, pais, listaMaes]) => {
+        if (cancelled) return;
+        const despesas = cats.filter((cat) => cat.tipo === "DESPESA");
+        const nomesDespesa = new Set(despesas.map((cat) => cat.nome));
+        setCategorias(despesas);
+        setNomesMae(listaMaes);
+        // Só as mães que têm pelo menos uma filha de despesa.
+        setMaes(pais.filter((mae) => mae.categorias_filhas.some((nome) => nomesDespesa.has(nome))));
       })
       .catch((err) => {
         if (!cancelled) setErro(err.message);
@@ -44,8 +62,81 @@ function CategoriasDespesaSection({ clienteId, clienteNome }) {
     };
   }, [clienteId]);
 
-  function toggle(id) {
+  // Grupos: cada mãe com as suas filhas (ligação pelo nome da filha; se o mesmo
+  // nome aparece em duas mães, vale a primeira) + um grupo "sem mãe" pro resto.
+  const grupos = [];
+  const jaAlocadas = new Set();
+  for (const mae of maes) {
+    const filhas = categorias.filter((cat) => !jaAlocadas.has(cat.id) && mae.categorias_filhas.includes(cat.nome));
+    filhas.forEach((cat) => jaAlocadas.add(cat.id));
+    if (filhas.length > 0) grupos.push({ id: mae.categoria_pai_id, nome: mae.nome ?? "", filhas });
+  }
+  const semMae = categorias.filter((cat) => !jaAlocadas.has(cat.id));
+  if (semMae.length > 0) grupos.push({ id: SEM_MAE, nome: null, filhas: semMae });
+
+  // Opções do seletor: as mães cadastradas + o nome já salvo do grupo, se ele
+  // veio de antes da lista existir (pra não sumir da tela).
+  function opcoesMae(nomeAtual) {
+    const nomes = nomesMae.map((mae) => mae.nome);
+    if (nomeAtual && !nomes.some((n) => n.toLowerCase() === nomeAtual.toLowerCase())) nomes.push(nomeAtual);
+    return nomes;
+  }
+
+  const termo = busca.trim().toLowerCase();
+  const gruposVisiveis = grupos
+    .map((grupo) => {
+      const nomeGrupoBate = grupo.nome && grupo.nome.toLowerCase().includes(termo);
+      const filhas = termo && !nomeGrupoBate
+        ? grupo.filhas.filter((cat) => cat.nome.toLowerCase().includes(termo))
+        : grupo.filhas;
+      return { ...grupo, filhasVisiveis: filhas };
+    })
+    .filter((grupo) => !termo || grupo.filhasVisiveis.length > 0);
+
+  function toggleCategoria(id) {
     setCategorias((prev) => prev.map((cat) => (cat.id === id ? { ...cat, is_despesa: !cat.is_despesa } : cat)));
+  }
+
+  function setNomeMae(id, nome) {
+    setMaes((prev) => prev.map((mae) => (mae.categoria_pai_id === id ? { ...mae, nome } : mae)));
+  }
+
+  // A lista de mães (nomes disponíveis pra escolher) é gravada na hora, sem
+  // esperar o "Salvar" — o "Salvar" grava só as marcações e a escolha de cada grupo.
+  async function handleAdicionarMae(e) {
+    e.preventDefault();
+    const nome = novaMae.trim();
+    if (!nome) return;
+    setErro(null);
+    try {
+      const criada = await apiFetch(`/api/clientes/${clienteId}/maes`, {
+        method: "POST",
+        body: JSON.stringify({ nome }),
+      });
+      setNomesMae((prev) => [...prev, criada].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
+      setNovaMae("");
+    } catch (err) {
+      setErro(err.message);
+    }
+  }
+
+  async function handleRemoverMae(id) {
+    setErro(null);
+    try {
+      await apiFetch(`/api/clientes/${clienteId}/maes/${id}`, { method: "DELETE" });
+      setNomesMae((prev) => prev.filter((mae) => mae.id !== id));
+    } catch (err) {
+      setErro(err.message);
+    }
+  }
+
+  function toggleGrupo(id) {
+    setAbertos((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
   }
 
   async function handleSalvar() {
@@ -59,6 +150,15 @@ function CategoriasDespesaSection({ clienteId, clienteNome }) {
         method: "PUT",
         body: JSON.stringify({ categorias: marcadas }),
       });
+      const nomeadas = maes
+        .filter((mae) => mae.nome && mae.nome.trim())
+        .map((mae) => ({ categoria_pai_id: mae.categoria_pai_id, nome: mae.nome.trim() }));
+      if (nomeadas.length > 0) {
+        await apiFetch(`/api/clientes/${clienteId}/categorias-pai`, {
+          method: "PUT",
+          body: JSON.stringify({ categorias_pai: nomeadas }),
+        });
+      }
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);
     } catch (err) {
@@ -68,10 +168,6 @@ function CategoriasDespesaSection({ clienteId, clienteNome }) {
     }
   }
 
-  const categoriasFiltradas = categorias.filter((cat) =>
-    cat.nome.toLowerCase().includes(busca.toLowerCase())
-  );
-
   return (
     <section className="settings-card">
       <h2 className="settings-card-title">
@@ -79,32 +175,105 @@ function CategoriasDespesaSection({ clienteId, clienteNome }) {
         Categorias de Despesa{clienteNome ? ` — ${clienteNome}` : ""}
       </h2>
       <p className="settings-hint">
-        Marca quais categorias do plano de contas do Conta Azul contam como despesa
-        operacional. Só o que estiver marcado aqui aparece em "Despesas" no dashboard.
+        As categorias do Conta Azul (filhas) ficam agrupadas pela categoria-mãe. Cadastre as
+        mães desse cliente, escolha qual é cada grupo e marque as filhas que contam como despesa
+        operacional: só o que estiver marcado aparece em "Despesas" no dashboard, agrupado pela mãe.
       </p>
       {loading && <p className="settings-hint">Carregando categorias...</p>}
       {erro && <p className="settings-hint status-error">{erro}</p>}
-      {!loading && !erro && categorias.length === 0 && (
+      {!loading && categorias.length === 0 && !erro && (
         <p className="settings-hint">Nenhuma categoria de despesa encontrada no Conta Azul.</p>
       )}
-      {!loading && !erro && categorias.length > 0 && (
+      {!loading && categorias.length > 0 && (
         <>
+          <div className="mae-cadastro">
+            <form className="mae-cadastro-form" onSubmit={handleAdicionarMae}>
+              <input
+                className="categoria-search"
+                placeholder="Cadastrar categoria-mãe (ex: Despesas Administrativas)"
+                value={novaMae}
+                onChange={(e) => setNovaMae(e.target.value)}
+              />
+              <button type="submit" className="mae-add-btn" disabled={!novaMae.trim()}>
+                <Plus size={14} weight="bold" />
+                Adicionar
+              </button>
+            </form>
+            {nomesMae.length > 0 && (
+              <ul className="mae-chips">
+                {nomesMae.map((mae) => (
+                  <li key={mae.id} className="mae-chip">
+                    {mae.nome}
+                    <button
+                      type="button"
+                      className="mae-chip-remove"
+                      onClick={() => handleRemoverMae(mae.id)}
+                      aria-label={`Remover ${mae.nome}`}
+                    >
+                      <X size={12} weight="bold" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <input
             className="categoria-search"
-            placeholder="Buscar categoria..."
+            placeholder="Buscar categoria ou grupo..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
-          <div className="settings-list settings-list-scroll">
-            {categoriasFiltradas.map((cat) => (
-              <label key={cat.id} className="settings-row settings-row-toggle">
-                <span>{cat.nome}</span>
-                <span className="toggle-switch">
-                  <input type="checkbox" checked={cat.is_despesa} onChange={() => toggle(cat.id)} />
-                  <span className="toggle-switch-track" />
-                </span>
-              </label>
-            ))}
+          <div className="settings-list settings-list-scroll categoria-grupos">
+            {gruposVisiveis.length === 0 && <p className="settings-hint">Nada encontrado pra essa busca.</p>}
+            {gruposVisiveis.map((grupo) => {
+              const aberto = Boolean(termo) || abertos.has(grupo.id);
+              const marcadas = grupo.filhas.filter((cat) => cat.is_despesa).length;
+              const Caret = aberto ? CaretDown : CaretRight;
+              return (
+                <div key={grupo.id} className="categoria-grupo">
+                  <div className="categoria-grupo-head">
+                    <button
+                      type="button"
+                      className="categoria-grupo-caret"
+                      onClick={() => toggleGrupo(grupo.id)}
+                      aria-expanded={aberto}
+                      aria-label={aberto ? "Recolher grupo" : "Expandir grupo"}
+                    >
+                      <Caret size={14} weight="bold" />
+                    </button>
+                    {grupo.id === SEM_MAE ? (
+                      <span className="categoria-grupo-semmae">Sem categoria-mãe</span>
+                    ) : (
+                      <select
+                        className="mae-input"
+                        value={grupo.nome}
+                        onChange={(e) => setNomeMae(grupo.id, e.target.value)}
+                      >
+                        <option value="">Escolha a mãe deste grupo…</option>
+                        {opcoesMae(grupo.nome).map((nome) => (
+                          <option key={nome} value={nome}>
+                            {nome}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <span className="categoria-grupo-count">
+                      {marcadas} de {grupo.filhas.length}
+                    </span>
+                  </div>
+                  {aberto &&
+                    grupo.filhasVisiveis.map((cat) => (
+                      <label key={cat.id} className="settings-row settings-row-toggle categoria-filha">
+                        <span>{cat.nome}</span>
+                        <span className="toggle-switch">
+                          <input type="checkbox" checked={cat.is_despesa} onChange={() => toggleCategoria(cat.id)} />
+                          <span className="toggle-switch-track" />
+                        </span>
+                      </label>
+                    ))}
+                </div>
+              );
+            })}
           </div>
           <button type="button" className="profile-save" onClick={handleSalvar} disabled={salvando}>
             {salvando ? "Salvando..." : salvo ? "Salvo!" : "Salvar"}
@@ -345,7 +514,7 @@ export default function AjustesPage() {
       )}
 
       {isMaster && activeClientId && (
-        <CategoriasDespesaSection clienteId={activeClientId} clienteNome={activeClient?.name} />
+        <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} />
       )}
 
       {isMaster && (
