@@ -5,10 +5,33 @@
 const BASE_URL = "https://api-v2.contaazul.com/v1";
 const TAMANHO_PAGINA = 200; // maior página aceita nos testes; suficiente pra não precisar paginar na prática
 
-async function chamarApi(path, accessToken, params = {}) {
+// Cache das respostas do Conta Azul (Cache API do Cloudflare), pra não bater
+// na API deles — que leva de 0,5 a 2 s por chamada — a cada abertura de tela
+// ou troca de período. A chave inclui um hash do access_token, então cada
+// cliente tem o seu cache e um cliente nunca enxerga dado de outro. Só guarda
+// respostas de sucesso. Dado novo no Conta Azul pode levar até este tempo pra
+// aparecer no dashboard.
+const CACHE_TTL_SEGUNDOS = 180;
+
+async function chaveCache(url, accessToken) {
+  const bytes = new TextEncoder().encode(accessToken);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  const id = [...new Uint8Array(hash)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return new Request(`https://cache.lucri.internal/${id}?u=${encodeURIComponent(url.toString())}`);
+}
+
+// `cache: false` pra dado que precisa ser "de agora" (ex.: saldo em conta).
+async function chamarApi(path, accessToken, params = {}, { cache = true } = {}) {
   const url = new URL(`${BASE_URL}${path}`);
   for (const [chave, valor] of Object.entries(params)) {
     url.searchParams.set(chave, valor);
+  }
+
+  const usaCache = cache && typeof caches !== "undefined";
+  const chave = usaCache ? await chaveCache(url, accessToken) : null;
+  if (usaCache) {
+    const guardado = await caches.default.match(chave);
+    if (guardado) return guardado.json();
   }
 
   const resp = await fetch(url, {
@@ -19,7 +42,16 @@ async function chamarApi(path, accessToken, params = {}) {
     throw new Error(`Conta Azul ${path} falhou: ${resp.status} ${await resp.text()}`);
   }
 
-  return resp.json();
+  const dados = await resp.json();
+  if (usaCache) {
+    await caches.default.put(
+      chave,
+      new Response(JSON.stringify(dados), {
+        headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL_SEGUNDOS}` },
+      })
+    );
+  }
+  return dados;
 }
 
 // O Conta Azul pagina as listas por padrão (10 itens por página, mesmo
@@ -65,7 +97,7 @@ export function buscarCategorias(accessToken) {
 }
 
 export async function buscarSaldoConta(accessToken, contaId) {
-  const dados = await chamarApi(`/conta-financeira/${contaId}/saldo-atual`, accessToken);
+  const dados = await chamarApi(`/conta-financeira/${contaId}/saldo-atual`, accessToken, {}, { cache: false });
   return dados.saldo_atual;
 }
 
