@@ -54,3 +54,34 @@
   font-weight: 700;
   border-top: 2px solid var(--border-subtle);
 }
+
+/* Linha expansível (categoria-mãe) e as despesas dentro dela. */
+.entradas-summary-table .row-expansivel {
+  cursor: pointer;
+}
+
+.entradas-summary-table .row-expansivel:hover td {
+  background: var(--bg-subtle);
+}
+
+.entradas-summary-table .row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entradas-summary-table .row-caret {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.entradas-summary-table .row-filho td {
+  padding: 10px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.entradas-summary-table .row-filho td:first-child {
+  padding-left: 22px;
+}

@@ -3,7 +3,7 @@ import { exigirPapel } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
 import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
-import { salvarCategoriasDespesa, listarCategoriaIdsDespesa } from "../db/categoriaDespesa.js";
+import { salvarCategoriasDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
 import { listarMaes, criarMae, removerMae } from "../db/categoriaMae.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
@@ -68,7 +68,7 @@ clientesRoutes.get("/:id/categorias", async (c) => {
 
   const [categorias, marcadas] = await Promise.all([
     buscarCategorias(accessToken),
-    listarCategoriaIdsDespesa(c.env.DB, clienteId),
+    listarMaesPorCategoria(c.env.DB, clienteId),
   ]);
 
   return c.json(
@@ -77,6 +77,7 @@ clientesRoutes.get("/:id/categorias", async (c) => {
       nome: cat.nome,
       tipo: cat.tipo,
       is_despesa: marcadas.has(cat.id),
+      mae_id: marcadas.get(cat.id)?.mae_id ?? null,
     }))
   );
 });
@@ -88,6 +89,12 @@ clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) 
 
   if (!Array.isArray(categorias)) {
     return c.json({ erro: "Campo 'categorias' precisa ser uma lista." }, 400);
+  }
+
+  // Cada categoria pode vir com `mae_id` (uma mãe do cliente, ver /maes).
+  const maesDoCliente = new Set((await listarMaes(c.env.DB, clienteId)).map((mae) => mae.id));
+  if (categorias.some((cat) => cat.mae_id != null && !maesDoCliente.has(cat.mae_id))) {
+    return c.json({ erro: "mae_id não pertence a esse cliente." }, 400);
   }
 
   await salvarCategoriasDespesa(c.env.DB, clienteId, categorias);
@@ -174,7 +181,7 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
     return c.json({ erro: "Categoria-mãe não encontrada." }, 404);
   }
   if (resultado === "em_uso") {
-    return c.json({ erro: "Essa mãe está em uso por algum grupo. Troque o grupo antes de apagar." }, 409);
+    return c.json({ erro: "Essa mãe está em uso por alguma despesa. Troque a mãe dela antes de apagar." }, 409);
   }
   return c.json({ ok: true });
 });

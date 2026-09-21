@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { exigirPapel } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { resolverPeriodo } from "../utils/periodo.js";
-import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre, buscarCategorias } from "../contaazul/api.js";
+import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre } from "../contaazul/api.js";
 import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
-import { listarCategoriaIdsDespesa } from "../db/categoriaDespesa.js";
-import { listarNomesPai } from "../db/categoriaPaiNome.js";
+import { listarCategoriaIdsDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
+import { classificarDespesas } from "../utils/despesas.js";
 
 export const financeiroRoutes = new Hono();
 
@@ -55,28 +55,17 @@ financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), 
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const [dados, categoriaIdsDespesa, categorias, nomesPai] = await Promise.all([
+  const [dados, marcadas] = await Promise.all([
     buscarContasAPagar(accessToken, { de, ate }),
-    listarCategoriaIdsDespesa(c.env.DB, clienteId),
-    buscarCategorias(accessToken),
-    listarNomesPai(c.env.DB, clienteId),
+    listarMaesPorCategoria(c.env.DB, clienteId),
   ]);
 
-  // Agrupamento por categoria-pai (ex: "Despesas Administrativas"), não
-  // pela subcategoria específica (ex: "Água e Saneamento") — decisão do
-  // usuário. O nome da categoria-pai não vem pronto do Conta Azul (ver
-  // categoria_pai_nome.js), então usa o cadastrado manualmente; sem nome
-  // cadastrado ainda, cai de volta na subcategoria pra não ficar em branco.
-  const paiPorCategoria = new Map(categorias.itens.map((cat) => [cat.id, cat.categoria_pai]));
-
-  const lancamentos = dados.itens
-    .map((item) => normalizarLancamento(item, "saida"))
-    .filter((item) => item.categoria_id && categoriaIdsDespesa.has(item.categoria_id))
-    .map((item) => {
-      const paiId = paiPorCategoria.get(item.categoria_id);
-      const nomeGrupo = paiId ? nomesPai.get(paiId) : null;
-      return nomeGrupo ? { ...item, categoria: nomeGrupo } : item;
-    });
+  // Agrupa pela categoria-mãe do cliente (ex: "Despesas Fixas"), mantendo a
+  // despesa original em `subcategoria` — ver classificarDespesas.
+  const lancamentos = classificarDespesas(
+    dados.itens.map((item) => normalizarLancamento(item, "saida")),
+    marcadas
+  );
 
   // Os `totais` do Conta Azul são de TODAS as saídas, não só das marcadas
   // como despesa — precisamos somar por conta própria a partir do filtro.

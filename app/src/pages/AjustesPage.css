@@ -225,74 +225,54 @@
   overflow-y: auto;
 }
 
-/* Categorias de despesa agrupadas por mãe (grupo recolhível com nome editável). */
-.categoria-grupos {
+/* Lista de despesas com o seletor de mãe em cada linha. */
+.categoria-lista {
   max-height: 480px;
 }
 
-.categoria-grupo {
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 8px 0;
-}
-
-.categoria-grupo:last-child {
-  border-bottom: none;
-}
-
-.categoria-grupo-head {
+.categoria-filtros {
   display: flex;
-  align-items: center;
   gap: 8px;
 }
 
-.categoria-grupo-caret {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.categoria-grupo-caret:hover {
-  background: var(--bg-subtle);
-  color: var(--text-primary);
-}
-
-.mae-input {
+.categoria-filtros .categoria-search {
+  margin-bottom: 0;
   flex: 1;
-  min-width: 0;
+}
+
+.categoria-filtro,
+.categoria-mae-select {
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: 8px 10px;
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
   color: var(--text-primary);
-  box-sizing: border-box;
+  cursor: pointer;
 }
 
-.categoria-grupo-semmae {
-  flex: 1;
-  font-size: 14px;
-  font-style: italic;
-  color: var(--text-muted);
-}
-
-.categoria-grupo-count {
+.categoria-mae-select {
   flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  min-width: 180px;
+  max-width: 240px;
 }
 
-.categoria-filha {
-  padding: 10px 4px 10px 36px;
+.categoria-linha {
+  align-items: center;
+}
+
+.categoria-linha-nome {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.categoria-legado {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--chart-despesa);
 }
 
 /* Cadastro da lista de mães do cliente + seleção por grupo. */
