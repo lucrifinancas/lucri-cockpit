@@ -5,6 +5,7 @@ import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
 import { salvarCategoriasDespesa, listarCategoriaIdsDespesa } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
+import { listarMaes, criarMae, removerMae } from "../db/categoriaMae.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { buscarCategorias } from "../contaazul/api.js";
 
@@ -138,5 +139,42 @@ clientesRoutes.put("/:id/categorias-pai", exigirPapel("master"), async (c) => {
   }
 
   await salvarNomesPai(c.env.DB, clienteId, categorias_pai);
+  return c.json({ ok: true });
+});
+
+// Lista de categorias-mãe do cliente (nomes cadastrados pra escolher em cada
+// grupo do Conta Azul). Cada cliente tem as suas.
+clientesRoutes.get("/:id/maes", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  return c.json(await listarMaes(c.env.DB, clienteId));
+});
+
+clientesRoutes.post("/:id/maes", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { nome } = await c.req.json();
+  const nomeLimpo = typeof nome === "string" ? nome.trim() : "";
+
+  if (!nomeLimpo) {
+    return c.json({ erro: "Nome é obrigatório." }, 400);
+  }
+
+  const mae = await criarMae(c.env.DB, clienteId, nomeLimpo);
+  if (!mae) {
+    return c.json({ erro: "Esse cliente já tem uma categoria-mãe com esse nome." }, 409);
+  }
+  return c.json(mae, 201);
+});
+
+clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const maeId = Number(c.req.param("maeId"));
+
+  const resultado = await removerMae(c.env.DB, clienteId, maeId);
+  if (resultado === "nao_encontrada") {
+    return c.json({ erro: "Categoria-mãe não encontrada." }, 404);
+  }
+  if (resultado === "em_uso") {
+    return c.json({ erro: "Essa mãe está em uso por algum grupo. Troque o grupo antes de apagar." }, 409);
+  }
   return c.json({ ok: true });
 });

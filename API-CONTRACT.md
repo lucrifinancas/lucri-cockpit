@@ -352,6 +352,48 @@ incremental (não substitui a lista inteira) — só afeta os IDs enviados.
 
 ---
 
+## `GET /api/clientes/:id/maes`
+
+Protegida (`master`, `analista`). Lista as **categorias-mãe cadastradas** do
+cliente (nomes como "Despesas Administrativas"). Cada cliente tem a sua
+lista. O master cadastra a lista uma vez e depois **escolhe** qual mãe é cada
+grupo do Conta Azul, em vez de digitar o nome toda vez (o vínculo grupo → nome
+continua sendo salvo em `PUT /categorias-pai`).
+
+**Resposta `200`:** ordenada por nome.
+```json
+[
+  { "id": 1, "nome": "Despesas Administrativas" },
+  { "id": 2, "nome": "Folha de Pagamento" }
+]
+```
+
+---
+
+## `POST /api/clientes/:id/maes`
+
+Protegida — **só `master`**. Cadastra uma categoria-mãe nova pro cliente.
+
+**Corpo da requisição:** `{ "nome": "Despesas Administrativas" }`
+
+**Resposta `201`:** `{ "id": 1, "nome": "Despesas Administrativas" }`
+
+**Erros:** `400` (nome vazio) e `409` (o cliente já tem uma mãe com esse nome;
+a comparação ignora maiúsculas/minúsculas).
+
+---
+
+## `DELETE /api/clientes/:id/maes/:maeId`
+
+Protegida — **só `master`**. Remove uma categoria-mãe da lista do cliente.
+
+**Resposta `200`:** `{ "ok": true }`
+
+**Erros:** `404` (não existe pra esse cliente) e `409` (a mãe está em uso por
+algum grupo em `categoria_pai_nome` — troque o grupo antes de apagar).
+
+---
+
 ## `GET /api/contaazul/autorizar/:clienteId`
 
 Protegida (`master`, `analista`). Gera o link de autorização OAuth do Conta
