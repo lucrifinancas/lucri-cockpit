@@ -243,6 +243,29 @@
   max-width: 240px;
 }
 
+/* Grupo pré-preenchido a partir do entrada_dre (Conta Azul), ainda não
+   confirmado pelo master — mesmo campo, só com uma borda tracejada +
+   selo, pra distinguir de uma escolha manual sem atrapalhar o fluxo de
+   revisar/trocar/salvar. */
+.categoria-mae-campo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.categoria-mae-select-sugerido {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.categoria-mae-sugestao-tag {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .categoria-linha {
   align-items: center;
 }

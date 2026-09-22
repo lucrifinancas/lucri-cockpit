@@ -102,12 +102,29 @@ clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) 
   return c.json({ ok: true });
 });
 
+// Conserta o typo do próprio Conta Azul ("DESPESSAS_FINANCEIRAS", com dois
+// S) — o valor cru fica só pra referência de debug, nunca exposto ao front.
+const TYPOS_ENTRADA_DRE = { DESPESSAS_FINANCEIRAS: "DESPESAS_FINANCEIRAS" };
+
+// "DESPESAS_ADMINISTRATIVAS" -> "Despesas Administrativas".
+function humanizarEntradaDre(valor) {
+  const corrigido = TYPOS_ENTRADA_DRE[valor] ?? valor;
+  return corrigido
+    .toLowerCase()
+    .split("_")
+    .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+    .join(" ");
+}
+
 // Lista as categorias-pai encontradas no plano de contas do cliente — a API
-// do Conta Azul não devolve o nome delas (limitação confirmada pelo
-// suporte), só o ID dentro de cada categoria filha. Aqui devolvemos cada
-// categoria-pai com o nome já cadastrado (se houver) e uma amostra das
-// categorias filhas, pra o master conseguir identificar qual é qual
-// olhando a tela do próprio Conta Azul.
+// do Conta Azul não devolve o nome delas no campo `categoria_pai` (limitação
+// confirmada pelo suporte), só o ID dentro de cada categoria filha. Mas cada
+// categoria já vem com `entrada_dre` (usado pro DRE) — um agrupamento mais
+// grosso que o plano de contas, porém já com nome pronto (ex:
+// "DESPESAS_ADMINISTRATIVAS") — então usamos o entrada_dre mais comum entre
+// as despesas de cada grupo como SUGESTÃO automática, sem obrigar o master a
+// digitar toda vez. Continua sendo só sugestão: o `nome` salvo de propósito
+// (categoria_pai_nome) sempre tem prioridade, e o master pode trocar.
 clientesRoutes.get("/:id/categorias-pai", async (c) => {
   const clienteId = Number(c.req.param("id"));
 
@@ -122,15 +139,32 @@ clientesRoutes.get("/:id/categorias-pai", async (c) => {
   ]);
 
   const filhasPorPai = new Map();
+  const entradaDrePorPai = new Map();
   for (const cat of categorias.itens) {
     if (!cat.categoria_pai) continue;
     if (!filhasPorPai.has(cat.categoria_pai)) filhasPorPai.set(cat.categoria_pai, []);
     filhasPorPai.get(cat.categoria_pai).push(cat.nome);
+
+    // So conta entrada_dre de despesa: um grupo pode ter filhas de receita
+    // e despesa misturadas, e o entrada_dre de receita seguiria uma
+    // classificacao diferente (linha de DRE de receita, nao de despesa).
+    if (cat.tipo !== "DESPESA" || !cat.entrada_dre) continue;
+    if (!entradaDrePorPai.has(cat.categoria_pai)) entradaDrePorPai.set(cat.categoria_pai, new Map());
+    const contagem = entradaDrePorPai.get(cat.categoria_pai);
+    contagem.set(cat.entrada_dre, (contagem.get(cat.entrada_dre) ?? 0) + 1);
+  }
+
+  function sugestaoParaPai(paiId) {
+    const contagem = entradaDrePorPai.get(paiId);
+    if (!contagem) return null;
+    const [valorMaisComum] = [...contagem.entries()].sort((a, b) => b[1] - a[1])[0];
+    return humanizarEntradaDre(valorMaisComum);
   }
 
   const paisOrdenados = [...filhasPorPai.entries()].map(([paiId, filhas]) => ({
     categoria_pai_id: paiId,
     nome: nomesPai.get(paiId) ?? null,
+    sugestao: nomesPai.get(paiId) ? null : sugestaoParaPai(paiId),
     categorias_filhas: filhas,
   }));
 

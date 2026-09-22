@@ -43,10 +43,15 @@ function CategoriasSection({ clienteId, clienteNome }) {
       .then(([cats, pais, listaMaes]) => {
         if (cancelled) return;
         // Só interessam os grupos que têm pelo menos uma categoria de despesa.
+        // Grupo sem `nome` salvo mas com `sugestao` (vinda do entrada_dre que
+        // o Conta Azul já usa pro DRE, ver clientes.js) entra pré-preenchido
+        // — o master só confirma ou troca, em vez de digitar do zero.
         const nomesDespesa = new Set(cats.filter((cat) => cat.tipo === "DESPESA").map((cat) => cat.nome));
         const comDespesa = pais
           .map((pai) => ({
             ...pai,
+            nome: pai.nome ?? pai.sugestao ?? null,
+            sugerido: !pai.nome && Boolean(pai.sugestao),
             despesas: pai.categorias_filhas
               .filter((nome) => nomesDespesa.has(nome))
               .sort((x, y) => x.localeCompare(y, "pt-BR")),
@@ -96,7 +101,9 @@ function CategoriasSection({ clienteId, clienteNome }) {
   }
 
   function setMaeDoGrupo(paiId, nome) {
-    setGrupos((prev) => prev.map((g) => (g.categoria_pai_id === paiId ? { ...g, nome: nome || null } : g)));
+    // Qualquer escolha manual (inclusive reconfirmar a própria sugestão pelo
+    // dropdown) tira o rótulo de "sugestão" — vira uma escolha do master.
+    setGrupos((prev) => prev.map((g) => (g.categoria_pai_id === paiId ? { ...g, nome: nome || null, sugerido: false } : g)));
   }
 
   function toggleAberto(paiId) {
@@ -141,8 +148,10 @@ function CategoriasSection({ clienteId, clienteNome }) {
       </h2>
       <p className="settings-hint">
         O Conta Azul agrupa as despesas em categorias-mãe, mas só informa o código do grupo, não o
-        nome. Veja a despesa de exemplo de cada grupo, escolha a mãe dele, e todas as despesas do
-        grupo (inclusive as novas) passam a usar essa mãe no dashboard.
+        nome. Grupos marcados com <strong>"sugestão"</strong> já vêm pré-preenchidos a partir da
+        própria classificação de DRE do Conta Azul — só confira e troque se quiser. Os demais, veja a
+        despesa de exemplo e escolha a mãe. Toda despesa do grupo (inclusive as novas) passa a usar
+        essa mãe no dashboard.
       </p>
       {loading && <p className="settings-hint">Carregando categorias...</p>}
       {erro && <p className="settings-hint status-error">{erro}</p>}
@@ -213,18 +222,21 @@ function CategoriasSection({ clienteId, clienteNome }) {
                           : "1 despesa no grupo"}
                       </button>
                     </span>
-                    <select
-                      className="categoria-mae-select"
-                      value={grupo.nome ?? ""}
-                      onChange={(e) => setMaeDoGrupo(grupo.categoria_pai_id, e.target.value)}
-                    >
-                      <option value="">Escolha a mãe…</option>
-                      {opcoes.map((nome) => (
-                        <option key={nome} value={nome}>
-                          {nome}
-                        </option>
-                      ))}
-                    </select>
+                    <span className="categoria-mae-campo">
+                      <select
+                        className={"categoria-mae-select" + (grupo.sugerido ? " categoria-mae-select-sugerido" : "")}
+                        value={grupo.nome ?? ""}
+                        onChange={(e) => setMaeDoGrupo(grupo.categoria_pai_id, e.target.value)}
+                      >
+                        <option value="">Escolha a mãe…</option>
+                        {opcoes.map((nome) => (
+                          <option key={nome} value={nome}>
+                            {nome}
+                          </option>
+                        ))}
+                      </select>
+                      {grupo.sugerido && <span className="categoria-mae-sugestao-tag">sugestão</span>}
+                    </span>
                   </div>
                   {aberto && grupo.despesas.length > 1 && (
                     <ul className="categoria-grupo-despesas">
