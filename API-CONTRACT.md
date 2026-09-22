@@ -680,9 +680,31 @@ custos, despesas, financeiro e não operacional — não só despesas.
 
 ---
 
+## POST /api/auth/esqueci-senha
+
+Pede a redefinição de senha por e-mail. Body: `{ "email": "..." }`.
+
+Sempre responde `{ "ok": true }`, mesmo se o e-mail não tiver cadastro — evita
+que alguém descubra quais e-mails existem tentando um por um. Se o e-mail
+existir, gera um token (válido por 60 min, guardado em
+`reset_senha_tokens`) e chama a API do Resend (`RESEND_API_KEY`,
+ver `GUIA-RESEND-EMAIL.md`) para enviar o e-mail com o link
+`{APP_URL}/redefinir-senha?token=...`.
+
+## POST /api/auth/redefinir-senha
+
+Efetiva a troca, usando o token recebido por e-mail. Body:
+`{ "token": "...", "senha_nova": "..." }` (mínimo 8 caracteres).
+
+Erros: `400` se o token não existir ou já tiver expirado ("Link inválido ou
+expirado. Peça uma nova redefinição."). Token é apagado depois de usado.
+
+---
+
 ## Endpoints ainda não implementados
 
-- **BALANÇO** — bloqueado pela definição de estrutura de linhas/subtotais.
-- Endpoint de "esqueci minha senha" por e-mail (adiado, ver
-  `GUIA-MAKE-RESET-SENHA.md`) — troca de senha *estando logado* já existe
-  (`POST /api/auth/alterar-senha`).
+- **BALANÇO** — decisão fechada em 2026-09-22: fica só na versão simplificada
+  (ativo circulante disponível/realizável vs. passivo circulante, sem
+  Patrimônio Líquido) — a contadora confirmou que não usa o Balanço
+  Patrimonial vindo do Conta Azul, esse dado vem de outro sistema contábil
+  dela. Falta só implementar essa versão simplificada.

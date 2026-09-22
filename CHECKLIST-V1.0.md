@@ -34,8 +34,14 @@ Balanço, DRE.
   na mesma sessão)
 - [x] **DRE (25/08)** — `GET /api/clientes/:id/dre`, usa a estrutura
   oficial `financeiro/categorias-dre` do próprio Conta Azul (configurada
-  pelo contador da empresa) em vez de regra própria. Falta só o front
-  renderizar (tabela contábil hierárquica).
+  pelo contador da empresa) em vez de regra própria. Front já vai ser
+  liberado pelo dev (22/09).
+- [x] **Esqueci minha senha por e-mail (22/09)** — `POST
+  /api/auth/esqueci-senha` + `POST /api/auth/redefinir-senha`, token de
+  60 min, e-mail enviado via API do Resend (ver
+  `GUIA-RESEND-EMAIL.md`). Falta verificar domínio no Resend, configurar
+  os secrets/vars em produção (`RESEND_API_KEY`, `EMAIL_REMETENTE`), e a
+  tela `/redefinir-senha` no front.
 
 ---
 
@@ -75,8 +81,6 @@ Balanço, DRE.
 
 ## ⚪ Fora de escopo v1.0 / adiado (não bloqueia)
 
-- [ ] Esqueci minha senha por e-mail (ver `GUIA-MAKE-RESET-SENHA.md`) —
-  troca de senha estando logado já existe
 - [ ] Token do Conta Azul intermitente (Nick Publicidade) — já teve episódio
   antes, se resolveu sozinho; 409 tratado no front se acontecer de novo
 
