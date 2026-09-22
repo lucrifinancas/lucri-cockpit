@@ -110,15 +110,14 @@ DESPESAS/DRE (ver "Em aberto").
 
 ## Em aberto
 
-Ver seção "Em aberto" do `DECISOES-E-ESCOPO.md`. Destaque para o backend:
-- **Origem da categorização fixo/variável para DESPESAS/DRE** — ainda não se
-  sabe se o Conta Azul já entrega essa categorização pronta ou se o dashboard
-  precisa de um mapeamento próprio por cliente. Evitar fechar o schema de
-  DESPESAS e DRE até confirmar.
-- **Estrutura exata de BALANÇO e DRE** (quais linhas/contas, quantos níveis de
-  subtotal) — ainda não detalhada, afeta diretamente o modelo de normalização
-  desses dois endpoints.
+**Atualizado em 22/09.** Ver seção "Em aberto" do `DECISOES-E-ESCOPO.md`
+(quase tudo resolvido desde a versão original). Único item real pendente
+pro backend:
+- **Estrutura exata de BALANÇO** (quais linhas/contas, quantos níveis de
+  subtotal) — ainda não detalhada, afeta diretamente o modelo de
+  normalização desse endpoint. DRE já foi resolvido (25/08) usando a árvore
+  oficial `categorias-dre` do Conta Azul — vale checar primeiro se existe
+  um equivalente `categorias-balanco`, mesmo caminho que resolveu o DRE.
 
-Acesso à API do Conta Azul segue pendente, mas não bloqueia o início com
-mock, nem os endpoints de ENTRADAS/SAÍDAS/CAIXA. Hospedagem/deploy já está
-decidida (ver seção acima).
+Acesso à API do Conta Azul já está integrado em produção desde 10/09
+(não é mais pendência). Hospedagem/deploy já está decidida (ver seção acima).

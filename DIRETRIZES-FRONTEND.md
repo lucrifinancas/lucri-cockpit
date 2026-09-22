@@ -155,7 +155,8 @@ pra logo e material institucional), então esse arquivo está desalinhado do
 `index.html` e precisa ser corrigido lá.
 
 Outras referências (só de comportamento, não de implementação): o dashboard de
-redes sociais (`../4.DASHBOARD/app/`, HTML puro) e `REFERENCIAS-UI-DASHBOARD.md`.
+redes sociais (`../4.DASHBOARD/app/`, HTML puro) e
+`REFERENCIAS/REFERENCIAS-UI-DASHBOARD.md`.
 
 ## Em aberto
 

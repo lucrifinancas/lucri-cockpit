@@ -1,5 +1,10 @@
 # Guia — Envio de e-mail de redefinição de senha via Make
 
+**Status: backlog, ainda não implementado.** Adiado (ver `API-CONTRACT.md`,
+"Endpoints ainda não implementados") — troca de senha *estando logado* já
+existe (`POST /api/auth/alterar-senha`). Este guia fica pronto pra quando
+"esqueci minha senha" (sem estar logado) entrar em pauta.
+
 Este documento é para quem for configurar o cenário no Make. O backend do
 Lucri Cockpit vai **chamar um webhook do Make** sempre que um usuário pedir
 para redefinir a senha — o Make fica responsável só pela parte de **enviar o

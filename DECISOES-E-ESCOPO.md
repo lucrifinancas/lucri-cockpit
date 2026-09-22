@@ -40,22 +40,20 @@ do projeto — este arquivo é a referência técnica de escopo pros devs.
 
 ## Em aberto — não decidido ainda
 
-- **Credenciais/acesso da API do Conta Azul** — já confirmado e mapeado em
-  `DADOS-CONTA-AZUL-API.md`. Falta só a integração real (front/back seguem
-  em dado mockado no formato correto).
-- **Origem da categorização fixo/variável para DESPESAS/DRE** — o Conta Azul
-  já traz `entrada_dre` pronto por categoria (ver `DADOS-CONTA-AZUL-API.md`),
-  então não deve precisar de tela própria de mapeamento — mas vale confirmar
-  antes de fechar o schema de DESPESAS/DRE de vez.
-- **Estrutura exata do BALANÇO e do DRE** — ainda não detalhamos quais linhas/
-  contas entram em cada um (ex: BALANÇO com ativo circulante/não circulante
-  detalhado? DRE com quantos níveis de subtotal?). Layout dessas duas telas deve
-  esperar essa definição.
-- **Saldo por conta bancária** — o payload documentado de `GET /conta-financeira`
-  não tem campo de saldo; confirmar com o Conta Azul se existe em outro
-  campo/endpoint ou se precisa ser calculado.
+**Atualizado em 22/09** — a maior parte desta seção já foi resolvida desde a
+versão original (24/07); ver `CHECKLIST-V1.0.md` pro status corrente.
 
-Enquanto o acesso ao Conta Azul não é integrado de fato, front e back seguem
-com dado mockado no formato real, mantendo a camada de dados isolada
-(repositório/service layer no back, hooks de fetch no front) pra trocar por
-integração real sem reescrever telas.
+- ~~Credenciais/acesso da API do Conta Azul~~ — **resolvido.** Integração real
+  em produção desde 10/09 (Home, Entradas, Saídas, Despesas, Caixa, DRE);
+  front/back não dependem mais de mock.
+- ~~Origem da categorização fixo/variável para DESPESAS/DRE~~ — **resolvido
+  (11/08 e 25/08).** DESPESAS usa marcação manual por categoria (Ajustes →
+  Categorias de Despesa, ver `API-CONTRACT.md`); DRE usa a árvore oficial
+  `entrada_dre`/`categorias-dre` do próprio Conta Azul.
+- ~~Saldo por conta bancária~~ — **resolvido (12/08).** Endpoint próprio
+  `GET /conta-financeira/:id/saldo-atual`, exposto em `GET /api/clientes/:id/home`
+  (`saldo` por conta + `saldo_total`).
+- **Estrutura exata do BALANÇO** — ainda em aberto, único item real
+  pendente desta lista. Vale checar primeiro se existe um
+  `financeiro/categorias-balanco` ou equivalente no Conta Azul, no mesmo
+  espírito do que resolveu o DRE, antes de fixar layout ou endpoint.
