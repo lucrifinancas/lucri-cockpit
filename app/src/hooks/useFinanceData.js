@@ -12,17 +12,19 @@ function buildQuery(range) {
   return qs ? `?${qs}` : "";
 }
 
-const emptyState = { home: null, entradas: null, saidas: null, despesas: [], previousHome: null, previousEntradas: null, previousSaidas: null, loading: true, error: null };
+const emptyState = { home: null, entradas: null, saidas: null, despesas: [], previousHome: null, previousEntradas: null, previousSaidas: null, previousDespesas: [], loading: true, error: null };
 
 // Hook único de acesso a dado financeiro da Home.
 // `home`/`entradas`/`saidas`/`despesas` vêm da API real (ver API-CONTRACT.md).
 // `despesas` depende de categorias marcadas manualmente em Ajustes — sem
 // nenhuma marcada ainda, volta lista vazia (não é erro, ver contrato).
-// `previousHome`/`previousEntradas`/`previousSaidas` são o mesmo formato pro
-// período imediatamente anterior (mesma duração, ver `previousRange`) — só
-// pra alimentar o delta "vs. período anterior" dos StatCards. `null` quando
-// não há período anterior comparável (preset "Todos os dados"), e também
-// enquanto ele ainda carrega em segundo plano (chega depois do resto).
+// `previousHome`/`previousEntradas`/`previousSaidas`/`previousDespesas` são o
+// mesmo formato pro período imediatamente anterior (mesma duração, ver
+// `previousRange`) — só pra alimentar o delta "vs. período anterior" dos
+// StatCards. `previousHome`/`previousEntradas`/`previousSaidas` ficam `null`
+// quando não há período anterior comparável (preset "Todos os dados"), e
+// também enquanto ainda carregam em segundo plano (chegam depois do resto);
+// `previousDespesas` já nasce lista vazia (mesmo padrão de `despesas`).
 export function useFinanceData() {
   const { activeClientId } = useActiveClient();
   const { range } = usePeriod();
@@ -38,6 +40,7 @@ export function useFinanceData() {
       previousHome: null,
       previousEntradas: null,
       previousSaidas: null,
+      previousDespesas: [],
     }));
 
     const qs = buildQuery(range);
@@ -67,8 +70,11 @@ export function useFinanceData() {
           apiFetch(`/api/clientes/${activeClientId}/home${prevQs}`).catch(() => null),
           apiFetch(`/api/clientes/${activeClientId}/entradas${prevQs}`).catch(() => null),
           apiFetch(`/api/clientes/${activeClientId}/saidas${prevQs}`).catch(() => null),
-        ]).then(([previousHome, previousEntradas, previousSaidas]) => {
-          if (!cancelled) setState((prev) => ({ ...prev, previousHome, previousEntradas, previousSaidas }));
+          apiFetch(`/api/clientes/${activeClientId}/despesas${prevQs}`).catch(() => null),
+        ]).then(([previousHome, previousEntradas, previousSaidas, previousDespesasResp]) => {
+          if (cancelled) return;
+          const previousDespesas = (previousDespesasResp?.lancamentos ?? []).map((l) => ({ ...l, valor: l.valor_pago }));
+          setState((prev) => ({ ...prev, previousHome, previousEntradas, previousSaidas, previousDespesas }));
         });
       })
       .catch((err) => {

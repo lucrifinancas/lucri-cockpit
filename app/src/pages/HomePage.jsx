@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowCircleDown, ArrowCircleUp, HandCoins, Wallet, WarningCircle } from "@phosphor-icons/react";
+import { ArrowCircleDown, ArrowCircleUp, HandCoins, Receipt, Wallet, WarningCircle } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
 import { sumValores, groupByCategoria, CATEGORY_PALETTE, computeDelta } from "../data/mockFinance";
@@ -69,7 +69,7 @@ function buildAgeing(lancamentos) {
 }
 
 export default function HomePage() {
-  const { home, entradas, saidas, despesas, previousHome, previousEntradas, previousSaidas, loading, error } = useFinanceData();
+  const { home, entradas, saidas, despesas, previousHome, previousEntradas, previousSaidas, previousDespesas, loading, error } = useFinanceData();
   const historico = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
@@ -131,6 +131,10 @@ export default function HomePage() {
   const deltaSaidas = previousSaidas ? computeDelta(totalSaidas, previousSaidas.totais.pago.valor) : null;
   const prevAReceberNoMes = previousHome ? Math.max(previousHome.contas_a_receber.todos - previousHome.contas_a_receber.pago.valor, 0) : null;
   const deltaAReceber = previousHome ? computeDelta(totalAReceberNoMes, prevAReceberNoMes) : null;
+  // `previousDespesas` nasce lista vazia (não null, ver useFinanceData),
+  // então usa `previousEntradas` como sinal de "tem período anterior
+  // comparável" — os dois chegam juntos na mesma leva de fetch.
+  const deltaDespesas = previousEntradas ? computeDelta(totalDespesas, sumValores(previousDespesas)) : null;
 
   const ageingChart = buildAgeing(entradas?.lancamentos ?? []);
 
@@ -199,6 +203,9 @@ export default function HomePage() {
         )}
         {isVisible("saidas") && (
           <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} delta={deltaSaidas} invertDeltaColor />
+        )}
+        {isVisible("despesas") && (
+          <StatCard label="Despesas" value={totalDespesas} icon={Receipt} delta={deltaDespesas} invertDeltaColor />
         )}
         {isVisible("contasAReceberMes") && (
           <StatCard
