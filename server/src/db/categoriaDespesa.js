@@ -1,11 +1,3 @@
-export async function listarCategoriaIdsDespesa(db, clienteId) {
-  const { results } = await db
-    .prepare("SELECT categoria_id FROM categoria_despesa WHERE cliente_id = ? AND is_despesa = 1")
-    .bind(clienteId)
-    .all();
-  return new Set(results.map((r) => r.categoria_id));
-}
-
 // categoria_id -> { mae_id, mae_nome } de todas as despesas marcadas do cliente.
 // `mae_id`/`mae_nome` vêm nulos nas linhas antigas, de antes da mãe existir.
 export async function listarMaesPorCategoria(db, clienteId) {
