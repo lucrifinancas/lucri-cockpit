@@ -44,18 +44,15 @@ Balanço, DRE.
 - [x] **Esqueci minha senha por e-mail (22/09)** — `POST
   /api/auth/esqueci-senha` + `POST /api/auth/redefinir-senha`, token de
   60 min, e-mail enviado via API do Resend (ver
-  `GUIA-RESEND-EMAIL.md`). Falta verificar domínio no Resend, configurar
-  os secrets/vars em produção (`RESEND_API_KEY`, `EMAIL_REMETENTE`), e a
-  tela `/redefinir-senha` no front.
+  `GUIA-RESEND-EMAIL.md`). Backend 100% configurado em produção (domínio
+  verificado, secrets, migration aplicada). Falta só a tela
+  `/redefinir-senha` no front.
+- [x] **BALANÇO simplificado (22/09)** — `GET /api/clientes/:id/balanco`,
+  ativo circulante (disponível + realizável) vs. passivo circulante, sem
+  Patrimônio Líquido (decisão fechada com dev + contadora). Falta o front
+  renderizar.
 
 ---
-
-## 🔴 Bloqueadores de v1.0 (faltam decisão + implementação)
-
-- [ ] **Estrutura do BALANÇO** — decidir linhas/subtotais (ativo circulante/
-  não circulante, passivo, PL) antes de fixar layout ou construir endpoint.
-  Vale checar primeiro se existe um `financeiro/categorias-balanco` ou
-  equivalente no Conta Azul, no mesmo espírito do que resolveu o DRE.
 
 ## 🟡 Telas que existem mas não estão roteadas/finalizadas
 

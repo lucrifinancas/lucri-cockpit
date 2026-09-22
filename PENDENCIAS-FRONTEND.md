@@ -111,17 +111,28 @@ Backend 100% funcional nesses quatro; é trabalho só de front:
 - **CAIXA** — endpoint pronto (`GET /api/clientes/:id/caixa`), página não
   existe/roteada.
 
-## 5. Balanço — ainda NÃO está pronto no backend
+## 5. Balanço simplificado (novo, 22/09)
 
-Só pra deixar claro: diferente dos itens acima, o **Balanço** ainda não
-tem endpoint implementado. Decisão fechada em 22/09 (conversa com o dev e
-a contadora): vai ser uma versão simplificada — Ativo circulante disponível
-(saldo bancário) + Ativo circulante realizável (contas a receber em
-aberto) vs. Passivo circulante (contas a pagar em aberto), sem Patrimônio
-Líquido real (a contadora não usa o Balanço vindo do Conta Azul, o dela
-vem de outro sistema contábil). O endpoint ainda precisa ser construído no
-backend antes de ter algo pro front consumir — não é pendência de frontend
-ainda.
+- `GET /api/clientes/:id/balanco` — pronto. **Não é um balanço patrimonial
+  contábil completo** (decisão fechada com o dev e a contadora — ela não
+  usa o Balanço vindo do Conta Azul, o dela vem de outro sistema contábil;
+  e a API do Conta Azul não expõe saldo patrimonial de qualquer forma).
+  Vale deixar isso visível na tela pro cliente final não confundir com um
+  balanço contábil de verdade — algo tipo um aviso/tooltip.
+- Diferente de `/dre` e `/caixa`, **não recebe período** (`de`/`ate`) — é
+  uma foto de agora.
+- Resposta:
+  ```json
+  {
+    "gerado_em": "2026-09-22",
+    "ativo": { "disponivel": 1491.84, "realizavel": 22071.00, "total": 23562.84 },
+    "passivo_circulante": 5362.67,
+    "saldo": 18200.17
+  }
+  ```
+- **Falta**: renderizar a tela (provavelmente o mesmo componente de tabela
+  contábil hierárquica que DRE vai usar, mas mais simples — só duas
+  seções, Ativo e Passivo, sem os vários níveis de subtotal do DRE).
 
 ---
 

@@ -2,7 +2,14 @@ import { Hono } from "hono";
 import { exigirPapel } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { resolverPeriodo } from "../utils/periodo.js";
-import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre, buscarCategorias } from "../contaazul/api.js";
+import {
+  buscarContasAPagar,
+  buscarContasAReceber,
+  buscarEstruturaDre,
+  buscarCategorias,
+  buscarContasBancarias,
+  buscarSaldoConta,
+} from "../contaazul/api.js";
 import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
 import { listarNomesPai } from "../db/categoriaPaiNome.js";
@@ -149,6 +156,57 @@ financeiroRoutes.get("/:clienteId/dre", exigirPapel("master", "analista"), async
   const dre = montarDre(estrutura, valorPorCategoria);
 
   return c.json({ periodo: { de, ate }, ...dre });
+});
+
+// Balanço SIMPLIFICADO (financeiro) — não é um balanço patrimonial contábil
+// completo. Decisão fechada em 22/09 depois de conversa com o dev e a
+// contadora: ela não usa o Balanço vindo do Conta Azul (o dela vem de outro
+// sistema contábil), e a própria API não expõe saldo patrimonial (imobilizado,
+// capital social, lucros acumulados) — só saldo bancário e contas a pagar/
+// receber. Então aqui só dá pra montar: Ativo circulante disponível (saldo
+// bancário) + realizável (a receber em aberto) vs. Passivo circulante
+// (a pagar em aberto). Sem Patrimônio Líquido real (ver API-CONTRACT.md).
+//
+// Diferente de /dre e /caixa, não tem "período" escolhido pelo usuário — é
+// uma foto de agora, soma de tudo que ainda está em aberto. Busca numa
+// janela larga (2 anos pra trás, 1 ano pra frente) pra não perder título
+// antigo em atraso nem título futuro já lançado, já que o endpoint do Conta
+// Azul exige um intervalo de data de vencimento pra filtrar.
+financeiroRoutes.get("/:clienteId/balanco", exigirPapel("master", "analista"), async (c) => {
+  const clienteId = Number(c.req.param("clienteId"));
+
+  const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
+  if (!accessToken) {
+    return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
+  }
+
+  const hoje = new Date();
+  const de = new Date(hoje.getFullYear() - 2, hoje.getMonth(), hoje.getDate()).toISOString().slice(0, 10);
+  const ate = new Date(hoje.getFullYear() + 1, hoje.getMonth(), hoje.getDate()).toISOString().slice(0, 10);
+
+  const [contasAPagar, contasAReceber, contasBancarias] = await Promise.all([
+    buscarContasAPagar(accessToken, { de, ate }),
+    buscarContasAReceber(accessToken, { de, ate }),
+    buscarContasBancarias(accessToken),
+  ]);
+
+  const contasAtivas = contasBancarias.itens.filter((conta) => conta.ativo);
+  const saldos = await Promise.all(contasAtivas.map((conta) => buscarSaldoConta(accessToken, conta.id)));
+  const disponivel = saldos.reduce((soma, saldo) => soma + saldo, 0);
+
+  const realizavel = contasAReceber.itens.reduce((soma, item) => soma + (item.nao_pago ?? 0), 0);
+  const passivoCirculante = contasAPagar.itens.reduce((soma, item) => soma + (item.nao_pago ?? 0), 0);
+
+  return c.json({
+    gerado_em: hoje.toISOString().slice(0, 10),
+    ativo: {
+      disponivel,
+      realizavel,
+      total: disponivel + realizavel,
+    },
+    passivo_circulante: passivoCirculante,
+    saldo: disponivel + realizavel - passivoCirculante,
+  });
 });
 
 const MESES = [

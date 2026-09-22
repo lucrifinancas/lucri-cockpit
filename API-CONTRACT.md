@@ -696,6 +696,9 @@ ver `GUIA-RESEND-EMAIL.md`) para enviar o e-mail com o link
 Efetiva a troca, usando o token recebido por e-mail. Body:
 `{ "token": "...", "senha_nova": "..." }` (mínimo 8 caracteres).
 
+Erros: `400` se o token não existir ou já tiver expirado ("Link inválido ou
+expirado. Peça uma nova redefinição."). Token é apagado depois de usado.
+
 ---
 
 ## Convites de cliente + autocadastro via Google
@@ -736,15 +739,40 @@ muita gente não deixa a data de nascimento visível na conta — não vale a
 pena depender disso. Se precisar de data de nascimento, pedir direto num
 campo do próprio formulário.
 
-Erros: `400` se o token não existir ou já tiver expirado ("Link inválido ou
-expirado. Peça uma nova redefinição."). Token é apagado depois de usado.
-
 ---
 
-## Endpoints ainda não implementados
+## GET /api/clientes/:id/balanco
 
-- **BALANÇO** — decisão fechada em 2026-09-22: fica só na versão simplificada
-  (ativo circulante disponível/realizável vs. passivo circulante, sem
-  Patrimônio Líquido) — a contadora confirmou que não usa o Balanço
-  Patrimonial vindo do Conta Azul, esse dado vem de outro sistema contábil
-  dela. Falta só implementar essa versão simplificada.
+Balanço **simplificado** (financeiro) — decisão fechada em 22/09 depois de
+conversa com o dev e a contadora: ela não usa o Balanço vindo do Conta Azul
+(o dela vem de outro sistema contábil), e a própria API não expõe saldo
+patrimonial (imobilizado, capital social, lucros acumulados) — só saldo
+bancário e contas a pagar/receber. **Não é um balanço patrimonial contábil
+completo.**
+
+Diferente de `/dre` e `/caixa`, não recebe `de`/`ate` — é uma foto de agora,
+soma de tudo que ainda está em aberto (busca numa janela larga por baixo dos
+panos: 2 anos pra trás, 1 ano pra frente, pra não perder título antigo em
+atraso nem título futuro já lançado).
+
+```json
+{
+  "gerado_em": "2026-09-22",
+  "ativo": {
+    "disponivel": 1491.84,
+    "realizavel": 22071.00,
+    "total": 23562.84
+  },
+  "passivo_circulante": 5362.67,
+  "saldo": 18200.17
+}
+```
+
+- `ativo.disponivel` = soma do saldo atual de todas as contas bancárias
+  ativas do cliente.
+- `ativo.realizavel` = soma do `valor_em_aberto` de todas as contas a
+  receber ainda não pagas (total ou parcialmente) dentro da janela.
+- `passivo_circulante` = soma do `valor_em_aberto` de todas as contas a
+  pagar ainda não pagas dentro da janela.
+- `saldo` = `ativo.total - passivo_circulante`. **Não existe Patrimônio
+  Líquido** nesse endpoint — esse dado não existe na API do Conta Azul.
