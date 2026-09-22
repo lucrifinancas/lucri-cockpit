@@ -14,6 +14,17 @@
   flex-wrap: wrap;
 }
 
+/* Linha da métrica-âncora (Saldo em conta) — sozinha, sem competir com os
+   outros StatCards logo abaixo. Largura limitada (não full-bleed) pra não
+   virar uma barra vazia esticada em telas largas. */
+.stat-row-hero {
+  display: flex;
+}
+
+.stat-row-hero .stat-card {
+  min-width: 320px;
+}
+
 /* Grid de colunas — evita a última linha ficar torta quando o total de
    cards não é múltiplo do que cabe por linha no flex-wrap. Home tem 7 ou 9
    cards dependendo do tipo de cliente (servico/produto), então usa

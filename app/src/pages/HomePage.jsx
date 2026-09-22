@@ -184,16 +184,20 @@ export default function HomePage() {
     <div className="page">
       <h1 className="page-title">Home</h1>
 
-      <div className="stat-row stat-row-grid">
-        {isVisible("saldoConta") && (
+      {isVisible("saldoConta") && (
+        <div className="stat-row-hero">
           <StatCard
             label="Saldo em conta"
             value={saldoTotal}
             icon={Wallet}
             breakdown={saldoPorConta}
             tone={saldoTotal < 0 ? "negative" : "neutral"}
+            size="hero"
           />
-        )}
+        </div>
+      )}
+
+      <div className="stat-row stat-row-grid">
         {isVisible("entradas") && (
           <StatCard label="Entradas" value={totalEntradas} icon={ArrowCircleDown} delta={deltaEntradas} />
         )}

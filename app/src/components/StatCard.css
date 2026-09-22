@@ -14,6 +14,32 @@
   cursor: default;
 }
 
+/* Métrica-âncora: 1 card maior que os demais (padrão Stripe/Mercury —
+   ver referencias-ui-dashboard-lucri.md, item 3), pra dar hierarquia à
+   Home em vez de todo StatCard competir pela mesma atenção. Só escala
+   tipografia/espaçamento — mantém a mesma estrutura do card normal. */
+.stat-card-hero {
+  padding: 28px 32px;
+  gap: 12px;
+}
+
+.stat-card-hero .stat-card-label {
+  font-size: 14px;
+}
+
+.stat-card-hero .stat-card-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.stat-card-hero .stat-card-value {
+  font-size: 44px;
+}
+
+.stat-card-hero .stat-card-delta {
+  font-size: 13px;
+}
+
 .stat-card-tooltip {
   display: none;
   position: absolute;
