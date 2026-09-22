@@ -12,8 +12,13 @@ Balanço, DRE.
 
 - [x] Auth completo (login, sessão, trocar senha, papéis master/analista/cliente)
 - [x] Login com Google (12/08) — alternativa sem senha, só autentica e-mail
-  já cadastrado (não cria conta nova). Falta só o botão no front — ver
-  `API-CONTRACT.md`.
+  já cadastrado. Falta só o botão no front — ver `API-CONTRACT.md`.
+- [x] **Autocadastro de cliente por convite + Google (22/09)** — master
+  reserva o e-mail (`POST /api/clientes/:id/convites`), a pessoa entra
+  com Google e a conta é criada na hora, vinculada ao cliente certo,
+  nome/sobrenome preenchidos automaticamente. Ver `API-CONTRACT.md`.
+  Falta o front: botão de login Google + tela do master pra gerenciar
+  convites.
 - [x] Onboarding de cliente (cadastro, OAuth Conta Azul, criar login de cliente)
 - [x] **Saldo em conta bancária (12/08)** — resolvido, endpoint próprio
   achado fora da doc oficial (`/conta-financeira/:id/saldo-atual`).

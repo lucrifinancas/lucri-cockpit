@@ -696,6 +696,46 @@ ver `GUIA-RESEND-EMAIL.md`) para enviar o e-mail com o link
 Efetiva a troca, usando o token recebido por e-mail. Body:
 `{ "token": "...", "senha_nova": "..." }` (mínimo 8 caracteres).
 
+---
+
+## Convites de cliente + autocadastro via Google
+
+Fluxo pra uma pessoa nova criar a própria conta "cliente" sem o master
+precisar cadastrar senha manualmente:
+
+1. Master reserva o e-mail: `POST /api/clientes/:id/convites`, body
+   `{ "email": "..." }` (só master). Não vincula senha nenhuma, só
+   `email` + `cliente_id`. Erro `409` se o e-mail já está convidado ou já
+   tem conta.
+2. `GET /api/clientes/:id/convites` — lista convites pendentes desse
+   cliente (master/analista).
+3. `DELETE /api/clientes/:id/convites/:conviteId` — cancela um convite
+   (só master).
+4. A pessoa clica em **Entrar com Google** (`GET /api/auth/google/iniciar`).
+   No callback (`GET /api/auth/google/callback`):
+   - Se já existe usuário com esse e-mail → só autentica (comportamento
+     de sempre).
+   - Se não existe usuário, mas existe convite pendente com esse e-mail →
+     cria a conta `papel: 'cliente'` na hora, vinculada ao `cliente_id`
+     do convite, com `nome`/`sobrenome` preenchidos automaticamente pelo
+     Google (`given_name`/`family_name`), apaga o convite e já loga a
+     pessoa.
+   - Se não existe nem usuário nem convite → redireciona com
+     `?google=conta_nao_encontrada`, igual antes.
+   - Conta criada por convite não tem senha utilizável (só entra via
+     Google) — pode usar `/api/auth/esqueci-senha` se quiser habilitar
+     login por senha também no futuro.
+
+**Sobre dados do Google pra cadastro** (pergunta que o dev fez): o escopo
+`profile` já usado (`server/src/auth/google.js`) devolve `given_name` e
+`family_name` separados — não precisa de escopo extra. **Data de
+nascimento não vem** nesse fluxo: exigiria o escopo restrito
+`user.birthday.read`, que passa por revisão manual do Google (política de
+privacidade, vídeo demonstrativo, pode levar semanas) e mesmo assim
+muita gente não deixa a data de nascimento visível na conta — não vale a
+pena depender disso. Se precisar de data de nascimento, pedir direto num
+campo do próprio formulário.
+
 Erros: `400` se o token não existir ou já tiver expirado ("Link inválido ou
 expirado. Peça uma nova redefinição."). Token é apagado depois de usado.
 

@@ -62,3 +62,18 @@ export async function criarUsuarioCliente(db, clienteId, email, senhaHash) {
     .bind(email, senhaHash, clienteId)
     .first();
 }
+
+// Cria a conta "cliente" no momento em que a pessoa aceita um convite
+// entrando com Google — não tem senha própria (só entra via Google, até
+// pedir uma redefinição de senha algum dia, se quiser). `senhaHash` aqui é
+// só um valor aleatório que ninguém consegue digitar, pra satisfazer a
+// coluna NOT NULL sem criar uma senha de verdade.
+export async function criarUsuarioClienteGoogle(db, clienteId, email, nome, sobrenome, senhaHashAleatorio) {
+  return db
+    .prepare(
+      `INSERT INTO usuarios (email, senha_hash, papel, cliente_id, nome, sobrenome)
+       VALUES (?, ?, 'cliente', ?, ?, ?) RETURNING id, email, papel, cliente_id, nome, sobrenome, criado_em`
+    )
+    .bind(email, senhaHashAleatorio, clienteId, nome, sobrenome)
+    .first();
+}
