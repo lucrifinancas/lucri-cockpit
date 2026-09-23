@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowCircleDown, ArrowCircleUp, HandCoins, Receipt, Wallet, WarningCircle } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
-import { sumValores, groupByCategoria, CATEGORY_PALETTE, computeDelta } from "../data/mockFinance";
+import { sumValores, groupByCategoria, CATEGORY_PALETTE, DESPESA_PALETTE, computeDelta } from "../data/mockFinance";
 import { useActiveClient } from "../context/ClientContext";
 import { useHomeCardPrefs } from "../hooks/useHomeCardPrefs";
 import StatCard from "../components/StatCard";
@@ -31,13 +31,17 @@ function reconciliarComTotal(porCategoria, totalOficial) {
 
 // Top N categorias de uma lista `{categoria, valor}[]` já ordenada, com o
 // resto agrupado em "Outros" — usado tanto pra receitas quanto despesas
-// (as duas já são dado real, ver API-CONTRACT.md).
-function topCategorias(porCategoria, n = 10) {
-  const top = porCategoria.slice(0, n);
-  const resto = porCategoria.slice(n);
+// (as duas já são dado real, ver API-CONTRACT.md). N real nunca passa do
+// tamanho da paleta: com mais categorias que cores, repetir cor faria duas
+// categorias diferentes parecerem a mesma (ver skill de dataviz) — melhor
+// dobrar o excedente em "Outros" um pouco mais cedo.
+function topCategorias(porCategoria, n = 10, palette = CATEGORY_PALETTE) {
+  const limite = Math.min(n, palette.length);
+  const top = porCategoria.slice(0, limite);
+  const resto = porCategoria.slice(limite);
   const restoValor = sumValores(resto.map((d) => ({ valor: d.valor })));
   return [
-    ...top.map((d, i) => ({ categoria: d.categoria, valor: d.valor, color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length] })),
+    ...top.map((d, i) => ({ categoria: d.categoria, valor: d.valor, color: palette[i % palette.length] })),
     ...(resto.length ? [{ categoria: "Outros", valor: restoValor, color: "var(--text-secondary)" }] : []),
   ];
 }
@@ -65,7 +69,7 @@ function buildAgeing(lancamentos) {
   }
   return buckets
     .filter((b) => b.valor > 0)
-    .map((b, i) => ({ categoria: b.label, valor: b.valor, color: CATEGORY_PALETTE[i] }));
+    .map((b, i) => ({ categoria: b.label, valor: b.valor, color: DESPESA_PALETTE[i] }));
 }
 
 export default function HomePage() {
@@ -158,7 +162,7 @@ export default function HomePage() {
   // Despesas por categoria: dado real, filtrado pelas categorias marcadas
   // em Ajustes → Categorias de Despesa (ver API-CONTRACT.md /despesas).
   const despesasPorCategoria = groupByCategoria(despesas);
-  const despesasChart = topCategorias(despesasPorCategoria);
+  const despesasChart = topCategorias(despesasPorCategoria, 10, DESPESA_PALETTE);
   // Cada linha é uma categoria-mãe; ao abrir, as despesas dela (subcategoria).
   // "Sem mãe" reúne as despesas ainda não classificadas em Ajustes.
   const despesasPorMae = new Map();

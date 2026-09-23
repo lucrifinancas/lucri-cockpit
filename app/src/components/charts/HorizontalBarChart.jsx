@@ -26,7 +26,7 @@ export default function HorizontalBarChart({ data, dataKey = "valor", nameKey = 
             tickLine={false}
             width={130}
           />
-          <Tooltip formatter={(v) => currencyFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
+          <Tooltip allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => currencyFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
           <Bar dataKey={dataKey} radius={[0, 4, 4, 0]} maxBarSize={22}>
             {data.map((d, i) => (
               <Cell key={d[nameKey] ?? i} fill={d.color ?? color} />

@@ -22,7 +22,7 @@ export default function ComparisonBarChart({ data, series }) {
             tickLine={false}
             tickFormatter={(v) => numberFmt.format(v)}
           />
-          <Tooltip formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
+          <Tooltip allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
           <Legend wrapperStyle={{ fontSize: 13, color: "var(--text-secondary)" }} />
           {series.map((s) => (
             <Bar key={s.dataKey} dataKey={s.dataKey} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} maxBarSize={40} />

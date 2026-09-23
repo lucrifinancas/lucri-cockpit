@@ -16,6 +16,19 @@ function BarValueLabel({ x, y, width, height, value }) {
   );
 }
 
+// Canto arredondado sempre na PONTA do dado, nunca na base — pra barra
+// negativa (ex: Resultado indo pro vermelho) a ponta fica embaixo, longe do
+// zero, então é embaixo que precisa arredondar (o Recharts não faz isso
+// sozinho: `radius` do <Bar> arredonda sempre o topo do retângulo).
+function RoundedBar({ x, y, width, height, value, fill, radius = 4 }) {
+  const r = Math.max(0, Math.min(radius, height, width / 2));
+  const d =
+    value < 0
+      ? `M${x},${y} L${x + width},${y} L${x + width},${y + height - r} Q${x + width},${y + height} ${x + width - r},${y + height} L${x + r},${y + height} Q${x},${y + height} ${x},${y + height - r} Z`
+      : `M${x},${y + r} Q${x},${y} ${x + r},${y} L${x + width - r},${y} Q${x + width},${y} ${x + width},${y + r} L${x + width},${y + height} L${x},${y + height} Z`;
+  return <path d={d} fill={fill} />;
+}
+
 // Barras históricas de um único indicador, valor sempre visível em cima da
 // barra — mesmo padrão do slide "Receitas de Vendas Mensais / Histórico".
 export default function HistoryBarChart({ data, dataKey, color, label, colorBySign = false }) {
@@ -42,8 +55,8 @@ export default function HistoryBarChart({ data, dataKey, color, label, colorBySi
             tickLine={false}
             tickFormatter={(v) => numberFmt.format(v)}
           />
-          <Tooltip formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
-          <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} maxBarSize={40}>
+          <Tooltip allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
+          <Bar dataKey={dataKey} fill={color} shape={(props) => <RoundedBar {...props} radius={4} />} maxBarSize={40}>
             {colorBySign &&
               data.map((d, i) => (
                 <Cell key={i} fill={d[dataKey] < 0 ? "var(--chart-despesa)" : "var(--chart-caixa)"} />

@@ -5,6 +5,21 @@
   padding: 20px;
 }
 
+/* O Recharts marca o wrapper como focável (tabIndex 0) pra navegação por
+   teclado; sem isso o Safari mostra o anel de foco azul padrão do sistema
+   até em clique de mouse (não só Tab), porque não existe :focus-visible
+   suportado nesse elemento. Substituído por um anel no estilo do resto do
+   dashboard, só em navegação real por teclado. */
+.recharts-wrapper:focus {
+  outline: none;
+}
+
+.recharts-wrapper:focus-visible {
+  outline: 2px solid var(--lucri-sky);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
 .chart-block-donut {
   display: flex;
   flex-direction: row;

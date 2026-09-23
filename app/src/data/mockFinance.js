@@ -16,6 +16,21 @@ export const CATEGORY_PALETTE = [
   "#5ce8a8",
 ];
 
+// Mesma paleta, sem o verde-menta (--lucri-mint): esse verde já significa
+// "receita/positivo" em todo o resto do dashboard (StatCard, --chart-receita).
+// Usar em breakdown de despesa ou de atraso faz uma categoria de gasto
+// aparecer pintada de "bom" só por cair no índice 1 da rotação — ver ranking
+// de despesas na Home.
+export const DESPESA_PALETTE = [
+  "#ff6b4a",
+  "#8a8ba0",
+  "#7c6bff",
+  "#ffb84a",
+  "#00d0f5",
+  "#4ad9ff",
+  "#5ce8a8",
+];
+
 // Agrupa itens com campo `categoria` somando `valor` por categoria, ordenado
 // do maior pro menor. `categoria` pode ser string (forma real do Conta Azul
 // em /entradas, /saidas e /despesas) ou objeto `{nome,...}`.
