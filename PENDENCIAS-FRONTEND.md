@@ -97,19 +97,13 @@ formulário.
   tela de "aceitar convite" é necessária — o fluxo inteiro é pelo botão de
   login Google já existente.
 
-## 4. Telas com dado real pronto, mas não roteadas/finalizadas
+## 4. ~~Telas com dado real pronto, mas não roteadas/finalizadas~~ (JÁ FEITO)
 
-Backend 100% funcional nesses quatro; é trabalho só de front:
-
-- **ENTRADAS** — já busca dado real (`useFinanceData`), mas não está
-  roteada em `App.jsx` (cai em `UnderConstructionPage`).
-- **SAÍDAS** — mesma situação: dado real pronto, falta rotear e revisar
-  layout.
-- **DESPESAS** — hoje só existe como cards na Home; falta página própria
-  com tabela de lançamentos (padrão de ENTRADAS/SAÍDAS). Endpoint:
-  `GET /api/clientes/:id/despesas`.
-- **CAIXA** — endpoint pronto (`GET /api/clientes/:id/caixa`), página não
-  existe/roteada.
+**Correção (23/09):** esse item estava desatualizado — ENTRADAS, SAÍDAS,
+DESPESAS e CAIXA já estão roteadas em `App.jsx` com dado real desde 10/09
+(`EntradasPage`, `SaidasPage`, `DespesasPage`, `CaixaPage`), inclusive
+DESPESAS já tem página própria com tabela de lançamentos, não só cards na
+Home. Confirmado direto no código em 23/09. Nada a fazer aqui.
 
 ## 5. Balanço simplificado (novo, 22/09)
 
