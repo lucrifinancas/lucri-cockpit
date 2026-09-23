@@ -680,9 +680,99 @@ custos, despesas, financeiro e não operacional — não só despesas.
 
 ---
 
-## Endpoints ainda não implementados
+## POST /api/auth/esqueci-senha
 
-- **BALANÇO** — bloqueado pela definição de estrutura de linhas/subtotais.
-- Endpoint de "esqueci minha senha" por e-mail (adiado, ver
-  `GUIA-MAKE-RESET-SENHA.md`) — troca de senha *estando logado* já existe
-  (`POST /api/auth/alterar-senha`).
+Pede a redefinição de senha por e-mail. Body: `{ "email": "..." }`.
+
+Sempre responde `{ "ok": true }`, mesmo se o e-mail não tiver cadastro — evita
+que alguém descubra quais e-mails existem tentando um por um. Se o e-mail
+existir, gera um token (válido por 60 min, guardado em
+`reset_senha_tokens`) e chama a API do Resend (`RESEND_API_KEY`,
+ver `GUIA-RESEND-EMAIL.md`) para enviar o e-mail com o link
+`{APP_URL}/redefinir-senha?token=...`.
+
+## POST /api/auth/redefinir-senha
+
+Efetiva a troca, usando o token recebido por e-mail. Body:
+`{ "token": "...", "senha_nova": "..." }` (mínimo 8 caracteres).
+
+Erros: `400` se o token não existir ou já tiver expirado ("Link inválido ou
+expirado. Peça uma nova redefinição."). Token é apagado depois de usado.
+
+---
+
+## Convites de cliente + autocadastro via Google
+
+Fluxo pra uma pessoa nova criar a própria conta "cliente" sem o master
+precisar cadastrar senha manualmente:
+
+1. Master reserva o e-mail: `POST /api/clientes/:id/convites`, body
+   `{ "email": "..." }` (só master). Não vincula senha nenhuma, só
+   `email` + `cliente_id`. Erro `409` se o e-mail já está convidado ou já
+   tem conta.
+2. `GET /api/clientes/:id/convites` — lista convites pendentes desse
+   cliente (master/analista).
+3. `DELETE /api/clientes/:id/convites/:conviteId` — cancela um convite
+   (só master).
+4. A pessoa clica em **Entrar com Google** (`GET /api/auth/google/iniciar`).
+   No callback (`GET /api/auth/google/callback`):
+   - Se já existe usuário com esse e-mail → só autentica (comportamento
+     de sempre).
+   - Se não existe usuário, mas existe convite pendente com esse e-mail →
+     cria a conta `papel: 'cliente'` na hora, vinculada ao `cliente_id`
+     do convite, com `nome`/`sobrenome` preenchidos automaticamente pelo
+     Google (`given_name`/`family_name`), apaga o convite e já loga a
+     pessoa.
+   - Se não existe nem usuário nem convite → redireciona com
+     `?google=conta_nao_encontrada`, igual antes.
+   - Conta criada por convite não tem senha utilizável (só entra via
+     Google) — pode usar `/api/auth/esqueci-senha` se quiser habilitar
+     login por senha também no futuro.
+
+**Sobre dados do Google pra cadastro** (pergunta que o dev fez): o escopo
+`profile` já usado (`server/src/auth/google.js`) devolve `given_name` e
+`family_name` separados — não precisa de escopo extra. **Data de
+nascimento não vem** nesse fluxo: exigiria o escopo restrito
+`user.birthday.read`, que passa por revisão manual do Google (política de
+privacidade, vídeo demonstrativo, pode levar semanas) e mesmo assim
+muita gente não deixa a data de nascimento visível na conta — não vale a
+pena depender disso. Se precisar de data de nascimento, pedir direto num
+campo do próprio formulário.
+
+---
+
+## GET /api/clientes/:id/balanco
+
+Balanço **simplificado** (financeiro) — decisão fechada em 22/09 depois de
+conversa com o dev e a contadora: ela não usa o Balanço vindo do Conta Azul
+(o dela vem de outro sistema contábil), e a própria API não expõe saldo
+patrimonial (imobilizado, capital social, lucros acumulados) — só saldo
+bancário e contas a pagar/receber. **Não é um balanço patrimonial contábil
+completo.**
+
+Diferente de `/dre` e `/caixa`, não recebe `de`/`ate` — é uma foto de agora,
+soma de tudo que ainda está em aberto (busca numa janela larga por baixo dos
+panos: 2 anos pra trás, 1 ano pra frente, pra não perder título antigo em
+atraso nem título futuro já lançado).
+
+```json
+{
+  "gerado_em": "2026-09-22",
+  "ativo": {
+    "disponivel": 1491.84,
+    "realizavel": 22071.00,
+    "total": 23562.84
+  },
+  "passivo_circulante": 5362.67,
+  "saldo": 18200.17
+}
+```
+
+- `ativo.disponivel` = soma do saldo atual de todas as contas bancárias
+  ativas do cliente.
+- `ativo.realizavel` = soma do `valor_em_aberto` de todas as contas a
+  receber ainda não pagas (total ou parcialmente) dentro da janela.
+- `passivo_circulante` = soma do `valor_em_aberto` de todas as contas a
+  pagar ainda não pagas dentro da janela.
+- `saldo` = `ativo.total - passivo_circulante`. **Não existe Patrimônio
+  Líquido** nesse endpoint — esse dado não existe na API do Conta Azul.

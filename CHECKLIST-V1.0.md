@@ -17,8 +17,13 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
 
 - [x] Auth completo (login, sessão, trocar senha, papéis master/analista/cliente)
 - [x] Login com Google (12/08) — alternativa sem senha, só autentica e-mail
-  já cadastrado (não cria conta nova). Falta só o botão no front — ver
-  `API-CONTRACT.md`.
+  já cadastrado. Falta só o botão no front — ver `API-CONTRACT.md`.
+- [x] **Autocadastro de cliente por convite + Google (22/09)** — master
+  reserva o e-mail (`POST /api/clientes/:id/convites`), a pessoa entra
+  com Google e a conta é criada na hora, vinculada ao cliente certo,
+  nome/sobrenome preenchidos automaticamente. Ver `API-CONTRACT.md`.
+  Falta o front: botão de login Google + tela do master pra gerenciar
+  convites.
 - [x] Onboarding de cliente (cadastro, OAuth Conta Azul, criar login de cliente)
 - [x] **Saldo em conta bancária (12/08)** — resolvido, endpoint próprio
   achado fora da doc oficial (`/conta-financeira/:id/saldo-atual`).
@@ -40,7 +45,18 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
 - [x] **DRE (25/08)** — `GET /api/clientes/:id/dre`, usa a estrutura
   oficial `financeiro/categorias-dre` do próprio Conta Azul (configurada
   pelo contador da empresa) em vez de regra própria. Falta só o front
-  renderizar (tabela contábil hierárquica) — ver bloco "Próximo" abaixo.
+  renderizar (tabela contábil hierárquica) — ver `PENDENCIAS-FRONTEND.md`.
+- [x] **Esqueci minha senha por e-mail (22/09)** — `POST
+  /api/auth/esqueci-senha` + `POST /api/auth/redefinir-senha`, token de
+  60 min, e-mail enviado via API do Resend (ver `GUIA-RESEND-EMAIL.md`).
+  Backend 100% configurado em produção. Falta só a tela `/redefinir-senha`
+  no front.
+- [x] **BALANÇO simplificado (22/09)** — `GET /api/clientes/:id/balanco`,
+  ativo circulante (disponível + realizável) vs. passivo circulante, sem
+  Patrimônio Líquido (decisão fechada com dev + contadora — ela não usa o
+  Balanço do Conta Azul, e a API não expõe saldo patrimonial de qualquer
+  forma). Resolve o bloqueador "Estrutura do BALANÇO" abaixo. Falta o
+  front renderizar + avisar na tela que não é balanço contábil completo.
 - [x] **Deploy automático do backend (CI/CD, 25/08)** — `.github/workflows/
   deploy-backend.yml` publica o `server/` sozinho a cada push em `main`,
   igual o front já faz com Cloudflare Pages.
@@ -69,16 +85,12 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
 
 ## 🔴 Bloqueadores de v1.0 (faltam decisão + implementação)
 
-- [ ] **Estrutura do BALANÇO** — decidir linhas/subtotais (ativo circulante/
-  não circulante, passivo, PL) antes de fixar layout ou construir endpoint.
-  Confirmado em 10/09 (`ESCOPO-VISIBILIDADE-CONTA-AZUL.md`): ainda não
-  verificamos se existe um `financeiro/categorias-balanco` ou equivalente
-  no Conta Azul, no mesmo espírito do que resolveu o DRE — **próximo passo
-  óbvio antes de desenhar a tela**.
 - [ ] **Criar login do cliente na tela de Ajustes** — `handleAddClient` só
   cadastra o registro do cliente (`POST /api/clientes`, nome); não existe
   formulário de e-mail + senha inicial (`POST /api/clientes/:id/login`,
-  só `master`) mencionado em `CHECKLIST-FRONTEND.md`. Segue sem UI.
+  só `master`) mencionado em `CHECKLIST-FRONTEND.md`. Pode estar
+  superado pelo fluxo de convite + Google (22/09, ver `PENDENCIAS-FRONTEND.md`)
+  — confirmar antes de construir os dois.
 
 ## ✳️ Achados novos de 23/09 (não bloqueiam v1.0, mas valem registro)
 
@@ -118,24 +130,28 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
 ## 🎯 Próximo
 
 Divisão combinada em 11/09: back fica com o usuário, front continua aqui.
+Lista completa (contrato de API, formato de resposta, exemplo de JSON) em
+`PENDENCIAS-FRONTEND.md`, consolidado pelo dev em 22/09.
 
-- [ ] **DRE — construir a tela** (frontend, desbloqueado): backend pronto
-  desde 25/08 (`GET /api/clientes/:id/dre`, árvore oficial do Conta Azul
-  com subtotais em cascata). Falta só o componente de tabela contábil
-  hierárquica (`linhas`/`subitens`) mencionado em `CHECKLIST-FRONTEND.md`.
-  Candidato óbvio a próxima tela — não depende de nenhuma decisão pendente.
-- [ ] **BALANÇO — checar `financeiro/categorias-balanco` no Conta Azul**
-  (backend): mesma estratégia que resolveu o DRE. Sem isso, a tela
-  continua sem poder ser desenhada.
-- [ ] **Criar login do cliente** (front + back): decidir se entra no
-  formulário de Ajustes agora ou fica pra depois do v1.0 — hoje cadastro
-  de cliente e criação de login são passos manuais separados sem UI pro
-  segundo.
+- [ ] **DRE — construir a tela**: backend pronto desde 25/08, árvore
+  oficial do Conta Azul com subtotais em cascata. Falta o componente de
+  tabela contábil hierárquica.
+- [ ] **BALANÇO simplificado — construir a tela**: backend pronto (22/09),
+  provavelmente o mesmo componente de tabela hierárquica do DRE, só mais
+  simples (Ativo/Passivo, sem os níveis de subtotal do DRE). Avisar na
+  tela que não é balanço contábil completo (decisão fechada com a
+  contadora).
+- [ ] **Esqueci minha senha — 2 telas**: pedir e-mail (chama
+  `POST /api/auth/esqueci-senha`) e `/redefinir-senha?token=...` (chama
+  `POST /api/auth/redefinir-senha`).
+- [ ] **Login com Google + convites**: botão "Entrar com Google" na tela
+  de login, e seção "Convites de acesso" em Ajustes (listar/criar/cancelar
+  convite, só master).
+- [ ] **Criar login do cliente** (front + back): pode estar superado pelo
+  fluxo de convite + Google acima — confirmar antes de construir os dois.
 
 ## ⚪ Fora de escopo v1.0 / adiado (não bloqueia)
 
-- [ ] Esqueci minha senha por e-mail (ver `GUIA-MAKE-RESET-SENHA.md`) —
-  troca de senha estando logado já existe
 - [ ] Token do Conta Azul intermitente (Nick Publicidade) — já teve episódio
   antes, se resolveu sozinho; 409 tratado no front se acontecer de novo
 
@@ -145,5 +161,7 @@ Divisão combinada em 11/09: back fica com o usuário, front continua aqui.
 
 - Escopo fechado: `DECISOES-E-ESCOPO.md`
 - Contrato de API: `API-CONTRACT.md`
+- Pendências de frontend (DRE, Balanço, esqueci senha, login Google/convites): `PENDENCIAS-FRONTEND.md`
+- Guia do Resend (e-mail transacional): `GUIA-RESEND-EMAIL.md`
 - Histórico de bugs achados: `RELATORIO-BUGS-BACKEND-2026-08-11.md`
 - Regras Conta Azul (competência/caixa/extrato): `RESUMO-DOCUMENTACAO-CONTAAZUL-2026-08-11.md`

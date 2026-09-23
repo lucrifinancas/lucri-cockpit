@@ -16,6 +16,7 @@ crons = ["0 * * * *"]
 
 [vars]
 APP_URL = "https://lucri-cockpit.pages.dev"
+EMAIL_REMETENTE = "Lucri Cockpit <nao-responda@lucrifinancas.com.br>"
 CONTA_AZUL_CLIENT_ID = "505p89h6j5qc34l6gdgadjtjau"
 CONTA_AZUL_REDIRECT_URI = "https://lucri-cockpit-server.lucrifinancas-54e.workers.dev/api/contaazul/callback"
 GOOGLE_CLIENT_ID = "639084962363-j00c9jsrvggglk02i358hhmqsqr48qgd.apps.googleusercontent.com"

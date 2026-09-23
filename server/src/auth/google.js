@@ -1,5 +1,6 @@
 // Login com Google — alternativa sem senha pra contas que o master já
-// cadastrou (não cria conta nova sozinho, só autentica quem já existe).
+// cadastrou. Também é usado pro autocadastro de cliente por convite (ver
+// server/src/routes/authGoogle.js e server/src/db/convites.js).
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -46,7 +47,8 @@ export async function obterUsuarioGoogle(env, code) {
 
   return {
     email: dados.email,
-    nome: dados.name,
+    nome: dados.given_name ?? null,
+    sobrenome: dados.family_name ?? null,
     emailVerificado: dados.email_verified,
   };
 }

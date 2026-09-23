@@ -1,10 +1,19 @@
 import { Hono } from "hono";
 import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { gerarUrlAutorizacaoGoogle, obterUsuarioGoogle } from "../auth/google.js";
-import { buscarUsuarioPorEmail } from "../db/usuarios.js";
+import { buscarUsuarioPorEmail, criarUsuarioClienteGoogle } from "../db/usuarios.js";
+import { buscarConvitePorEmail, apagarConvitePorEmail } from "../db/convites.js";
 import { criarSessao } from "../auth/sessao.js";
+import { criarHashSenha } from "../auth/senha.js";
 
 export const authGoogleRoutes = new Hono();
+
+// Senha aleatória que ninguém digita — só pra satisfazer a coluna NOT NULL
+// de contas criadas por convite, que só entram via Google.
+async function gerarHashSenhaInutilizavel() {
+  const senhaAleatoria = crypto.randomUUID() + crypto.randomUUID();
+  return criarHashSenha(senhaAleatoria);
+}
 
 const NOME_COOKIE_STATE = "google_oauth_state";
 
@@ -26,8 +35,9 @@ authGoogleRoutes.get("/iniciar", (c) => {
 });
 
 // Passo 2: Google redireciona o navegador pra cá depois do usuário
-// autorizar. Só autentica quem já tem um usuário nosso com esse e-mail —
-// não cria conta nova sozinho.
+// autorizar. Se já existe um usuário com esse e-mail, só autentica. Se não
+// existe mas tem um convite pendente pra esse e-mail, cria a conta "cliente"
+// na hora, já vinculada ao cliente do convite (autocadastro).
 authGoogleRoutes.get("/callback", async (c) => {
   const urlApp = c.env.APP_URL;
   const code = c.req.query("code");
@@ -51,9 +61,24 @@ authGoogleRoutes.get("/callback", async (c) => {
     return c.redirect(`${urlApp}/?google=email_nao_verificado`);
   }
 
-  const usuario = await buscarUsuarioPorEmail(c.env.DB, usuarioGoogle.email);
+  let usuario = await buscarUsuarioPorEmail(c.env.DB, usuarioGoogle.email);
+
   if (!usuario) {
-    return c.redirect(`${urlApp}/?google=conta_nao_encontrada`);
+    const convite = await buscarConvitePorEmail(c.env.DB, usuarioGoogle.email);
+    if (!convite) {
+      return c.redirect(`${urlApp}/?google=conta_nao_encontrada`);
+    }
+
+    const senhaHashAleatorio = await gerarHashSenhaInutilizavel();
+    usuario = await criarUsuarioClienteGoogle(
+      c.env.DB,
+      convite.cliente_id,
+      usuarioGoogle.email,
+      usuarioGoogle.nome,
+      usuarioGoogle.sobrenome,
+      senhaHashAleatorio
+    );
+    await apagarConvitePorEmail(c.env.DB, usuarioGoogle.email);
   }
 
   await criarSessao(c, usuario, c.env.JWT_SECRET);

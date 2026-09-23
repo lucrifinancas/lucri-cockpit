@@ -6,6 +6,7 @@ import { criarHashSenha } from "../auth/senha.js";
 import { salvarCategoriasDespesa, listarMaesPorCategoria, listarOverridesDespesa } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
 import { listarMaes, criarMae, removerMae } from "../db/categoriaMae.js";
+import { listarConvites, criarConvite, removerConvite } from "../db/convites.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { buscarCategorias } from "../contaazul/api.js";
 
@@ -193,6 +194,40 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
   }
   if (resultado === "em_uso") {
     return c.json({ erro: "Essa mãe está em uso por algum grupo. Troque a mãe do grupo antes de apagar." }, 409);
+  }
+  return c.json({ ok: true });
+});
+
+// Convites de acesso pendentes desse cliente — a pessoa aceita entrando com
+// Google (ver server/src/routes/authGoogle.js), sem precisar de senha.
+clientesRoutes.get("/:id/convites", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  return c.json(await listarConvites(c.env.DB, clienteId));
+});
+
+clientesRoutes.post("/:id/convites", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { email } = await c.req.json();
+  const emailLimpo = typeof email === "string" ? email.trim().toLowerCase() : "";
+
+  if (!emailLimpo) {
+    return c.json({ erro: "E-mail é obrigatório." }, 400);
+  }
+
+  const convite = await criarConvite(c.env.DB, clienteId, emailLimpo);
+  if (!convite) {
+    return c.json({ erro: "Esse e-mail já está convidado ou já tem uma conta." }, 409);
+  }
+  return c.json(convite, 201);
+});
+
+clientesRoutes.delete("/:id/convites/:conviteId", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const conviteId = Number(c.req.param("conviteId"));
+
+  const resultado = await removerConvite(c.env.DB, clienteId, conviteId);
+  if (resultado === "nao_encontrado") {
+    return c.json({ erro: "Convite não encontrado." }, 404);
   }
   return c.json({ ok: true });
 });
