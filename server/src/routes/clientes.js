@@ -3,7 +3,7 @@ import { exigirPapel } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
 import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
-import { salvarCategoriasDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
+import { salvarCategoriasDespesa, listarMaesPorCategoria, listarOverridesDespesa } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
 import { listarMaes, criarMae, removerMae } from "../db/categoriaMae.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
@@ -56,8 +56,11 @@ clientesRoutes.post("/:id/login", exigirPapel("master"), async (c) => {
   return c.json(usuario, 201);
 });
 
-// Lista o plano de contas do cliente, com um campo extra `is_despesa`
-// indicando o que o master já marcou (usado na tela de Ajustes).
+// Lista o plano de contas do cliente. `is_despesa` é o valor EFETIVO (conta
+// como despesa nos relatórios ou não): automático (tipo=DESPESA do Conta
+// Azul) por padrão, ou o override do master quando existir (`overridden`
+// avisa o front que esse valor foi escolhido manualmente, não é o
+// automático — ver utils/despesas.js pra mesma regra usada no cálculo real).
 clientesRoutes.get("/:id/categorias", async (c) => {
   const clienteId = Number(c.req.param("id"));
 
@@ -66,24 +69,31 @@ clientesRoutes.get("/:id/categorias", async (c) => {
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const [categorias, marcadas] = await Promise.all([
+  const [categorias, marcadas, overridesDespesa] = await Promise.all([
     buscarCategorias(accessToken),
     listarMaesPorCategoria(c.env.DB, clienteId),
+    listarOverridesDespesa(c.env.DB, clienteId),
   ]);
 
   return c.json(
-    categorias.itens.map((cat) => ({
-      id: cat.id,
-      nome: cat.nome,
-      tipo: cat.tipo,
-      is_despesa: marcadas.has(cat.id),
-      mae_id: marcadas.get(cat.id)?.mae_id ?? null,
-      pai_id: cat.categoria_pai ?? null,
-    }))
+    categorias.itens.map((cat) => {
+      const override = overridesDespesa.get(cat.id);
+      return {
+        id: cat.id,
+        nome: cat.nome,
+        tipo: cat.tipo,
+        is_despesa: override !== undefined ? override : cat.tipo === "DESPESA",
+        overridden: override !== undefined,
+        mae_id: marcadas.get(cat.id)?.mae_id ?? null,
+        pai_id: cat.categoria_pai ?? null,
+      };
+    })
   );
 });
 
-// Salva quais categorias contam como "despesa operacional" — só master.
+// Salva os overrides de "conta como despesa?" — só as categorias onde o
+// master escolheu diferente do automático (tipo=DESPESA), ver
+// utils/despesas.js. Só master.
 clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   const { categorias } = await c.req.json();

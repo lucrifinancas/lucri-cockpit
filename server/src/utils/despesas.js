@@ -18,6 +18,16 @@ export function classificarDespesas(lancamentos, idsDespesa, maePorCategoria) {
     });
 }
 
-export function idsDeDespesa(categorias) {
-  return new Set(categorias.filter((cat) => cat.tipo === "DESPESA").map((cat) => cat.id));
+// Automático por padrão (tipo=DESPESA do Conta Azul), mas o master pode
+// sobrescrever categoria a categoria em Ajustes (`overrides`, vindo de
+// categoria_despesa — ver categoriaDespesa.js). Sem nenhum override salvo
+// pro cliente, o comportamento é idêntico a antes.
+export function idsDeDespesa(categorias, overrides = new Map()) {
+  const ids = new Set();
+  for (const cat of categorias) {
+    const override = overrides.get(cat.id);
+    const conta = override !== undefined ? override : cat.tipo === "DESPESA";
+    if (conta) ids.add(cat.id);
+  }
+  return ids;
 }

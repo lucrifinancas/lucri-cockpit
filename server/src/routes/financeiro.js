@@ -6,6 +6,7 @@ import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre, buscarCat
 import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
 import { listarNomesPai } from "../db/categoriaPaiNome.js";
+import { listarOverridesDespesa } from "../db/categoriaDespesa.js";
 import { classificarDespesas, idsDeDespesa } from "../utils/despesas.js";
 
 export const financeiroRoutes = new Hono();
@@ -55,10 +56,11 @@ financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), 
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const [dados, categorias, nomesPai] = await Promise.all([
+  const [dados, categorias, nomesPai, overridesDespesa] = await Promise.all([
     buscarContasAPagar(accessToken, { de, ate }),
     buscarCategorias(accessToken),
     listarNomesPai(c.env.DB, clienteId),
+    listarOverridesDespesa(c.env.DB, clienteId),
   ]);
 
   // A mãe é o grupo (categoria-pai) do Conta Azul: o master dá o nome de cada
@@ -73,7 +75,7 @@ financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), 
   // nome: "Sem mãe".
   const lancamentos = classificarDespesas(
     dados.itens.map((item) => normalizarLancamento(item, "saida")),
-    idsDeDespesa(categorias.itens),
+    idsDeDespesa(categorias.itens, overridesDespesa),
     maePorCategoria
   );
 
@@ -180,13 +182,15 @@ financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "anal
   const ate = hoje.toISOString().slice(0, 10);
   const hojeISO = ate;
 
-  const [contasAReceber, contasAPagar, categorias] = await Promise.all([
+  const [contasAReceber, contasAPagar, categorias, overridesDespesa] = await Promise.all([
     buscarContasAReceber(accessToken, { de, ate }),
     buscarContasAPagar(accessToken, { de, ate }),
     buscarCategorias(accessToken),
+    listarOverridesDespesa(c.env.DB, clienteId),
   ]);
-  // Mesma regra de /despesas: toda categoria do tipo DESPESA conta.
-  const categoriaIdsDespesa = idsDeDespesa(categorias.itens);
+  // Mesma regra de /despesas: automático (tipo DESPESA), com override
+  // manual do master por cima quando existir.
+  const categoriaIdsDespesa = idsDeDespesa(categorias.itens, overridesDespesa);
 
   const buckets = new Map();
   function bucket(dataVencimento) {

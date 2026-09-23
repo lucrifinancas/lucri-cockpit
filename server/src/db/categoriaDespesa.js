@@ -1,9 +1,13 @@
-export async function listarCategoriaIdsDespesa(db, clienteId) {
+// Override manual de "essa categoria conta como despesa?" — só existe uma
+// linha aqui quando o master mexeu explicitamente naquela categoria (ver
+// utils/despesas.js: sem override, vale o tipo=DESPESA automático do Conta
+// Azul). categoria_id -> true/false.
+export async function listarOverridesDespesa(db, clienteId) {
   const { results } = await db
-    .prepare("SELECT categoria_id FROM categoria_despesa WHERE cliente_id = ? AND is_despesa = 1")
+    .prepare("SELECT categoria_id, is_despesa FROM categoria_despesa WHERE cliente_id = ?")
     .bind(clienteId)
     .all();
-  return new Set(results.map((r) => r.categoria_id));
+  return new Map(results.map((r) => [r.categoria_id, Boolean(r.is_despesa)]));
 }
 
 // categoria_id -> { mae_id, mae_nome } de todas as despesas marcadas do cliente.
@@ -21,8 +25,9 @@ export async function listarMaesPorCategoria(db, clienteId) {
   return new Map(results.map((r) => [r.categoria_id, { mae_id: r.mae_id, mae_nome: r.mae_nome }]));
 }
 
-// Substitui a marcação inteira do cliente pela lista recebida (mais simples
-// e previsível do front do que ficar mandando diffs de marcar/desmarcar).
+// Substitui os overrides do cliente pela lista recebida — só as categorias
+// onde o master escolheu diferente do automático precisam vir aqui (ver
+// AjustesPage.jsx: manda só o diff, não a lista inteira de categorias).
 export async function salvarCategoriasDespesa(db, clienteId, categorias) {
   const statements = [
     db.prepare("DELETE FROM categoria_despesa WHERE cliente_id = ?").bind(clienteId),
@@ -30,9 +35,9 @@ export async function salvarCategoriasDespesa(db, clienteId, categorias) {
       db
         .prepare(
           `INSERT INTO categoria_despesa (cliente_id, categoria_id, categoria_nome, is_despesa, mae_id)
-           VALUES (?, ?, ?, 1, ?)`
+           VALUES (?, ?, ?, ?, ?)`
         )
-        .bind(clienteId, cat.categoria_id, cat.categoria_nome, cat.mae_id ?? null)
+        .bind(clienteId, cat.categoria_id, cat.categoria_nome, cat.is_despesa ? 1 : 0, cat.mae_id ?? null)
     ),
   ];
   await db.batch(statements);
