@@ -59,7 +59,7 @@
 }
 
 .pending-notice-link {
-  color: var(--lucri-mint);
+  color: var(--lucri-mint-text);
   font-weight: 600;
   text-decoration: underline;
 }

@@ -64,11 +64,11 @@
 }
 
 .status-ok {
-  color: var(--lucri-mint);
+  color: var(--lucri-mint-text);
 }
 
 .status-error {
-  color: var(--chart-despesa);
+  color: var(--danger-text);
 }
 
 .toggle-switch {
@@ -389,6 +389,6 @@
 }
 
 .categoria-faltam {
-  color: var(--chart-despesa);
+  color: var(--danger-text);
   font-weight: 600;
 }

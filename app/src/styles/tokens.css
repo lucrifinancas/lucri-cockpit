@@ -5,8 +5,10 @@
 :root {
   --lucri-night: #010116;
   --lucri-mint: #00eb85;
+  --lucri-mint-on-dark: #2ae8a4;
   --lucri-sky: #00d0f5;
   --lucri-white: #ffffff;
+  --lucri-cream: #f7f7f2;
   --lucri-gradient: linear-gradient(90deg, var(--lucri-sky), var(--lucri-mint));
 
   --bg-app: var(--lucri-white);
@@ -23,6 +25,14 @@
   --cta: var(--lucri-mint);
   --danger: #e2453c;
 
+  /* Variantes escurecidas pra TEXTO em fundo claro — --lucri-mint e --danger
+     puros dão 1.59:1 e 4.08:1 contra --bg-panel branco (WCAG AA pede 3:1 em
+     texto grande, 4.5:1 em texto pequeno). Essas passam nos dois (5.4:1 e
+     5.3:1). Usar só quando a cor carrega texto (valor, link, status); fundo
+     de pílula/dot/ícone continua com --lucri-mint/--danger puros. */
+  --lucri-mint-text: #007a45;
+  --danger-text: #c23a2f;
+
   /* Cores semânticas de gráfico — mesmo padrão dos relatórios: receita em
      verde (marca), despesa em coral (fora da paleta de marca, só pra gráfico,
      igual o próprio relatório já faz), caixa/lucro em azul-céu (marca). */
@@ -35,6 +45,7 @@
   --font-title: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 
+  --radius-control: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-pill: 999px;
@@ -55,6 +66,11 @@
   --text-muted: #747592;
 
   --chart-saldo: #8a8ba0;
+
+  /* No escuro os tokens puros já têm contraste de sobra (11.4:1 e 6.4:1
+     contra --bg-panel escuro) — sem precisar escurecer. */
+  --lucri-mint-text: var(--lucri-mint);
+  --danger-text: var(--chart-despesa);
 }
 
 * {

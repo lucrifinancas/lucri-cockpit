@@ -8,7 +8,7 @@ export default function PeriodSelector() {
   return (
     <div className="period-selector">
       <div className="select-wrap">
-        <select value={preset} onChange={(e) => setPreset(e.target.value)}>
+        <select aria-label="Período" value={preset} onChange={(e) => setPreset(e.target.value)}>
           {PRESETS.map((p) => (
             <option key={p.id} value={p.id}>
               {p.label}
@@ -20,7 +20,13 @@ export default function PeriodSelector() {
 
       {preset === "mes-especifico" && (
         <div className="period-custom">
-          <input type="month" lang="pt-BR" value={month} onChange={(e) => setMonth(e.target.value)} />
+          <input
+            type="month"
+            lang="pt-BR"
+            aria-label="Mês"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+          />
         </div>
       )}
 
@@ -29,6 +35,7 @@ export default function PeriodSelector() {
           <input
             type="date"
             lang="pt-BR"
+            aria-label="Data inicial"
             value={custom.start ?? ""}
             onChange={(e) => setCustomRange({ ...custom, start: e.target.value })}
           />
@@ -36,6 +43,7 @@ export default function PeriodSelector() {
           <input
             type="date"
             lang="pt-BR"
+            aria-label="Data final"
             value={custom.end ?? ""}
             onChange={(e) => setCustomRange({ ...custom, end: e.target.value })}
           />

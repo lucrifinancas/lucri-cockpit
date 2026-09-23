@@ -69,11 +69,11 @@
 }
 
 .stat-card-value.tone-positive {
-  color: var(--lucri-mint);
+  color: var(--lucri-mint-text);
 }
 
 .stat-card-value.tone-negative {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .stat-card-delta {
@@ -82,11 +82,11 @@
 }
 
 .stat-card-delta.delta-up {
-  color: var(--lucri-mint);
+  color: var(--lucri-mint-text);
 }
 
 .stat-card-delta.delta-down {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .stat-card-icon {
