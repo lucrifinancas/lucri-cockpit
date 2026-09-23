@@ -7,6 +7,7 @@ import { contaazulOnboardingRoutes } from "./routes/contaazulOnboarding.js";
 import { homeRoutes } from "./routes/home.js";
 import { financeiroRoutes } from "./routes/financeiro.js";
 import { ContaAzulDesconectadaError } from "./contaazul/errors.js";
+import { recalcularHistoricoPendente } from "./cron/historico.js";
 
 const app = new Hono();
 
@@ -51,4 +52,12 @@ app.route("/api/contaazul", contaazulOnboardingRoutes);
 app.route("/api/clientes", homeRoutes);
 app.route("/api/clientes", financeiroRoutes);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // Recalcula histórico mensal pendente em fatias pequenas (ver
+  // cron/historico.js e o schedule em wrangler.toml) — não bloqueia
+  // requisições HTTP, roda em paralelo via waitUntil.
+  scheduled(event, env, ctx) {
+    ctx.waitUntil(recalcularHistoricoPendente(env));
+  },
+};

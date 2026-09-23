@@ -7,6 +7,8 @@ import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
 import { listarOverridesDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
 import { classificarDespesas, idsDeDespesa } from "../utils/despesas.js";
+import { ultimosMeses } from "../contaazul/historico.js";
+import { listarHistoricoMensal } from "../db/historicoMensal.js";
 
 export const financeiroRoutes = new Hono();
 
@@ -154,74 +156,30 @@ const MESES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-function chaveMes(dataISO) {
-  return dataISO.slice(0, 7); // "2026-08-15" -> "2026-08"
-}
-
 // Histórico dos últimos N meses — Receitas x Despesas, Resultado
-// (lucro/prejuízo) e Contas a receber vencidas, tudo por mês de
-// vencimento. Busca contas a receber/pagar numa janela larga (2 chamadas
-// no total, em vez de 1 por mês) e agrupa localmente. Regime de caixa em
-// tudo (ver "⚠️ Regime de caixa" no API-CONTRACT.md).
+// (lucro/prejuízo) e Contas a receber vencidas. Lê de `historico_mensal`
+// (pré-computado por src/cron/historico.js), não mais ao vivo na Conta
+// Azul: buscar 12 meses de contas a pagar/receber numa invocação só
+// estourava o limite de subrequisições do Worker pra cliente com bastante
+// lançamento (ver CHECKLIST-V1.0.md, achado de 23/09). Só os últimos 12
+// meses têm cron rodando; pedir mais que isso devolve zero nos meses mais
+// antigos em vez de calcular na hora.
 financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const meses = Math.min(Math.max(Number(c.req.query("meses")) || 12, 1), 24);
 
-  const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
-  if (!accessToken) {
-    return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
-  }
+  const mesesChaves = ultimosMeses(meses);
+  const historico = await listarHistoricoMensal(c.env.DB, clienteId, mesesChaves);
 
-  const hoje = new Date();
-  const primeiroMes = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1);
-  const de = primeiroMes.toISOString().slice(0, 10);
-  const ate = hoje.toISOString().slice(0, 10);
-  const hojeISO = ate;
-
-  const [contasAReceber, contasAPagar, categorias, overridesDespesa] = await Promise.all([
-    buscarContasAReceber(accessToken, { de, ate }),
-    buscarContasAPagar(accessToken, { de, ate }),
-    buscarCategorias(accessToken),
-    listarOverridesDespesa(c.env.DB, clienteId),
-  ]);
-  // Mesma regra de /despesas: automático (tipo DESPESA), com override
-  // manual do master por cima quando existir.
-  const categoriaIdsDespesa = idsDeDespesa(categorias.itens, overridesDespesa);
-
-  const buckets = new Map();
-  function bucket(dataVencimento) {
-    const chave = chaveMes(dataVencimento);
-    if (!buckets.has(chave)) {
-      buckets.set(chave, { receitas: 0, despesas: 0, vencidas: 0 });
-    }
-    return buckets.get(chave);
-  }
-
-  for (const item of contasAReceber.itens) {
-    const b = bucket(item.data_vencimento);
-    b.receitas += item.pago ?? 0;
-    if ((item.nao_pago ?? 0) > 0 && item.data_vencimento < hojeISO) {
-      b.vencidas += item.nao_pago;
-    }
-  }
-
-  for (const item of contasAPagar.itens) {
-    const categoriaId = item.categorias?.[0]?.id;
-    if (!categoriaId || !categoriaIdsDespesa.has(categoriaId)) continue;
-    bucket(item.data_vencimento).despesas += item.pago ?? 0;
-  }
-
-  const mesesLista = Array.from({ length: meses }, (_, i) => {
-    const ref = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1 - i), 1);
-    const chave = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, "0")}`;
-    const b = buckets.get(chave) ?? { receitas: 0, despesas: 0, vencidas: 0 };
+  const mesesLista = historico.map((h) => {
+    const [, mesNum] = h.mes.split("-").map(Number);
     return {
-      mes: chave,
-      label: MESES[ref.getMonth()],
-      receitas: b.receitas,
-      despesas: b.despesas,
-      resultado: b.receitas - b.despesas,
-      vencidas: b.vencidas,
+      mes: h.mes,
+      label: MESES[mesNum - 1],
+      receitas: h.receitas,
+      despesas: h.despesas,
+      resultado: h.receitas - h.despesas,
+      vencidas: h.vencidas,
     };
   });
 

@@ -21,6 +21,13 @@ export async function buscarConexaoPorCliente(db, clienteId) {
     .first();
 }
 
+// Ids dos clientes com Conta Azul conectado — usado pelo cron de histórico
+// pra saber quem precisa de recálculo (ver cron/historico.js).
+export async function listarClienteIdsConectados(db) {
+  const { results } = await db.prepare("SELECT cliente_id FROM conexoes_contaazul").all();
+  return results.map((r) => r.cliente_id);
+}
+
 export async function atualizarTokens(db, clienteId, { accessToken, refreshToken, expiraEm }) {
   await db
     .prepare(
