@@ -5,8 +5,7 @@ import { resolverPeriodo } from "../utils/periodo.js";
 import { buscarContasAPagar, buscarContasAReceber, buscarEstruturaDre, buscarCategorias } from "../contaazul/api.js";
 import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
-import { listarNomesPai } from "../db/categoriaPaiNome.js";
-import { listarOverridesDespesa } from "../db/categoriaDespesa.js";
+import { listarOverridesDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
 import { classificarDespesas, idsDeDespesa } from "../utils/despesas.js";
 
 export const financeiroRoutes = new Hono();
@@ -56,23 +55,20 @@ financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), 
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const [dados, categorias, nomesPai, overridesDespesa] = await Promise.all([
+  const [dados, categorias, maePorCategoria, overridesDespesa] = await Promise.all([
     buscarContasAPagar(accessToken, { de, ate }),
     buscarCategorias(accessToken),
-    listarNomesPai(c.env.DB, clienteId),
+    listarMaesPorCategoria(c.env.DB, clienteId),
     listarOverridesDespesa(c.env.DB, clienteId),
   ]);
 
-  // A mãe é o grupo (categoria-pai) do Conta Azul: o master dá o nome de cada
-  // grupo uma vez em Ajustes e toda despesa do grupo herda esse nome — inclusive
-  // as criadas depois. Só o código do grupo vem do Conta Azul, o nome não.
-  const maePorCategoria = new Map(
-    categorias.itens.map((cat) => [cat.id, { mae_nome: nomesPai.get(cat.categoria_pai) ?? null }])
-  );
+  // A categoria master é escolhida pelo master por despesa individual em
+  // Ajustes (não pelo agrupamento do Conta Azul, que mistura categorias sem
+  // relação entre si). Despesa ainda sem categoria master cai em "Sem mãe".
 
-  // Toda categoria de despesa conta, agrupada pela mãe (ex: "Despesas
-  // Administrativas"), com a despesa original em `subcategoria`. Grupo ainda sem
-  // nome: "Sem mãe".
+  // Toda categoria de despesa conta, agrupada pela categoria master (ex:
+  // "Despesas Administrativas"), com a despesa original em `subcategoria`.
+  // Sem categoria master: "Sem mãe".
   const lancamentos = classificarDespesas(
     dados.itens.map((item) => normalizarLancamento(item, "saida")),
     idsDeDespesa(categorias.itens, overridesDespesa),

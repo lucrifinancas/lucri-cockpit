@@ -21,8 +21,8 @@ export async function criarMae(db, clienteId, nome) {
   return { id: meta.last_row_id, nome };
 }
 
-// Só apaga se nenhum grupo do cliente estiver usando essa mãe. Devolve
-// "nao_encontrada", "em_uso" ou "ok".
+// Só apaga se nenhuma despesa do cliente estiver usando essa categoria
+// master. Devolve "nao_encontrada", "em_uso" ou "ok".
 export async function removerMae(db, clienteId, maeId) {
   const mae = await db
     .prepare("SELECT nome FROM categoria_mae WHERE id = ? AND cliente_id = ?")
@@ -31,8 +31,8 @@ export async function removerMae(db, clienteId, maeId) {
   if (!mae) return "nao_encontrada";
 
   const emUso = await db
-    .prepare("SELECT 1 FROM categoria_pai_nome WHERE cliente_id = ? AND nome = ? COLLATE NOCASE LIMIT 1")
-    .bind(clienteId, mae.nome)
+    .prepare("SELECT 1 FROM categoria_despesa WHERE cliente_id = ? AND mae_id = ? LIMIT 1")
+    .bind(clienteId, maeId)
     .first();
   if (emUso) return "em_uso";
 

@@ -174,7 +174,7 @@
 }
 
 .profile-save {
-  background: var(--lucri-gradient);
+  background: var(--cta);
   border: none;
   border-radius: var(--radius-md);
   padding: 10px 20px;
@@ -199,7 +199,7 @@
 }
 
 .onboarding-form button {
-  background: var(--lucri-gradient);
+  background: var(--cta);
   border: none;
   border-radius: var(--radius-md);
   padding: 10px 16px;
@@ -223,35 +223,6 @@
 .settings-list-scroll {
   max-height: 320px;
   overflow-y: auto;
-}
-
-/* Lista de despesas com o seletor de mãe em cada linha. */
-.categoria-mae-select {
-  background: var(--bg-app);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 8px 10px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.categoria-mae-select {
-  flex-shrink: 0;
-  min-width: 180px;
-  max-width: 240px;
-}
-
-.categoria-linha {
-  align-items: center;
-}
-
-.categoria-linha-nome {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
 }
 
 /* Cadastro da lista de mães do cliente + seleção por grupo. */
@@ -334,69 +305,90 @@
   color: var(--text-primary);
 }
 
-/* Atribuição em lote: por grupo do Conta Azul e seleção múltipla. */
-.categoria-grupos-lista {
-  max-height: 240px;
+/* Chip da categoria master vira clicável: seleciona ela como "ativa" pra
+   marcar despesas em lote. */
+.mae-chip-selecionavel {
+  padding-left: 0;
 }
 
-.categoria-grupo-amostra {
+.mae-chip-nome {
+  padding: 4px 4px 4px 10px;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.mae-chip-ativa {
+  background: var(--cta);
+}
+
+.mae-chip-ativa .mae-chip-nome {
+  color: var(--lucri-night);
+}
+
+.mae-chip-ativa .mae-chip-remove {
+  color: var(--lucri-night);
+  opacity: 0.7;
+}
+
+.mae-chip-ativa .mae-chip-remove:hover {
+  background: rgba(1, 1, 22, 0.15);
+  opacity: 1;
+}
+
+/* Grade de despesas individuais: cada uma é um cardzinho clicável que
+   entra/sai da categoria master ativa. */
+.despesa-cat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 420px;
+}
+
+.despesa-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.despesa-cat-chip:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+
+.despesa-cat-chip-selecionada {
+  background: var(--cta);
+  border-color: transparent;
+  color: var(--lucri-night);
+  font-weight: 700;
+}
+
+.despesa-cat-chip-desabilitada {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.despesa-cat-chip-mae {
   font-size: 11px;
+  font-weight: 600;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
 }
 
 .categoria-faltam {
   color: var(--chart-despesa);
   font-weight: 600;
-}
-
-/* Grupos do Conta Azul: uma despesa de exemplo + seletor da mãe. */
-.categoria-grupos-lista {
-  max-height: 520px;
-}
-
-.categoria-grupo-item {
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.categoria-grupo-item:last-child {
-  border-bottom: none;
-}
-
-.categoria-grupo-item .categoria-linha {
-  border-bottom: none;
-}
-
-.categoria-grupo-exemplo {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.categoria-grupo-ver {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.categoria-grupo-ver:hover {
-  color: var(--text-primary);
-  text-decoration: underline;
-}
-
-.categoria-grupo-despesas {
-  margin: 0 0 12px;
-  padding: 0 4px 0 20px;
-  list-style: disc;
-  font-size: 12px;
-  color: var(--text-secondary);
-  columns: 2;
-  column-gap: 24px;
 }
