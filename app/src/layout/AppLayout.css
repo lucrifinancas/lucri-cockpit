@@ -1,125 +1,104 @@
 .app-shell {
-  display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background: var(--bg-subtle);
 }
 
-/* Cartão flutuante: branco (--bg-panel) com cantos arredondados e sombra,
-   solto do canto da tela. Layout inspirado na referência de sidebar simples. */
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  margin: 16px 0 16px 16px;
-  padding: 20px 16px 16px;
-  background: var(--bg-panel);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px rgba(1, 1, 22, 0.1);
+/* Navbar horizontal fixa no topo, mesmo cartão flutuante que a sidebar
+   antiga usava (bg-panel, cantos arredondados, sombra), só que deitado. */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  overflow-y: auto;
+  align-items: center;
+  gap: 20px;
+  margin: 16px;
+  padding: 10px 16px;
+  background: var(--bg-panel);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 24px rgba(1, 1, 22, 0.1);
 }
 
-.sidebar-brand {
+.topnav-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 4px;
-}
-
-.sidebar-logo {
-  width: 28px;
-  height: 28px;
   flex-shrink: 0;
 }
 
-.sidebar-name {
-  font-size: 16px;
+.topnav-logo {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.topnav-name {
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
 }
 
-.sidebar-version {
-  align-self: center;
-  margin-bottom: -12px;
+.topnav-version {
   font-size: 10px;
   font-weight: 700;
   color: var(--lucri-night);
-  background: var(--lucri-gradient);
+  background: var(--cta);
   padding: 2px 7px;
   border-radius: 999px;
   letter-spacing: 0.02em;
 }
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.sidebar-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.sidebar-link {
+.topnav-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
+  gap: 2px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.topnav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
   color: var(--text-secondary);
   text-decoration: none;
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.sidebar-link svg {
+.topnav-link svg {
   flex-shrink: 0;
 }
 
-.sidebar-link:hover {
+.topnav-link:hover {
   background: var(--bg-subtle);
   color: var(--text-primary);
 }
 
 /* Item ativo: preenchido, sem cor nova — inverte texto e fundo do tema
    (noite com texto claro no tema claro; claro com texto escuro no escuro). */
-.sidebar-link.active {
+.topnav-link.active {
   background: var(--text-primary);
   color: var(--bg-panel);
-  box-shadow: 0 2px 6px rgba(1, 1, 22, 0.18);
 }
 
-.app-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.app-header {
+.topnav-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
-.app-header-client {
+.topnav-client {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .select-wrap {
@@ -157,39 +136,64 @@
   pointer-events: none;
 }
 
-.app-header-client .select-wrap select {
+.topnav-client .select-wrap select {
   font-weight: 700;
 }
 
-.app-header-client strong {
-  font-size: 15px;
+.topnav-client strong {
+  font-size: 14px;
+  white-space: nowrap;
 }
 
-.app-header-user {
-  margin-left: auto;
+.topnav-user {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border-subtle);
 }
 
-.app-header-user-text {
+.topnav-user-text {
   display: flex;
   flex-direction: column;
   line-height: 1.3;
 }
 
-.app-header-user-text strong {
+.topnav-user-text strong {
   font-size: 13px;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
-.app-header-user-text span {
-  font-size: 12px;
+.topnav-user-text span {
+  font-size: 11px;
   color: var(--text-muted);
 }
 
+.topnav-iconbtn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topnav-iconbtn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.topnav-iconbtn.active {
+  background: var(--text-primary);
+  color: var(--bg-panel);
+}
+
 .app-content {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
+  padding: 8px 24px 24px;
 }

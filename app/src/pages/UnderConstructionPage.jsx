@@ -9,7 +9,7 @@ export default function UnderConstructionPage({ title }) {
         <span className="under-construction-icon">🚧</span>
         <p>
           Em construção | O time está focado na <strong>Home</strong> nesta
-          etapa (Beta 1.0). Volta em breve.
+          etapa (Beta 1.5). Volta em breve.
         </p>
       </div>
     </div>

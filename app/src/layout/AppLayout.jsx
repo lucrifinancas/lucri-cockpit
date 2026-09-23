@@ -37,44 +37,30 @@ export default function AppLayout() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <img src={logoSymbol} alt="" className="sidebar-logo" />
-          <span className="sidebar-name">Lucri Cockpit</span>
+      <header className="topnav">
+        <div className="topnav-brand">
+          <img src={logoSymbol} alt="" className="topnav-logo" />
+          <span className="topnav-name">Lucri Cockpit</span>
+          <span className="topnav-version">Beta 1.5</span>
         </div>
-        <nav className="sidebar-nav">
+
+        <nav className="topnav-nav">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
+              className={({ isActive }) => "topnav-link" + (isActive ? " active" : "")}
             >
-              <item.icon size={20} weight="light" />
+              <item.icon size={18} weight="light" />
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <span className="sidebar-version">Beta 1.0</span>
-        <div className="sidebar-footer">
-          <NavLink
-            to="/ajustes"
-            className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
-          >
-            <GearSix size={20} weight="light" />
-            Ajustes
-          </NavLink>
-          <button className="sidebar-link" onClick={logout}>
-            <SignOut size={20} weight="light" />
-            Sair
-          </button>
-        </div>
-      </aside>
 
-      <div className="app-main">
-        <header className="app-header">
-          <div className="app-header-client">
-            <ClientAvatar client={activeClient} />
+        <div className="topnav-actions">
+          <div className="topnav-client">
+            <ClientAvatar client={activeClient} size={28} />
             {canSwitchClient ? (
               <div className="select-wrap">
                 <select
@@ -96,19 +82,30 @@ export default function AppLayout() {
 
           <PeriodSelector />
 
-          <div className="app-header-user">
-            <ClientAvatar client={{ name: profile.name, logoUrl: profile.avatarUrl }} size={36} />
-            <div className="app-header-user-text">
+          <div className="topnav-user">
+            <ClientAvatar client={{ name: profile.name, logoUrl: profile.avatarUrl }} size={32} />
+            <div className="topnav-user-text">
               <strong>{profile.name}</strong>
               <span>{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
             </div>
           </div>
-        </header>
 
-        <main className="app-content">
-          <Outlet />
-        </main>
-      </div>
+          <NavLink
+            to="/ajustes"
+            className={({ isActive }) => "topnav-iconbtn" + (isActive ? " active" : "")}
+            title="Ajustes"
+          >
+            <GearSix size={18} weight="light" />
+          </NavLink>
+          <button className="topnav-iconbtn" onClick={logout} title="Sair">
+            <SignOut size={18} weight="light" />
+          </button>
+        </div>
+      </header>
+
+      <main className="app-content">
+        <Outlet />
+      </main>
     </div>
   );
 }
