@@ -64,6 +64,7 @@ export default function AppLayout() {
             {canSwitchClient ? (
               <div className="select-wrap">
                 <select
+                  aria-label="Cliente ativo"
                   value={activeClientId ?? ""}
                   onChange={(e) => setSelectedClientId(Number(e.target.value))}
                 >

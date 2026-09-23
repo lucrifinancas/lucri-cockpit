@@ -3,20 +3,26 @@
   background: var(--bg-subtle);
 }
 
-/* Navbar horizontal fixa no topo, mesmo cartão flutuante que a sidebar
-   antiga usava (bg-panel, cantos arredondados, sombra), só que deitado. */
+/* Cor de fundo do {component.global-nav} do Design System (fundo
+   {color.bg-dark} SEMPRE, não segue o tema claro/escuro do app), mas
+   flutuando (margem + cantos arredondados + sombra) por pedido do Augusto
+   — a versão colada na borda da tela ele não gostou. Os links de página
+   vivem aqui em vez de numa sidebar por decisão do produto (23/09). */
 .topnav {
   position: sticky;
-  top: 0;
+  top: 16px;
   z-index: 10;
   display: flex;
   align-items: center;
   gap: 20px;
+  height: 56px;
   margin: 16px;
-  padding: 10px 16px;
-  background: var(--bg-panel);
+  padding: 0 20px;
+  background: rgba(1, 1, 22, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: var(--radius-pill);
-  box-shadow: 0 8px 24px rgba(1, 1, 22, 0.1);
+  box-shadow: 0 8px 24px rgba(1, 1, 22, 0.18);
 }
 
 .topnav-brand {
@@ -27,25 +33,27 @@
 }
 
 .topnav-logo {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 .topnav-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--lucri-white);
   white-space: nowrap;
 }
 
+/* Selo pequeno sobre fundo escuro fixo — usa o verde on-dark do Design
+   System ({color.green-onDark}), não o {color.green} de fundo claro. */
 .topnav-version {
   font-size: 10px;
   font-weight: 700;
   color: var(--lucri-night);
-  background: var(--cta);
+  background: var(--lucri-mint-on-dark);
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   letter-spacing: 0.02em;
 }
 
@@ -54,20 +62,24 @@
   align-items: center;
   gap: 2px;
   flex: 1;
+  height: 100%;
   overflow-x: auto;
 }
 
+/* {type.nav-link} + grammar "utilitário" ({radius.control}, nunca pill —
+   pill é só pra {component.button-primary}/CTA). */
 .topnav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  border-radius: var(--radius-pill);
-  color: var(--text-secondary);
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  color: var(--lucri-cream);
   text-decoration: none;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -77,15 +89,23 @@
 }
 
 .topnav-link:hover {
-  background: var(--bg-subtle);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--lucri-white);
 }
 
-/* Item ativo: preenchido, sem cor nova — inverte texto e fundo do tema
-   (noite com texto claro no tema claro; claro com texto escuro no escuro). */
+.topnav-link:focus-visible,
+.topnav-iconbtn:focus-visible {
+  outline: 2px solid var(--lucri-sky);
+  outline-offset: 2px;
+}
+
+/* Ativo: fundo verde on-dark ~12% + texto/ícone branco puro + peso maior —
+   cor nunca é o único sinal (acessibilidade), aqui o segundo sinal é o
+   peso da fonte em vez de uma borda (tirada por pedido do Augusto). */
 .topnav-link.active {
-  background: var(--text-primary);
-  color: var(--bg-panel);
+  background: rgba(42, 232, 164, 0.12);
+  color: var(--lucri-white);
+  font-weight: 700;
 }
 
 .topnav-actions {
@@ -93,6 +113,7 @@
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  height: 100%;
 }
 
 .topnav-client {
@@ -110,29 +131,29 @@
 .select-wrap select {
   appearance: none;
   -webkit-appearance: none;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-control);
   padding: 8px 32px 8px 12px;
-  color: var(--text-primary);
+  color: var(--lucri-white);
   font-family: var(--font-body);
   font-size: 13px;
   cursor: pointer;
 }
 
 .select-wrap select:hover {
-  border-color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.select-wrap select:focus {
-  outline: none;
-  border-color: var(--lucri-sky);
+.select-wrap select:focus-visible {
+  outline: 2px solid var(--lucri-sky);
+  outline-offset: 2px;
 }
 
 .select-caret {
   position: absolute;
   right: 10px;
-  color: var(--text-muted);
+  color: var(--lucri-cream);
   pointer-events: none;
 }
 
@@ -142,6 +163,7 @@
 
 .topnav-client strong {
   font-size: 14px;
+  color: var(--lucri-white);
   white-space: nowrap;
 }
 
@@ -150,7 +172,7 @@
   align-items: center;
   gap: 8px;
   padding-left: 14px;
-  border-left: 1px solid var(--border-subtle);
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .topnav-user-text {
@@ -161,13 +183,14 @@
 
 .topnav-user-text strong {
   font-size: 13px;
-  color: var(--text-primary);
+  color: var(--lucri-white);
   white-space: nowrap;
 }
 
 .topnav-user-text span {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--lucri-cream);
+  opacity: 0.7;
 }
 
 .topnav-iconbtn {
@@ -177,23 +200,37 @@
   height: 34px;
   flex-shrink: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-control);
   background: none;
-  color: var(--text-secondary);
+  color: var(--lucri-cream);
   text-decoration: none;
   cursor: pointer;
 }
 
 .topnav-iconbtn:hover {
-  background: var(--bg-subtle);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--lucri-white);
 }
 
 .topnav-iconbtn.active {
-  background: var(--text-primary);
-  color: var(--bg-panel);
+  background: rgba(42, 232, 164, 0.12);
+  color: var(--lucri-white);
+}
+
+/* Período/data dentro da navbar herdam o input do Design System, mas essa
+   navbar é fundo escuro fixo — sobrescreve os tokens de tema (que
+   assumiriam fundo claro no tema claro do app). */
+.topnav .period-selector input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-control);
+  color: var(--lucri-white);
+}
+
+.topnav .period-custom {
+  color: var(--lucri-cream);
 }
 
 .app-content {
-  padding: 8px 24px 24px;
+  padding: 24px;
 }
