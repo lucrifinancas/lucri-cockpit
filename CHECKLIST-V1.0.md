@@ -80,13 +80,28 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
   formulário de e-mail + senha inicial (`POST /api/clientes/:id/login`,
   só `master`) mencionado em `CHECKLIST-FRONTEND.md`. Segue sem UI.
 
-## 🟢 Configuração pendente (não é código, é ação manual)
+## ✳️ Achados novos de 23/09 (não bloqueiam v1.0, mas valem registro)
 
-- [ ] **Marcar categorias de Despesa por cliente** — o backend/front estão
-  prontos, mas não dá pra confirmar de código se alguém já marcou alguma
-  categoria pra algum cliente (Ajustes → Categorias de Despesa). Sem isso,
-  Despesas aparece zerada pra esse cliente. Verificar pelo menos pra Nick
-  Publicidade.
+- [x] **Despesa passou a contar automático (23/09)** — antes só contava
+  categoria marcada manualmente, e ninguém tinha marcado nenhuma ainda em
+  produção (Despesas estava zerada pra todo mundo). Agora é automático por
+  `tipo=DESPESA` do Conta Azul, com override manual por categoria pra
+  exceção.
+- [x] **Categoria master trocou de "por grupo do Conta Azul" pra "por
+  despesa individual" (23/09)** — o agrupamento do Conta Azul mistura
+  categorias sem relação dentro do mesmo grupo (ex: exame médico dentro de
+  "Confraternizações"). Ajustes → Categorias de Despesa agora deixa
+  escolher a categoria master ativa e marcar várias despesas de uma vez
+  pra ela, em vez de 1 dropdown por grupo do Conta Azul.
+- [ ] **Empréstimo pago e Antecipação de Lucros contam como despesa,
+  mas não deveriam** — comparei `tipo=DESPESA` contra a árvore oficial de
+  DRE do Conta Azul (Nick Publicidade, 120 categorias): `Antecipação de
+  Lucros`, `Empréstimos de Bancos`, `Empréstimos de Outras Instituições` e
+  `Empréstimos de Sócios` são movimentação de caixa/patrimônio, não custo
+  operacional (só o juro do empréstimo é despesa de verdade, e esse —
+  `Juros pagos` — nem está mapeado na DRE do contador ainda). É uma regra
+  genérica (vale pra qualquer cliente), mas decisão adiada — ver mensagem
+  do Augusto de 23/09.
 
 ## ✳️ Achados novos de 10/09 (não bloqueiam v1.0, mas valem registro)
 
