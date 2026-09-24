@@ -19,6 +19,23 @@ automaticamente) — o front não precisa se preocupar com isso, os
   ser enviado/recebido (domínios diferentes entre front e back).
 - Rotas marcadas como **protegidas** retornam `401` se não houver sessão
   válida, e `403` se o papel do usuário não tiver permissão para aquela ação.
+- Trocar a senha (`/alterar-senha` ou `/redefinir-senha`) **derruba
+  qualquer outra sessão aberta** daquele usuário (em qualquer aba/
+  dispositivo) — é proposital, ver `RELATORIO-SEGURANCA-2026-09-24.md`,
+  achado 2. O front deve tratar um `401` inesperado em qualquer rota como
+  "sessão expirou, faça login de novo", não como bug.
+- Todo POST/PUT/PATCH/DELETE agora exige o cabeçalho `Origin` batendo com
+  o front oficial (ou localhost/rede local em desenvolvimento) e, se tiver
+  corpo, `Content-Type: application/json` de verdade — retorna `403`/`415`
+  caso contrário. Isso é transparente pro front normal (`fetch` sempre
+  manda `Origin` sozinho), mas **testes manuais via Postman/Insomnia
+  precisam adicionar o header `Origin` manualmente** pra chamadas de
+  escrita, ou vão receber 403.
+- Login (`/login`) e recuperação (`/esqueci-senha`) têm limite de
+  tentativas por e-mail (10 tentativas/15 min e 3 pedidos/15 min,
+  respectivamente) — passado isso, `/login` retorna `429`, e
+  `/esqueci-senha` continua respondendo `{"ok": true}` normalmente (não
+  expõe o bloqueio, só não manda e-mail nem invalida o token anterior).
 - Qualquer endpoint que dependa da conexão com o Conta Azul (HOME, ENTRADAS,
   SAÍDAS, CAIXA) pode retornar `409 {"erro": "conta_azul_desconectada"}` se
   a conexão do cliente não puder mais ser renovada — nesse caso, o cliente

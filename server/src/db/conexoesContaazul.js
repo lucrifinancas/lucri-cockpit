@@ -32,25 +32,30 @@ export async function atualizarTokens(db, clienteId, { accessToken, refreshToken
     .run();
 }
 
+const VALIDADE_MINUTOS = 10;
+
 export async function criarAutorizacaoPendente(db, state, clienteId) {
-  await db
-    .prepare("INSERT INTO contaazul_autorizacoes_pendentes (state, cliente_id) VALUES (?, ?)")
-    .bind(state, clienteId)
-    .run();
+  await db.batch([
+    // Limpeza oportunista de state antigo nunca usado, junto com a
+    // inserção — evita acumular linha "morta" pra sempre na tabela.
+    db.prepare(`DELETE FROM contaazul_autorizacoes_pendentes WHERE criado_em <= datetime('now', '-${VALIDADE_MINUTOS} minutes')`),
+    db.prepare("INSERT INTO contaazul_autorizacoes_pendentes (state, cliente_id) VALUES (?, ?)").bind(state, clienteId),
+  ]);
 }
 
+// Confere validade e apaga na mesma consulta (DELETE ... RETURNING) — state
+// só pode ser consumido uma vez, e um link antigo (mais de 10 min) não
+// funciona mais mesmo que alguém consiga um code OAuth válido pra usar com
+// ele. Ver RELATORIO-SEGURANCA-2026-09-24.md, achado 6.
 export async function consumirAutorizacaoPendente(db, state) {
   const pendente = await db
-    .prepare("SELECT * FROM contaazul_autorizacoes_pendentes WHERE state = ?")
+    .prepare(
+      `DELETE FROM contaazul_autorizacoes_pendentes
+       WHERE state = ? AND criado_em > datetime('now', '-${VALIDADE_MINUTOS} minutes')
+       RETURNING *`
+    )
     .bind(state)
     .first();
 
-  if (!pendente) return null;
-
-  await db
-    .prepare("DELETE FROM contaazul_autorizacoes_pendentes WHERE state = ?")
-    .bind(state)
-    .run();
-
-  return pendente;
+  return pendente ?? null;
 }

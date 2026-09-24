@@ -7,6 +7,8 @@ import { contaazulOnboardingRoutes } from "./routes/contaazulOnboarding.js";
 import { homeRoutes } from "./routes/home.js";
 import { financeiroRoutes } from "./routes/financeiro.js";
 import { ContaAzulDesconectadaError } from "./contaazul/errors.js";
+import { origemPermitida } from "./auth/origem.js";
+import { bloquearCsrf } from "./middleware/csrf.js";
 
 const app = new Hono();
 
@@ -23,22 +25,27 @@ app.onError((erro, c) => {
 
 // Só o front oficial (definido em APP_URL) pode chamar essa API, e só ele
 // pode mandar/receber o cookie de sessão (credentials). Localhost e IPs de
-// rede local também são liberados pra permitir rodar o front em dev contra
-// o backend publicado ou testar em outra máquina na mesma rede.
+// rede local também são liberados, mas só em desenvolvimento (requisição
+// via http) — em produção (https) ninguém além da origem oficial passa,
+// mesmo que finja ser localhost no cabeçalho Origin. Ver
+// RELATORIO-SEGURANCA-2026-09-24.md, achado 5.
 app.use(
   "*",
   cors({
-    origin: (origin, c) =>
-      origin === c.env.APP_URL ||
-      /^http:\/\/localhost:\d+$/.test(origin) ||
-      /^http:\/\/(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+:\d+$/.test(
-        origin
-      )
-        ? origin
-        : "",
+    origin: (origin, c) => {
+      const ehHttps = c.req.url.startsWith("https://");
+      return origemPermitida(origin, c.env, ehHttps) ? origin : "";
+    },
     credentials: true,
+    allowHeaders: ["Content-Type"],
   })
 );
+
+// CORS só impede o NAVEGADOR de ler a resposta — não impede a rota de
+// rodar. Esta camada extra bloqueia a escrita em si (POST/PUT/PATCH/DELETE)
+// vinda de fora da lista de origens permitidas. Ver
+// RELATORIO-SEGURANCA-2026-09-24.md, achado 1.
+app.use("*", bloquearCsrf);
 
 app.get("/api/health", (c) => {
   return c.json({ status: "ok", servico: "lucri-cockpit-server" });

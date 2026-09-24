@@ -10,6 +10,13 @@ Balanço, DRE.
 
 ## ✅ Pronto
 
+- [x] **Correções de segurança (24/09)** — CSRF (Origin explícito +
+  Content-Type real em toda escrita), sessão revogada ao trocar/redefinir
+  senha, rate limit em login/esqueci-senha, Hono atualizado (0
+  vulnerabilidades), CORS de dev restrito à produção, autorização Conta
+  Azul expira em 10 min, tokens de reset com hash. Ver
+  `RELATORIO-SEGURANCA-2026-09-24.md`. Falta aplicar a migration 0009 em
+  produção.
 - [x] Auth completo (login, sessão, trocar senha, papéis master/analista/cliente)
 - [x] Login com Google (12/08) — alternativa sem senha, só autentica e-mail
   já cadastrado. Falta só o botão no front — ver `API-CONTRACT.md`.
