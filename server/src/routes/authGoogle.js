@@ -4,6 +4,7 @@ import { gerarUrlAutorizacaoGoogle, obterUsuarioGoogle } from "../auth/google.js
 import { buscarUsuarioPorEmail, criarUsuarioClienteGoogle } from "../db/usuarios.js";
 import { buscarConvitePorEmail, apagarConvitePorEmail } from "../db/convites.js";
 import { criarSessao } from "../auth/sessao.js";
+import { ehDesenvolvimento } from "../auth/origem.js";
 import { criarHashSenha } from "../auth/senha.js";
 
 export const authGoogleRoutes = new Hono();
@@ -21,12 +22,12 @@ const NOME_COOKIE_STATE = "google_oauth_state";
 // o navegador pra cá (não é fetch comum).
 authGoogleRoutes.get("/iniciar", (c) => {
   const state = crypto.randomUUID();
-  const ehHttps = c.req.url.startsWith("https://");
+  const ehProducao = !ehDesenvolvimento(c);
 
   setCookie(c, NOME_COOKIE_STATE, state, {
     httpOnly: true,
-    secure: ehHttps,
-    sameSite: ehHttps ? "None" : "Lax",
+    secure: ehProducao,
+    sameSite: ehProducao ? "None" : "Lax",
     path: "/",
     maxAge: 600, // 10 minutos — só dura o tempo do login
   });

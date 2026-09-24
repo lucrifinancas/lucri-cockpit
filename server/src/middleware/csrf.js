@@ -16,8 +16,7 @@ export async function bloquearCsrf(c, next) {
   }
 
   const origin = c.req.header("Origin");
-  const ehHttps = c.req.url.startsWith("https://");
-  if (!origemPermitida(origin, c.env, ehHttps)) {
+  if (!origemPermitida(origin, c)) {
     return c.json({ erro: "Origem não permitida." }, 403);
   }
 

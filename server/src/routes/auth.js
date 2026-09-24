@@ -107,6 +107,12 @@ authRoutes.post("/alterar-senha", async (c) => {
   // pendente também deixa de fazer sentido.
   await apagarTokensResetDoUsuario(c.env.DB, usuario.id);
 
+  // A troca incrementou sessao_versao, o que derruba TODAS as sessões —
+  // inclusive esta. Emite uma sessão nova só pra quem acabou de trocar, pra
+  // pessoa continuar logada aqui e só as outras abas/dispositivos caírem.
+  const usuarioAtualizado = await buscarUsuarioPorId(c.env.DB, usuario.id);
+  await criarSessao(c, usuarioAtualizado, c.env.JWT_SECRET);
+
   return c.json({ ok: true });
 });
 

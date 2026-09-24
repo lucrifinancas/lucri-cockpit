@@ -25,17 +25,14 @@ app.onError((erro, c) => {
 
 // Só o front oficial (definido em APP_URL) pode chamar essa API, e só ele
 // pode mandar/receber o cookie de sessão (credentials). Localhost e IPs de
-// rede local também são liberados, mas só em desenvolvimento (requisição
-// via http) — em produção (https) ninguém além da origem oficial passa,
-// mesmo que finja ser localhost no cabeçalho Origin. Ver
+// rede local também são liberados, mas só em desenvolvimento (backend
+// rodando em localhost/rede local) — em produção ninguém além da origem
+// oficial passa, mesmo que finja ser localhost no cabeçalho Origin. Ver
 // RELATORIO-SEGURANCA-2026-09-24.md, achado 5.
 app.use(
   "*",
   cors({
-    origin: (origin, c) => {
-      const ehHttps = c.req.url.startsWith("https://");
-      return origemPermitida(origin, c.env, ehHttps) ? origin : "";
-    },
+    origin: (origin, c) => (origemPermitida(origin, c) ? origin : ""),
     credentials: true,
     allowHeaders: ["Content-Type"],
   })
