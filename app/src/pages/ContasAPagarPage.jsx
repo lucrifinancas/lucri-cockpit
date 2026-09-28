@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CaretDown, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { filterLancamentos } from "../data/mockFinance";
 import "../styles/page.css";
@@ -121,42 +122,58 @@ export default function ContasAPagarPage() {
       </div>
 
       <div className="cap-filtros">
-        <input
-          className="table-search"
-          type="text"
-          aria-label="Buscar"
-          placeholder="Buscar por descrição, fornecedor ou categoria..."
-          value={busca}
-          onChange={mudar(setBusca)}
-        />
-        <label className="cap-filtro">
-          <span>Categoria</span>
-          <select aria-label="Categoria" value={categoria} onChange={mudar(setCategoria)}>
-            <option value="">Todas</option>
-            {categorias.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+        <label className="cap-filtro cap-filtro-busca">
+          <span className="cap-filtro-label">Buscar</span>
+          <span className="cap-campo">
+            <MagnifyingGlass size={16} className="cap-campo-icone" aria-hidden="true" />
+            <input
+              type="text"
+              aria-label="Buscar"
+              placeholder="Descrição, fornecedor ou categoria"
+              value={busca}
+              onChange={mudar(setBusca)}
+            />
+          </span>
         </label>
         <label className="cap-filtro">
-          <span>Fornecedor</span>
-          <select aria-label="Fornecedor" value={fornecedor} onChange={mudar(setFornecedor)}>
-            <option value="">Todos</option>
-            {fornecedores.map((f) => (
-              <option key={f} value={f}>{f}</option>
-            ))}
-          </select>
+          <span className="cap-filtro-label">Categoria</span>
+          <span className={`cap-campo cap-campo-select ${categoria ? "is-set" : ""}`}>
+            <select aria-label="Categoria" value={categoria} onChange={mudar(setCategoria)}>
+              <option value="">Todas</option>
+              {categorias.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <CaretDown size={14} weight="bold" className="cap-campo-caret" aria-hidden="true" />
+          </span>
         </label>
         <label className="cap-filtro">
-          <span>Vence de</span>
-          <input type="date" aria-label="Vence de" value={venceDe} max={venceAte || undefined} onChange={mudar(setVenceDe)} />
+          <span className="cap-filtro-label">Fornecedor</span>
+          <span className={`cap-campo cap-campo-select ${fornecedor ? "is-set" : ""}`}>
+            <select aria-label="Fornecedor" value={fornecedor} onChange={mudar(setFornecedor)}>
+              <option value="">Todos</option>
+              {fornecedores.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+            <CaretDown size={14} weight="bold" className="cap-campo-caret" aria-hidden="true" />
+          </span>
         </label>
-        <label className="cap-filtro">
-          <span>até</span>
-          <input type="date" aria-label="Vence até" value={venceAte} min={venceDe || undefined} onChange={mudar(setVenceAte)} />
-        </label>
+        <div className="cap-filtro">
+          <span className="cap-filtro-label">Vencimento</span>
+          <span className="cap-faixa">
+            <span className={`cap-campo ${venceDe ? "is-set" : ""}`}>
+              <input type="date" aria-label="Vence de" value={venceDe} max={venceAte || undefined} onChange={mudar(setVenceDe)} />
+            </span>
+            <span className="cap-faixa-sep">até</span>
+            <span className={`cap-campo ${venceAte ? "is-set" : ""}`}>
+              <input type="date" aria-label="Vence até" value={venceAte} min={venceDe || undefined} onChange={mudar(setVenceAte)} />
+            </span>
+          </span>
+        </div>
         {temFiltro && (
           <button type="button" className="cap-limpar" onClick={limparFiltros}>
+            <X size={14} weight="bold" aria-hidden="true" />
             Limpar filtros
           </button>
         )}
