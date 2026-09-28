@@ -20,6 +20,36 @@ async function chaveCache(url, accessToken) {
   return new Request(`https://cache.lucri.internal/${id}?u=${encodeURIComponent(url.toString())}`);
 }
 
+// A Home dispara vários pedidos ao Conta Azul ao mesmo tempo (home,
+// entradas, saídas, despesas — alguns repetindo a mesma consulta) e, com o
+// cache frio, o Conta Azul às vezes recusa um deles (limite de taxa / erro
+// passageiro). Antes isso virava 500 direto e o usuário tinha que recarregar
+// várias vezes (28/09). Agora: 429, 5xx ou falha de rede → espera e tenta de
+// novo, até 3 vezes. Outros 4xx (ex.: 401) não adiantam repetir e voltam na
+// hora. Respeita o Retry-After do Conta Azul, com teto de 3 s.
+const ESPERAS_RETENTATIVA_MS = [300, 800, 1500];
+
+async function fetchComRetentativa(url, accessToken) {
+  for (let tentativa = 0; ; tentativa++) {
+    const ultima = tentativa === ESPERAS_RETENTATIVA_MS.length;
+    let resp;
+    try {
+      resp = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    } catch (erro) {
+      if (ultima) throw erro;
+    }
+    if (resp && (resp.ok || (resp.status !== 429 && resp.status < 500) || ultima)) {
+      return resp;
+    }
+
+    await resp?.body?.cancel(); // descarta o corpo da resposta com erro antes de repetir
+    const retryAfter = Number(resp?.headers.get("Retry-After"));
+    const espera = retryAfter > 0 ? Math.min(retryAfter * 1000, 3000) : ESPERAS_RETENTATIVA_MS[tentativa];
+    console.warn(`Conta Azul ${url.pathname} ${resp ? resp.status : "falha de rede"} — tentando de novo em ${espera} ms`);
+    await new Promise((r) => setTimeout(r, espera));
+  }
+}
+
 // `cache: false` pra dado que precisa ser "de agora" (ex.: saldo em conta).
 async function chamarApi(path, accessToken, params = {}, { cache = true } = {}) {
   const url = new URL(`${BASE_URL}${path}`);
@@ -34,9 +64,7 @@ async function chamarApi(path, accessToken, params = {}, { cache = true } = {}) 
     if (guardado) return guardado.json();
   }
 
-  const resp = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const resp = await fetchComRetentativa(url, accessToken);
 
   if (!resp.ok) {
     throw new Error(`Conta Azul ${path} falhou: ${resp.status} ${await resp.text()}`);
