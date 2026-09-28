@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import AjustesPage from "./pages/AjustesPage";
 import EntradasPage from "./pages/EntradasPage";
 import SaidasPage from "./pages/SaidasPage";
+import ContasAPagarPage from "./pages/ContasAPagarPage";
 import DespesasPage from "./pages/DespesasPage";
 import CaixaPage from "./pages/CaixaPage";
 import BalancoPage from "./pages/BalancoPage";
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/entradas" element={<EntradasPage />} />
             <Route path="/saidas" element={<SaidasPage />} />
+            <Route path="/contas-a-pagar" element={<ContasAPagarPage />} />
             <Route path="/despesas" element={<DespesasPage />} />
             <Route path="/caixa" element={<CaixaPage />} />
             <Route path="/balanco" element={<BalancoPage />} />
