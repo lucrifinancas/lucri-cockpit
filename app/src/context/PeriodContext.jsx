@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 // Seletor de período — versão funcional simplificada do padrão já usado no
 // dashboard de redes sociais (4.DASHBOARD/2.0/period.js): presets + intervalo
-// customizado, estado persistente. O intervalo customizado usa o
-// DateRangePicker (calendário de 2 meses no mesmo desenho do dashboard
-// social); presets e "mês específico" continuam no <select>/<input>.
+// customizado, estado persistente. Intervalo customizado e "mês específico"
+// usam DateRangePicker/MonthPicker (mesmo desenho do calendário do
+// dashboard social), não os <input type="date"/"month"> nativos.
 
 const STORAGE_KEY = "lucri-dash.period";
 

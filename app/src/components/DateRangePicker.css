@@ -253,3 +253,60 @@
 .drp-escuro .drp-trigger:focus-visible {
   border-color: var(--lucri-mint);
 }
+
+/* MonthPicker: painel estreito com a grade dos 12 meses (3 x 4), mesmos
+   estados de dia do calendário (is-edge = escolhido, is-today = mês atual). */
+.drp-panel-mes {
+  width: 260px;
+}
+
+.drp-meses {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.drp-mes {
+  position: relative;
+  min-height: 36px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.drp-mes:hover {
+  background: var(--bg-subtle);
+}
+
+.drp-mes.is-edge {
+  background: var(--lucri-mint);
+  color: var(--lucri-night);
+}
+
+.drp-mes.is-today::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--lucri-mint);
+  transform: translateX(-50%);
+}
+
+.drp-mes.is-today.is-edge::after {
+  background: var(--lucri-night);
+}
+
+.drp-mes:focus-visible {
+  outline: 2px solid var(--lucri-mint);
+  outline-offset: 1px;
+}

@@ -1,6 +1,7 @@
 import { CaretDown } from "@phosphor-icons/react";
 import { PRESETS, usePeriod } from "../context/PeriodContext";
 import DateRangePicker from "./DateRangePicker";
+import MonthPicker from "./MonthPicker";
 import "./PeriodSelector.css";
 
 export default function PeriodSelector() {
@@ -20,15 +21,7 @@ export default function PeriodSelector() {
       </div>
 
       {preset === "mes-especifico" && (
-        <div className="period-custom">
-          <input
-            type="month"
-            lang="pt-BR"
-            aria-label="Mês"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          />
-        </div>
+        <MonthPicker tema="escuro" ariaLabel="Mês" value={month} onChange={setMonth} />
       )}
 
       {preset === "custom" && (

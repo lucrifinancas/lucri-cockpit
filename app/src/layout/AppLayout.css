@@ -217,20 +217,6 @@
   color: var(--lucri-white);
 }
 
-/* Período/data dentro da navbar herdam o input do Design System, mas essa
-   navbar é fundo escuro fixo — sobrescreve os tokens de tema (que
-   assumiriam fundo claro no tema claro do app). */
-.topnav .period-selector input {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-control);
-  color: var(--lucri-white);
-}
-
-.topnav .period-custom {
-  color: var(--lucri-cream);
-}
-
 .app-content {
   padding: 24px;
 }
