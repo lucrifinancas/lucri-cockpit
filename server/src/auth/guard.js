@@ -1,11 +1,11 @@
 // Middleware: bloqueia a rota se não houver sessão válida, ou se o papel do
 // usuário não estiver na lista de papéis permitidos.
 
-import { lerSessao } from "./sessao.js";
+import { lerSessaoValida } from "./sessao.js";
 
 export function exigirPapel(...papeisPermitidos) {
   return async (c, next) => {
-    const sessao = await lerSessao(c, c.env.JWT_SECRET);
+    const sessao = await lerSessaoValida(c, c.env.JWT_SECRET, c.env.DB);
     if (!sessao) {
       return c.json({ erro: "Não autenticado." }, 401);
     }

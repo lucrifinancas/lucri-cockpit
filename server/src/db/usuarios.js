@@ -12,41 +12,57 @@ export async function buscarUsuarioPorId(db, id) {
   return db.prepare("SELECT * FROM usuarios WHERE id = ?").bind(id).first();
 }
 
+// Também incrementa sessao_versao — é isso que faz qualquer sessão (JWT)
+// emitida antes dessa troca parar de funcionar, mesmo sem ter expirado (ver
+// lerSessaoValida em auth/sessao.js e RELATORIO-SEGURANCA-2026-09-24.md,
+// achado 2). Cobre trocar senha estando logado e redefinir por e-mail — as
+// duas chamam esta mesma função.
 export async function atualizarSenha(db, usuarioId, novoHash) {
   await db
-    .prepare("UPDATE usuarios SET senha_hash = ? WHERE id = ?")
+    .prepare("UPDATE usuarios SET senha_hash = ?, sessao_versao = sessao_versao + 1 WHERE id = ?")
     .bind(novoHash, usuarioId)
     .run();
 }
 
-// Cria um token de redefinição de senha, válido por `minutosValidade`.
+async function hashToken(token) {
+  const bytes = new TextEncoder().encode(token);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Cria um token de redefinição de senha, válido por `minutosValidade`. Só o
+// hash do token vai pro banco — o valor original só existe no e-mail que a
+// pessoa recebe, então um vazamento de leitura do banco não entrega tokens
+// usáveis (ver RELATORIO-SEGURANCA-2026-09-24.md, "Outros pontos").
 export async function criarTokenReset(db, usuarioId, token, minutosValidade) {
+  const tokenHash = await hashToken(token);
   await db
     .prepare(
-      `INSERT INTO reset_senha_tokens (token, usuario_id, expira_em)
+      `INSERT INTO reset_senha_tokens (token_hash, usuario_id, expira_em)
        VALUES (?, ?, datetime('now', '+' || ? || ' minutes'))`
     )
-    .bind(token, usuarioId, minutosValidade)
+    .bind(tokenHash, usuarioId, minutosValidade)
     .run();
 }
 
-// Devolve o usuário dono do token, só se ele existir e ainda não tiver
-// expirado — senão null.
-export async function buscarUsuarioPorTokenReset(db, token) {
-  const resultado = await db
+// Confere e apaga o token na mesma consulta (DELETE ... RETURNING) — duas
+// tentativas simultâneas com o mesmo token nunca conseguem as duas passar,
+// diferente do SELECT+DELETE separado de antes. Devolve o usuário dono do
+// token, ou null se o token não existir, já tiver sido usado ou tiver
+// expirado.
+export async function consumirTokenReset(db, token) {
+  const tokenHash = await hashToken(token);
+  const linha = await db
     .prepare(
-      `SELECT u.* FROM reset_senha_tokens t
-       JOIN usuarios u ON u.id = t.usuario_id
-       WHERE t.token = ? AND t.expira_em > datetime('now')`
+      `DELETE FROM reset_senha_tokens
+       WHERE token_hash = ? AND expira_em > datetime('now')
+       RETURNING usuario_id`
     )
-    .bind(token)
+    .bind(tokenHash)
     .first();
-  return resultado ?? null;
-}
+  if (!linha) return null;
 
-// Apaga o token depois de usado (ou ao pedir um novo, pra não acumular).
-export async function apagarTokenReset(db, token) {
-  await db.prepare("DELETE FROM reset_senha_tokens WHERE token = ?").bind(token).run();
+  return buscarUsuarioPorId(db, linha.usuario_id);
 }
 
 export async function apagarTokensResetDoUsuario(db, usuarioId) {
@@ -57,7 +73,8 @@ export async function criarUsuarioCliente(db, clienteId, email, senhaHash) {
   return db
     .prepare(
       `INSERT INTO usuarios (email, senha_hash, papel, cliente_id)
-       VALUES (?, ?, 'cliente', ?) RETURNING id, email, papel, cliente_id, criado_em`
+       VALUES (?, ?, 'cliente', ?)
+       RETURNING id, email, papel, cliente_id, sessao_versao, criado_em`
     )
     .bind(email, senhaHash, clienteId)
     .first();
@@ -72,7 +89,8 @@ export async function criarUsuarioClienteGoogle(db, clienteId, email, nome, sobr
   return db
     .prepare(
       `INSERT INTO usuarios (email, senha_hash, papel, cliente_id, nome, sobrenome)
-       VALUES (?, ?, 'cliente', ?, ?, ?) RETURNING id, email, papel, cliente_id, nome, sobrenome, criado_em`
+       VALUES (?, ?, 'cliente', ?, ?, ?)
+       RETURNING id, email, papel, cliente_id, nome, sobrenome, sessao_versao, criado_em`
     )
     .bind(email, senhaHashAleatorio, clienteId, nome, sobrenome)
     .first();
