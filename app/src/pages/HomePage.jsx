@@ -11,6 +11,7 @@ import HistoryBarChart from "../components/charts/HistoryBarChart";
 import ComparisonBarChart from "../components/charts/ComparisonBarChart";
 import ProportionDonut from "../components/charts/ProportionDonut";
 import HorizontalBarChart from "../components/charts/HorizontalBarChart";
+import ProgressBar from "../components/charts/ProgressBar";
 import "../styles/page.css";
 
 const fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -232,6 +233,32 @@ export default function HomePage() {
           />
         )}
       </div>
+
+      <section className="page-section">
+        <div className="chart-row chart-row-2">
+          <div>
+            <h2 className="section-title">Contas a pagar — andamento</h2>
+            <ProgressBar
+              pago={contasAPagar.pago.valor}
+              vencido={contasAPagar.vencido.valor}
+              total={contasAPagar.todos}
+              color="var(--chart-caixa)"
+              pagoLabel="Pago"
+            />
+          </div>
+
+          <div>
+            <h2 className="section-title">Contas a receber — andamento</h2>
+            <ProgressBar
+              pago={contasAReceber.pago.valor}
+              vencido={contasAReceber.vencido.valor}
+              total={contasAReceber.todos}
+              color="var(--chart-receita)"
+              pagoLabel="Recebido"
+            />
+          </div>
+        </div>
+      </section>
 
       <section className="page-section">
         <div className="chart-row chart-row-2">

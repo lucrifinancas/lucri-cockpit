@@ -15,7 +15,7 @@ export default function ProportionDonut({ data }) {
       <div className="chart-donut-wrap">
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
-            <Pie data={data} dataKey="value" nameKey="name" innerRadius={INNER_RADIUS} outerRadius={OUTER_RADIUS} paddingAngle={2}>
+            <Pie data={data} dataKey="value" nameKey="name" innerRadius={INNER_RADIUS} outerRadius={OUTER_RADIUS} paddingAngle={2} stroke="var(--bg-panel)">
               {data.map((d) => (
                 <Cell key={d.name} fill={d.color} />
               ))}

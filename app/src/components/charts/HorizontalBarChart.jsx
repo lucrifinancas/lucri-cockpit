@@ -9,7 +9,7 @@ export default function HorizontalBarChart({ data, dataKey = "valor", nameKey = 
   return (
     <div className="chart-block">
       <ResponsiveContainer width="100%" height={height ?? Math.max(240, data.length * 36)}>
-        <BarChart data={data} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 0 }}>
+        <BarChart data={data} layout="vertical" margin={{ top: 8, right: 110, left: 8, bottom: 0 }}>
           <CartesianGrid horizontal={false} stroke="var(--border-subtle)" />
           <XAxis
             type="number"
@@ -26,7 +26,7 @@ export default function HorizontalBarChart({ data, dataKey = "valor", nameKey = 
             tickLine={false}
             width={130}
           />
-          <Tooltip allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => currencyFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
+          <Tooltip cursor={{ fill: "var(--bg-subtle)" }} allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => currencyFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
           <Bar dataKey={dataKey} radius={[0, 4, 4, 0]} maxBarSize={22}>
             {data.map((d, i) => (
               <Cell key={d[nameKey] ?? i} fill={d.color ?? color} />

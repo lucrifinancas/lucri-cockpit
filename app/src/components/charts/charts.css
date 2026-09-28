@@ -10,11 +10,16 @@
    até em clique de mouse (não só Tab), porque não existe :focus-visible
    suportado nesse elemento. Substituído por um anel no estilo do resto do
    dashboard, só em navegação real por teclado. */
-.recharts-wrapper:focus {
+/* O <svg> e as camadas <g> internas (Recharts v3) também são focáveis e
+   ganhavam o contorno padrão do navegador (retângulo azul) em qualquer
+   clique. */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus {
   outline: none;
 }
 
-.recharts-wrapper:focus-visible {
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible {
   outline: 2px solid var(--lucri-sky);
   outline-offset: 2px;
   border-radius: var(--radius-md);
@@ -111,6 +116,66 @@
 }
 
 .chart-legend-detail {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Barra de progresso em pílula (ProgressBar.jsx) */
+.progress-track {
+  display: flex;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.progress-fill:first-child {
+  border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+}
+
+.progress-fill-late {
+  background: var(--chart-despesa);
+}
+
+.progress-fill-pct {
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lucri-night);
+}
+
+.progress-pct-outside {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.progress-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 16px;
+}
+
+.progress-legend strong {
+  color: var(--text-primary);
+}
+
+.progress-dot-rest {
+  background: var(--border-subtle);
+}
+
+.progress-total {
+  margin: 12px 0 0;
   font-size: 12px;
   color: var(--text-muted);
 }
