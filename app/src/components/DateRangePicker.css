@@ -220,3 +220,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Variante pra barra de navegação escura — mesmo visual do .select-wrap
+   select do AppLayout.css (fundo/borda brancos translúcidos, texto claro),
+   altura 36px como o resto do .period-selector. */
+.drp-escuro .drp-trigger {
+  height: 36px;
+  min-width: 170px;
+  padding-right: 12px;
+  font-size: 13px;
+  color: var(--lucri-white);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-control);
+}
+
+.drp-escuro .drp-trigger svg,
+.drp-escuro .drp-placeholder {
+  color: var(--lucri-cream);
+}
+
+.drp-escuro .drp-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.drp-escuro .drp-trigger.is-set {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.drp-escuro .drp-trigger[aria-expanded="true"],
+.drp-escuro .drp-trigger:focus-visible {
+  border-color: var(--lucri-mint);
+}

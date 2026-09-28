@@ -1,5 +1,6 @@
 import { CaretDown } from "@phosphor-icons/react";
 import { PRESETS, usePeriod } from "../context/PeriodContext";
+import DateRangePicker from "./DateRangePicker";
 import "./PeriodSelector.css";
 
 export default function PeriodSelector() {
@@ -31,23 +32,15 @@ export default function PeriodSelector() {
       )}
 
       {preset === "custom" && (
-        <div className="period-custom">
-          <input
-            type="date"
-            lang="pt-BR"
-            aria-label="Data inicial"
-            value={custom.start ?? ""}
-            onChange={(e) => setCustomRange({ ...custom, start: e.target.value })}
-          />
-          <span>até</span>
-          <input
-            type="date"
-            lang="pt-BR"
-            aria-label="Data final"
-            value={custom.end ?? ""}
-            onChange={(e) => setCustomRange({ ...custom, end: e.target.value })}
-          />
-        </div>
+        <DateRangePicker
+          tema="escuro"
+          limpavel={false}
+          ariaLabel="Período personalizado"
+          placeholder="Escolher datas"
+          de={custom.start ?? ""}
+          ate={custom.end ?? ""}
+          onChange={({ de, ate }) => setCustomRange({ start: de, end: ate })}
+        />
       )}
     </div>
   );

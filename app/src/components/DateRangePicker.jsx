@@ -15,7 +15,10 @@ const fmtCurto = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "");
 // início, 2º marca o fim e já aplica. Datas trafegam como "AAAA-MM-DD",
 // igual ao resto do app. `mesInicial` ("AAAA-MM-DD") decide qual mês abre
 // quando ainda não tem nada escolhido.
-export default function DateRangePicker({ de, ate, onChange, mesInicial, placeholder = "Qualquer data", ariaLabel }) {
+// `tema="escuro"`: botão pra barra de navegação escura (o painel continua
+// claro). `limpavel={false}` esconde o X — ex. no seletor de período do
+// topo, onde "sem datas" não é um estado válido.
+export default function DateRangePicker({ de, ate, onChange, mesInicial, placeholder = "Qualquer data", ariaLabel, tema = "claro", limpavel = true }) {
   const [aberto, setAberto] = useState(false);
   const [rascunho, setRascunho] = useState(null); // início escolhido, esperando o fim
   const [hover, setHover] = useState(null);
@@ -71,7 +74,7 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
   const rotulo = temValor ? `${fmtCurto(de) || "…"} → ${fmtCurto(ate) || "…"}` : placeholder;
 
   return (
-    <div className="drp" ref={ref}>
+    <div className={`drp ${tema === "escuro" ? "drp-escuro" : ""}`} ref={ref}>
       <button
         type="button"
         className={`drp-trigger ${temValor ? "is-set" : ""}`}
@@ -82,7 +85,7 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
         <CalendarBlank size={16} aria-hidden="true" />
         <span className={temValor ? "" : "drp-placeholder"}>{rotulo}</span>
       </button>
-      {temValor && (
+      {limpavel && temValor && (
         <button type="button" className="drp-clear" aria-label="Limpar datas" onClick={() => onChange({ de: "", ate: "" })}>
           <X size={12} weight="bold" />
         </button>
