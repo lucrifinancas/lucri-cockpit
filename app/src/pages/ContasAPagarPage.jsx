@@ -39,11 +39,30 @@ export default function ContasAPagarPage() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [pagina, setPagina] = useState(1);
+  const [categoria, setCategoria] = useState("");
+  const [fornecedor, setFornecedor] = useState("");
+  const [venceDe, setVenceDe] = useState("");
+  const [venceAte, setVenceAte] = useState("");
 
   const d = new Date();
   const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-  const lancamentos = (saidas?.lancamentos ?? []).map((l) => ({ ...l, situacao: situacaoDe(l, hoje) }));
+  const todos = (saidas?.lancamentos ?? []).map((l) => ({ ...l, situacao: situacaoDe(l, hoje) }));
+  const opcoes = (campo) => [...new Set(todos.map((l) => l[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const categorias = opcoes("categoria");
+  const fornecedores = opcoes("contraparte");
+
+  // Filtros (busca, categoria, fornecedor, faixa de vencimento) valem pros
+  // cards também — igual o Conta Azul; o card escolhido só recorta a tabela
+  // por situação em cima disso.
+  const lancamentos = filterLancamentos(todos, busca).filter(
+    (l) =>
+      (!categoria || l.categoria === categoria) &&
+      (!fornecedor || l.contraparte === fornecedor) &&
+      (!venceDe || l.data_vencimento >= venceDe) &&
+      (!venceAte || l.data_vencimento <= venceAte)
+  );
+  const temFiltro = busca || categoria || fornecedor || venceDe || venceAte;
   const somaAberto = (s) => lancamentos.filter((l) => l.situacao === s).reduce((t, l) => t + l.valor_em_aberto, 0);
   const cards = [
     { id: "vencido", label: "Vencidos", valor: somaAberto("vencido"), tone: "danger" },
@@ -53,7 +72,7 @@ export default function ContasAPagarPage() {
     { id: "todos", label: "Total do período", valor: lancamentos.reduce((t, l) => t + l.valor, 0), tone: "neutral" },
   ];
 
-  const filtrados = filterLancamentos(lancamentos, busca)
+  const filtrados = lancamentos
     .filter((l) => filtro === "todos" || l.situacao === filtro)
     .sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento));
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
@@ -62,6 +81,22 @@ export default function ContasAPagarPage() {
 
   function escolherFiltro(id) {
     setFiltro(id);
+    setPagina(1);
+  }
+
+  // Todo filtro volta pra página 1 — senão a página atual pode ficar além
+  // do fim da lista recortada.
+  const mudar = (setter) => (e) => {
+    setter(e.target.value);
+    setPagina(1);
+  };
+
+  function limparFiltros() {
+    setBusca("");
+    setCategoria("");
+    setFornecedor("");
+    setVenceDe("");
+    setVenceAte("");
     setPagina(1);
   }
 
@@ -85,16 +120,47 @@ export default function ContasAPagarPage() {
         ))}
       </div>
 
-      <input
-        className="table-search"
-        type="text"
-        placeholder="Buscar por descrição, fornecedor ou categoria..."
-        value={busca}
-        onChange={(e) => {
-          setBusca(e.target.value);
-          setPagina(1);
-        }}
-      />
+      <div className="cap-filtros">
+        <input
+          className="table-search"
+          type="text"
+          aria-label="Buscar"
+          placeholder="Buscar por descrição, fornecedor ou categoria..."
+          value={busca}
+          onChange={mudar(setBusca)}
+        />
+        <label className="cap-filtro">
+          <span>Categoria</span>
+          <select aria-label="Categoria" value={categoria} onChange={mudar(setCategoria)}>
+            <option value="">Todas</option>
+            {categorias.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </label>
+        <label className="cap-filtro">
+          <span>Fornecedor</span>
+          <select aria-label="Fornecedor" value={fornecedor} onChange={mudar(setFornecedor)}>
+            <option value="">Todos</option>
+            {fornecedores.map((f) => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </label>
+        <label className="cap-filtro">
+          <span>Vence de</span>
+          <input type="date" aria-label="Vence de" value={venceDe} max={venceAte || undefined} onChange={mudar(setVenceDe)} />
+        </label>
+        <label className="cap-filtro">
+          <span>até</span>
+          <input type="date" aria-label="Vence até" value={venceAte} min={venceDe || undefined} onChange={mudar(setVenceAte)} />
+        </label>
+        {temFiltro && (
+          <button type="button" className="cap-limpar" onClick={limparFiltros}>
+            Limpar filtros
+          </button>
+        )}
+      </div>
 
       <div className="data-table-wrap">
         <table className="data-table cap-table">

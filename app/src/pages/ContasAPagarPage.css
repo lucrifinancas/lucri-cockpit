@@ -135,3 +135,52 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Fileira de filtros: busca + selects + faixa de vencimento, quebra linha
+   em tela estreita. Mesma superfície do .table-search. */
+.cap-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.cap-filtros .table-search {
+  flex: 1 1 260px;
+}
+
+.cap-filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cap-filtro select,
+.cap-filtro input {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
+  min-width: 150px;
+  max-width: 240px;
+}
+
+.cap-limpar {
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cap-limpar:hover {
+  color: var(--text-primary);
+}
