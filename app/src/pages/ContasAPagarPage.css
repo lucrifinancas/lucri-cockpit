@@ -240,35 +240,6 @@
   pointer-events: none;
 }
 
-.cap-faixa {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cap-faixa .cap-campo {
-  width: 150px;
-}
-
-.cap-faixa-sep {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.cap-campo input[type="date"] {
-  cursor: pointer;
-}
-
-.cap-campo input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0.55;
-  cursor: pointer;
-}
-
-.cap-campo input[type="date"]:hover::-webkit-calendar-picker-indicator,
-.cap-campo input[type="date"]:focus::-webkit-calendar-picker-indicator {
-  opacity: 1;
-}
-
 .cap-limpar {
   display: inline-flex;
   align-items: center;

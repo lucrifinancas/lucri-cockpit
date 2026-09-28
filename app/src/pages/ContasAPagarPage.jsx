@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CaretDown, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { filterLancamentos } from "../data/mockFinance";
+import DateRangePicker from "../components/DateRangePicker";
 import "../styles/page.css";
 import "./ContasAPagarPage.css";
 
@@ -161,15 +162,17 @@ export default function ContasAPagarPage() {
         </label>
         <div className="cap-filtro">
           <span className="cap-filtro-label">Vencimento</span>
-          <span className="cap-faixa">
-            <span className={`cap-campo ${venceDe ? "is-set" : ""}`}>
-              <input type="date" aria-label="Vence de" value={venceDe} max={venceAte || undefined} onChange={mudar(setVenceDe)} />
-            </span>
-            <span className="cap-faixa-sep">até</span>
-            <span className={`cap-campo ${venceAte ? "is-set" : ""}`}>
-              <input type="date" aria-label="Vence até" value={venceAte} min={venceDe || undefined} onChange={mudar(setVenceAte)} />
-            </span>
-          </span>
+          <DateRangePicker
+            ariaLabel="Faixa de vencimento"
+            de={venceDe}
+            ate={venceAte}
+            mesInicial={todos[0]?.data_vencimento}
+            onChange={({ de, ate }) => {
+              setVenceDe(de);
+              setVenceAte(ate);
+              setPagina(1);
+            }}
+          />
         </div>
         {temFiltro && (
           <button type="button" className="cap-limpar" onClick={limparFiltros}>

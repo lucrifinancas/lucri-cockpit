@@ -1,0 +1,222 @@
+/* Visual espelhado do seletor de período do Dashboard 2.0 (dp-* no
+   style.css de lá), traduzido pros tokens do Cockpit. Verde da marca
+   (--lucri-mint) marca início/fim; texto em cima dele usa --lucri-night
+   (mint + branco não passa contraste). */
+.drp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.drp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  min-width: 190px;
+  padding: 0 36px 0 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.drp-trigger svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.drp-trigger:hover {
+  border-color: var(--text-muted);
+}
+
+.drp-trigger[aria-expanded="true"],
+.drp-trigger:focus-visible {
+  outline: none;
+  border-color: var(--lucri-mint);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lucri-mint) 20%, transparent);
+}
+
+.drp-trigger.is-set {
+  border-color: var(--lucri-mint);
+  background: color-mix(in srgb, var(--lucri-mint) 8%, var(--bg-app));
+}
+
+.drp-placeholder {
+  color: var(--text-muted);
+}
+
+.drp-clear {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.drp-clear:hover {
+  color: var(--text-primary);
+}
+
+.drp-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: min(560px, calc(100vw - 32px));
+  padding: 16px 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(1, 1, 22, 0.14);
+}
+
+.drp-months {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.drp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.drp-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.drp-nav {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.drp-nav.hidden {
+  visibility: hidden;
+}
+
+.drp-dow,
+.drp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.drp-dow {
+  margin-bottom: 4px;
+}
+
+.drp-dow span {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.drp-day {
+  position: relative;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.drp-day:hover {
+  background: var(--bg-subtle);
+}
+
+.drp-day.is-range {
+  background: var(--bg-subtle);
+  border-radius: 0;
+}
+
+.drp-day.is-edge {
+  background: var(--lucri-mint);
+  color: var(--lucri-night);
+}
+
+.drp-day.is-today::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--lucri-mint);
+  transform: translateX(-50%);
+}
+
+.drp-day.is-today.is-edge::after {
+  background: var(--lucri-night);
+}
+
+.drp-day:focus-visible {
+  outline: 2px solid var(--lucri-mint);
+  outline-offset: 1px;
+}
+
+.drp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.drp-link {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.drp-link:hover {
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .drp-months {
+    grid-template-columns: 1fr;
+  }
+}
