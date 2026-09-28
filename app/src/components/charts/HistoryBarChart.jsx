@@ -7,8 +7,12 @@ import "./charts.css";
 // rótulo nunca fica colado na linha do zero, o que ficava confuso pra
 // valores pequenos perto dela. Pra gráficos só-positivos (ex: Vencidas por
 // mês) o efeito é só "rótulo acima da barra" em vez de dentro dela.
+// Barra negativa chega do Recharts com `height` negativo (y = base), então
+// topo/base saem de min/max em vez de assumir y + height = base.
 function BarValueLabel({ x, y, width, height, value }) {
-  const labelY = value < 0 ? y + height + 14 : y - 8;
+  const top = Math.min(y, y + height);
+  const bottom = Math.max(y, y + height);
+  const labelY = value < 0 ? bottom + 14 : top - 8;
   return (
     <text x={x + width / 2} y={labelY} textAnchor="middle" fill="var(--text-primary)" fontSize={11} fontWeight={700}>
       {numberFmt.format(value)}
@@ -41,7 +45,7 @@ export default function HistoryBarChart({ data, dataKey, color, label, colorBySi
         </div>
       )}
       <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 24, right: 8, left: 4, bottom: 8 }}>
+        <BarChart data={data} margin={{ top: 24, right: 8, left: 4, bottom: 16 }}>
           <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
           <XAxis
             dataKey="month"
@@ -54,6 +58,7 @@ export default function HistoryBarChart({ data, dataKey, color, label, colorBySi
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => numberFmt.format(v)}
+            width={84}
           />
           <Tooltip cursor={{ fill: "var(--bg-subtle)" }} allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
           <Bar dataKey={dataKey} fill={color} shape={(props) => <RoundedBar {...props} radius={4} />} maxBarSize={40}>
