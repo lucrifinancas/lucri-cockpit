@@ -25,9 +25,11 @@
   background: var(--bg-panel-hover);
 }
 
+/* Card escolhido: só uma faixa verde da marca na base + fundo levemente
+   destacado — sem contorno escuro (usuário achou pesado). */
 .cap-card.active {
-  border-color: var(--text-primary);
-  box-shadow: inset 0 -3px 0 var(--text-primary);
+  background: var(--bg-panel-hover);
+  box-shadow: inset 0 -3px 0 var(--lucri-mint);
 }
 
 .cap-card:focus-visible {
