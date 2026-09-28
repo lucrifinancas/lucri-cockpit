@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
+import { EnvelopeSimple, MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
@@ -243,6 +243,115 @@ function CategoriasSection({ clienteId, clienteNome }) {
   );
 }
 
+// Convite de cliente por e-mail (ver API-CONTRACT.md: "Convites de cliente
+// + autocadastro via Google", 22/09) — master reserva o e-mail, a pessoa
+// entra com Google e a conta "cliente" é criada na hora, sem precisar
+// definir senha manualmente. Não tem tela de "aceitar convite": o fluxo
+// inteiro é pelo botão "Entrar com Google" do login.
+function ConvitesSection({ clienteId, clienteNome }) {
+  const [convites, setConvites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [criando, setCriando] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    if (!clienteId) return;
+    let cancelled = false;
+    setLoading(true);
+    setErro(null);
+    apiFetch(`/api/clientes/${clienteId}/convites`)
+      .then((lista) => {
+        if (!cancelled) setConvites(lista);
+      })
+      .catch((err) => {
+        if (!cancelled) setErro(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clienteId]);
+
+  async function handleConvidar(e) {
+    e.preventDefault();
+    const email = novoEmail.trim();
+    if (!email) return;
+    setErro(null);
+    setCriando(true);
+    try {
+      const criado = await apiFetch(`/api/clientes/${clienteId}/convites`, {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      setConvites((prev) => [...prev, criado]);
+      setNovoEmail("");
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setCriando(false);
+    }
+  }
+
+  async function handleCancelar(conviteId) {
+    setErro(null);
+    try {
+      await apiFetch(`/api/clientes/${clienteId}/convites/${conviteId}`, { method: "DELETE" });
+      setConvites((prev) => prev.filter((c) => c.id !== conviteId));
+    } catch (err) {
+      setErro(err.message);
+    }
+  }
+
+  return (
+    <section className="settings-card">
+      <h2 className="settings-card-title">
+        <EnvelopeSimple size={18} weight="regular" />
+        Convites de acesso{clienteNome ? ` — ${clienteNome}` : ""}
+      </h2>
+      <p className="settings-hint">
+        Reserva o e-mail de quem vai acessar como cliente — na primeira vez que a pessoa entrar com
+        o Google usando esse e-mail, a conta é criada sozinha, sem você precisar definir senha.
+      </p>
+      <form className="onboarding-form" onSubmit={handleConvidar}>
+        <input
+          type="email"
+          placeholder="email@empresa.com"
+          value={novoEmail}
+          onChange={(e) => setNovoEmail(e.target.value)}
+        />
+        <button type="submit" disabled={criando || !novoEmail.trim()}>
+          {criando ? "Convidando..." : "Convidar"}
+        </button>
+      </form>
+      {erro && <p className="settings-hint status-error">{erro}</p>}
+      {loading && <p className="settings-hint">Carregando convites...</p>}
+      {!loading && convites.length === 0 && !erro && (
+        <p className="settings-hint">Nenhum convite pendente.</p>
+      )}
+      {!loading && convites.length > 0 && (
+        <div className="settings-list">
+          {convites.map((convite) => (
+            <div key={convite.id} className="settings-row">
+              <span>{convite.email}</span>
+              <button
+                type="button"
+                className="mae-chip-remove"
+                onClick={() => handleCancelar(convite.id)}
+                aria-label={`Cancelar convite de ${convite.email}`}
+              >
+                <X size={14} weight="bold" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AjustesPage() {
   const { user, alterarSenha } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -474,6 +583,10 @@ export default function AjustesPage() {
 
       {isMaster && activeClientId && (
         <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} />
+      )}
+
+      {isMaster && activeClientId && (
+        <ConvitesSection clienteId={activeClientId} clienteNome={activeClient?.name} />
       )}
 
       {isMaster && (

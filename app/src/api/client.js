@@ -2,7 +2,7 @@
 // repo lucrifinancas/lucri-cockpit). `credentials: "include"` é obrigatório
 // em todo fetch: front e back estão em domínios diferentes, e é o cookie de
 // sessão (`lucri_sessao`) que autentica.
-const BASE_URL =
+export const BASE_URL =
   import.meta.env.VITE_API_URL ??
   "https://lucri-cockpit-server.lucrifinancas-54e.workers.dev";
 

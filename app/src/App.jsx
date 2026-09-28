@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
+import RedefinirSenhaPage from "./auth/RedefinirSenhaPage";
 import { ClientProvider } from "./context/ClientContext";
 import { PeriodProvider } from "./context/PeriodContext";
 import AppLayout from "./layout/AppLayout";
@@ -26,7 +27,12 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginPage />;
+    return (
+      <Routes>
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+    );
   }
 
   return (

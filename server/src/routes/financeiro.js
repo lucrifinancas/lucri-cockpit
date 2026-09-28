@@ -14,8 +14,8 @@ import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
 import { listarOverridesDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
 import { classificarDespesas, idsDeDespesa } from "../utils/despesas.js";
-import { ultimosMeses } from "../contaazul/historico.js";
-import { listarHistoricoMensal } from "../db/historicoMensal.js";
+import { ultimosMeses, mesesJanelaBalanco } from "../contaazul/historico.js";
+import { listarHistoricoMensal, somarAbertoNaJanela } from "../db/historicoMensal.js";
 
 export const financeiroRoutes = new Hono();
 
@@ -167,11 +167,14 @@ financeiroRoutes.get("/:clienteId/dre", exigirPapel("master", "analista"), async
 // bancário) + realizável (a receber em aberto) vs. Passivo circulante
 // (a pagar em aberto). Sem Patrimônio Líquido real (ver API-CONTRACT.md).
 //
-// Diferente de /dre e /caixa, não tem "período" escolhido pelo usuário — é
-// uma foto de agora, soma de tudo que ainda está em aberto. Busca numa
-// janela larga (2 anos pra trás, 1 ano pra frente) pra não perder título
-// antigo em atraso nem título futuro já lançado, já que o endpoint do Conta
-// Azul exige um intervalo de data de vencimento pra filtrar.
+// Realizável/passivo vêm pré-computados de historico_mensal (mesmo cache do
+// /historico-mensal — ver src/cron/historico.js), somando os 36 meses da
+// janela (2 anos atrás, 1 ano à frente). O cálculo ao vivo original buscava
+// essa janela inteira numa invocação só e estourava o limite de
+// subrequisições do Worker pra cliente com bastante lançamento (23/09,
+// mesmo achado do histórico) — a "foto" agora atualiza em até ~1 dia em vez
+// de tempo real, igual o histórico. Só o disponível (saldo bancário) segue
+// ao vivo — são poucas contas, barato de buscar toda vez.
 financeiroRoutes.get("/:clienteId/balanco", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
 
@@ -180,23 +183,18 @@ financeiroRoutes.get("/:clienteId/balanco", exigirPapel("master", "analista"), a
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const hoje = new Date();
-  const de = new Date(hoje.getFullYear() - 2, hoje.getMonth(), hoje.getDate()).toISOString().slice(0, 10);
-  const ate = new Date(hoje.getFullYear() + 1, hoje.getMonth(), hoje.getDate()).toISOString().slice(0, 10);
-
-  const [contasAPagar, contasAReceber, contasBancarias] = await Promise.all([
-    buscarContasAPagar(accessToken, { de, ate }),
-    buscarContasAReceber(accessToken, { de, ate }),
-    buscarContasBancarias(accessToken),
-  ]);
-
+  const contasBancarias = await buscarContasBancarias(accessToken);
   const contasAtivas = contasBancarias.itens.filter((conta) => conta.ativo);
   const saldos = await Promise.all(contasAtivas.map((conta) => buscarSaldoConta(accessToken, conta.id)));
   const disponivel = saldos.reduce((soma, saldo) => soma + saldo, 0);
 
-  const realizavel = contasAReceber.itens.reduce((soma, item) => soma + (item.nao_pago ?? 0), 0);
-  const passivoCirculante = contasAPagar.itens.reduce((soma, item) => soma + (item.nao_pago ?? 0), 0);
+  const { realizavel, passivo: passivoCirculante } = await somarAbertoNaJanela(
+    c.env.DB,
+    clienteId,
+    mesesJanelaBalanco()
+  );
 
+  const hoje = new Date();
   return c.json({
     gerado_em: hoje.toISOString().slice(0, 10),
     ativo: {

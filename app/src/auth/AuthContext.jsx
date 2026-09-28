@@ -38,8 +38,24 @@ export function AuthProvider({ children }) {
     });
   }
 
+  async function esqueciSenha({ email }) {
+    await apiFetch("/api/auth/esqueci-senha", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async function redefinirSenha({ token, senhaNova }) {
+    await apiFetch("/api/auth/redefinir-senha", {
+      method: "POST",
+      body: JSON.stringify({ token, senha_nova: senhaNova }),
+    });
+  }
+
   return (
-    <AuthContext.Provider value={{ user, checkingSession, login, logout, alterarSenha }}>
+    <AuthContext.Provider
+      value={{ user, checkingSession, login, logout, alterarSenha, esqueciSenha, redefinirSenha }}
+    >
       {children}
     </AuthContext.Provider>
   );

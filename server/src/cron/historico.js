@@ -1,9 +1,8 @@
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
-import { computarMes, ultimosMeses } from "../contaazul/historico.js";
+import { computarMes, mesesJanelaBalanco } from "../contaazul/historico.js";
 import { listarClienteIdsConectados } from "../db/conexoesContaazul.js";
 import { statusHistoricoPorCliente, upsertHistoricoMes } from "../db/historicoMensal.js";
 
-const JANELA_MESES = 12;
 const HORAS_FRESCOR = 20; // mês só entra na fila de novo depois disso
 const LIMITE_POR_EXECUCAO = 6; // teto de (cliente, mês) recalculados por invocação — cada um é ~4 requisições à Conta Azul (contas a pagar/receber, paginadas), fica bem abaixo do limite de subrequisições do Worker mesmo somando os 6
 
@@ -19,12 +18,14 @@ function idadeEmHoras(atualizadoEm) {
 // limite de subrequisições que o cálculo ao vivo batia (ver
 // CHECKLIST-V1.0.md, achado de 23/09). Também serve de backfill: mês nunca
 // calculado tem prioridade máxima (idade "infinita"), então um cliente novo
-// preenche os 12 meses em poucas execuções.
+// preenche a janela em poucas execuções. Cobre os 36 meses que o /balanco
+// pré-computado precisa (24 atrás + 12 à frente) — já é superset dos 12
+// meses que a Home/Histórico mostram, não precisa rodar duas janelas.
 export async function recalcularHistoricoPendente(env) {
   const clienteIds = await listarClienteIdsConectados(env.DB);
   if (clienteIds.length === 0) return;
 
-  const mesesChaves = ultimosMeses(JANELA_MESES);
+  const mesesChaves = mesesJanelaBalanco();
 
   const pendentes = [];
   for (const clienteId of clienteIds) {

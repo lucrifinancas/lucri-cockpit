@@ -133,20 +133,22 @@ Divisão combinada em 11/09: back fica com o usuário, front continua aqui.
 Lista completa (contrato de API, formato de resposta, exemplo de JSON) em
 `PENDENCIAS-FRONTEND.md`, consolidado pelo dev em 22/09.
 
-- [ ] **DRE — construir a tela**: backend pronto desde 25/08, árvore
-  oficial do Conta Azul com subtotais em cascata. Falta o componente de
-  tabela contábil hierárquica.
-- [ ] **BALANÇO simplificado — construir a tela**: backend pronto (22/09),
-  provavelmente o mesmo componente de tabela hierárquica do DRE, só mais
-  simples (Ativo/Passivo, sem os níveis de subtotal do DRE). Avisar na
-  tela que não é balanço contábil completo (decisão fechada com a
-  contadora).
-- [ ] **Esqueci minha senha — 2 telas**: pedir e-mail (chama
-  `POST /api/auth/esqueci-senha`) e `/redefinir-senha?token=...` (chama
-  `POST /api/auth/redefinir-senha`).
-- [ ] **Login com Google + convites**: botão "Entrar com Google" na tela
-  de login, e seção "Convites de acesso" em Ajustes (listar/criar/cancelar
-  convite, só master).
+- [x] **DRE — tela construída (23/09)**: `AccountingTable`, componente
+  genérico de tabela contábil hierárquica (linha + subitens + totalizador),
+  reutilizado pelo Balanço abaixo.
+- [x] **BALANÇO simplificado — tela construída (23/09)**: mesmo
+  `AccountingTable`, linhas montadas à mão (Ativo Circulante com
+  disponível/realizável, Passivo Circulante, Saldo) já que o endpoint não
+  devolve array de linhas como o DRE. Aviso de "não é balanço contábil
+  completo" fixo no topo da tela.
+- [x] **Esqueci minha senha — 2 telas (23/09)**: link "Esqueci minha
+  senha" alterna o próprio LoginPage pra um modo de pedir e-mail (sem
+  rota nova); `/redefinir-senha?token=...` é página própria
+  (`RedefinirSenhaPage`), roteada mesmo deslogado.
+- [x] **Login com Google + convites — front construído (23/09)**: botão
+  "Entrar com Google" no login (redirect de página inteira, trata
+  `?google=<código>` com mensagem amigável); seção "Convites de acesso"
+  em Ajustes (listar/criar/cancelar, só master).
 - [ ] **Criar login do cliente** (front + back): pode estar superado pelo
   fluxo de convite + Google acima — confirmar antes de construir os dois.
 

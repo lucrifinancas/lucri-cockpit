@@ -1,0 +1,62 @@
+.accounting-table {
+  width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  border-collapse: collapse;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.accounting-row td {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.accounting-row:last-child td {
+  border-bottom: none;
+}
+
+.accounting-desc {
+  color: var(--text-primary);
+}
+
+.accounting-codigo {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-right: 10px;
+}
+
+/* Valor negativo já sai com o "-" do Intl.NumberFormat — a cor é reforço,
+   nunca o único sinal. */
+.accounting-valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.accounting-row-grupo .accounting-desc,
+.accounting-row-grupo .accounting-valor {
+  font-weight: 600;
+}
+
+.accounting-row-sub .accounting-desc {
+  padding-left: 40px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.accounting-row-sub .accounting-valor {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Totalizador (Receita Bruta, Lucro Bruto, Resultado Final...): separador
+   visual + negrito, sem cor nova — hierarquia vem de peso e superfície,
+   igual o resto do dashboard. */
+.accounting-row-total td {
+  background: var(--bg-subtle);
+  font-weight: 700;
+  border-top: 1px solid var(--border-subtle);
+}

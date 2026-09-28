@@ -29,6 +29,14 @@
   }
 }
 
+/* Variante sem painel de destaque (ex: RedefinirSenhaPage) — tela de
+   trânsito, não precisa vender o produto de novo. */
+.login-shell-single {
+  grid-template-columns: 1fr;
+  max-width: 460px;
+  min-height: auto;
+}
+
 .login-form-pane {
   padding: 48px;
   display: flex;
@@ -100,6 +108,63 @@
 .login-submit:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.login-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 11px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.login-google:hover {
+  border-color: var(--text-muted);
+}
+
+/* Texto neutro (não --lucri-sky) — essa cor em texto pequeno fica abaixo
+   do contraste mínimo do WCAG em fundo claro (ver --lucri-mint-text em
+   tokens.css pro mesmo problema em outro tom). */
+.login-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.login-link:hover {
+  color: var(--text-primary);
 }
 
 .login-showcase-pane {
