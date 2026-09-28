@@ -73,7 +73,7 @@ function buildAgeing(lancamentos) {
 }
 
 export default function HomePage() {
-  const { home, entradas, saidas, despesas, previousHome, previousEntradas, previousSaidas, previousDespesas, loading, error } = useFinanceData();
+  const { home, entradas, saidas, despesas, previousHome, previousEntradas, previousSaidas, loading, error } = useFinanceData();
   const historico = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
@@ -124,6 +124,10 @@ export default function HomePage() {
   // período) — mais confiável que reclassificar lançamento por lançamento.
   const contasAReceber = home.contas_a_receber;
   const totalAReceberNoMes = Math.max(contasAReceber.todos - contasAReceber.pago.valor, 0);
+  // "Contas a pagar": mesma conta do a-receber, do lado de `contas_a_pagar`
+  // — o que vence no período e ainda não foi pago.
+  const contasAPagar = home.contas_a_pagar;
+  const totalAPagar = Math.max(contasAPagar.todos - contasAPagar.pago.valor, 0);
   const inadimplenciaPct = contasAReceber.todos > 0 ? (contasAReceber.vencido.valor / contasAReceber.todos) * 100 : 0;
 
   // Delta "vs. período anterior" — só quando o hook trouxe o período
@@ -135,10 +139,8 @@ export default function HomePage() {
   const deltaSaidas = previousSaidas ? computeDelta(totalSaidas, previousSaidas.totais.pago.valor) : null;
   const prevAReceberNoMes = previousHome ? Math.max(previousHome.contas_a_receber.todos - previousHome.contas_a_receber.pago.valor, 0) : null;
   const deltaAReceber = previousHome ? computeDelta(totalAReceberNoMes, prevAReceberNoMes) : null;
-  // `previousDespesas` nasce lista vazia (não null, ver useFinanceData),
-  // então usa `previousEntradas` como sinal de "tem período anterior
-  // comparável" — os dois chegam juntos na mesma leva de fetch.
-  const deltaDespesas = previousEntradas ? computeDelta(totalDespesas, sumValores(previousDespesas)) : null;
+  const prevAPagar = previousHome ? Math.max(previousHome.contas_a_pagar.todos - previousHome.contas_a_pagar.pago.valor, 0) : null;
+  const deltaAPagar = previousHome ? computeDelta(totalAPagar, prevAPagar) : null;
 
   const ageingChart = buildAgeing(entradas?.lancamentos ?? []);
 
@@ -208,8 +210,8 @@ export default function HomePage() {
         {isVisible("saidas") && (
           <StatCard label="Saídas" value={totalSaidas} icon={ArrowCircleUp} delta={deltaSaidas} invertDeltaColor />
         )}
-        {isVisible("despesas") && (
-          <StatCard label="Despesas" value={totalDespesas} icon={Receipt} delta={deltaDespesas} invertDeltaColor />
+        {isVisible("contasAPagar") && (
+          <StatCard label="Contas a pagar" value={totalAPagar} icon={Receipt} delta={deltaAPagar} invertDeltaColor />
         )}
         {isVisible("contasAReceberMes") && (
           <StatCard
