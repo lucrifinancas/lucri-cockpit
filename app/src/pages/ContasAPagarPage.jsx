@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CaretDown, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
+import { useActiveClient } from "../context/ClientContext";
+import { usePeriod } from "../context/PeriodContext";
+import { apiFetch } from "../api/client";
 import { filterLancamentos } from "../data/mockFinance";
 import DateRangePicker from "../components/DateRangePicker";
 import "../styles/page.css";
@@ -8,6 +11,83 @@ import "./ContasAPagarPage.css";
 
 const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const POR_PAGINA = 10;
+
+const NOMES_MES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// Visão por mês (pedido do usuário, 07/10): 2 meses atrás, o atual e 2 na
+// frente — total a pagar de cada mês (por vencimento) e quanto já foi pago.
+// Busca a própria janela de 5 meses (não depende do período do topo); clicar
+// num mês troca o período da página pra ele (setMonth do PeriodContext), aí
+// os cards de situação e a tabela abaixo acompanham.
+function MesesCards() {
+  const { activeClientId } = useActiveClient();
+  const { preset, month, setMonth } = usePeriod();
+  const [porMes, setPorMes] = useState(null);
+
+  const hoje = new Date();
+  const meses = [-2, -1, 0, 1, 2].map((desloc) => {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() + desloc, 1);
+    return { chave: iso(d).slice(0, 7), nome: NOMES_MES[d.getMonth()], atual: desloc === 0 };
+  });
+  const de = `${meses[0].chave}-01`;
+  const ultimo = new Date(hoje.getFullYear(), hoje.getMonth() + 3, 0);
+  const ate = iso(ultimo);
+
+  useEffect(() => {
+    if (!activeClientId) return;
+    let cancelado = false;
+    setPorMes(null);
+    apiFetch(`/api/clientes/${activeClientId}/saidas?de=${de}&ate=${ate}`)
+      .then((dados) => {
+        if (cancelado) return;
+        const soma = new Map();
+        for (const l of dados.lancamentos ?? []) {
+          const chave = l.data_vencimento?.slice(0, 7);
+          const atual = soma.get(chave) ?? { total: 0, pago: 0 };
+          atual.total += l.valor;
+          atual.pago += l.valor_pago;
+          soma.set(chave, atual);
+        }
+        setPorMes(soma);
+      })
+      .catch(() => !cancelado && setPorMes(new Map()));
+    return () => {
+      cancelado = true;
+    };
+  }, [activeClientId, de, ate]);
+
+  const mesAtivo = preset === "mes-especifico" ? month : preset === "mes" ? meses[2].chave : null;
+
+  return (
+    <div className="cap-meses" role="tablist" aria-label="Escolher mês">
+      {meses.map((m) => {
+        const { total = 0, pago = 0 } = porMes?.get(m.chave) ?? {};
+        const pct = total > 0 ? Math.min(100, Math.round((pago / total) * 100)) : 0;
+        return (
+          <button
+            key={m.chave}
+            type="button"
+            role="tab"
+            aria-selected={mesAtivo === m.chave}
+            className={`cap-card cap-mes ${mesAtivo === m.chave ? "active" : ""}`}
+            onClick={() => setMonth(m.chave)}
+          >
+            <span className="cap-card-label">
+              {m.nome}
+              {m.atual && <span className="cap-mes-atual">atual</span>}
+            </span>
+            <span className="cap-card-value">{porMes ? fmt.format(total) : "…"}</span>
+            <span className="cap-mes-barra" aria-hidden="true">
+              <span style={{ width: `${pct}%` }} />
+            </span>
+            <span className="cap-mes-pago">{porMes ? `${pct}% pago · ${fmt.format(pago)}` : "carregando"}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const SITUACOES = {
   vencido: { label: "Vencido", tone: "danger" },
@@ -105,6 +185,8 @@ export default function ContasAPagarPage() {
   return (
     <div className="page">
       <h1 className="page-title">Contas a pagar</h1>
+
+      <MesesCards />
 
       <div className="cap-cards" role="tablist" aria-label="Filtrar por situação">
         {cards.map((c) => (
