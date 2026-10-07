@@ -15,24 +15,29 @@ const POR_PAGINA = 10;
 const NOMES_MES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-// Visão por mês (pedido do usuário, 07/10): 2 meses atrás, o atual e 2 na
-// frente — total a pagar de cada mês (por vencimento) e quanto já foi pago.
-// Busca a própria janela de 5 meses (não depende do período do topo); clicar
-// num mês troca o período da página pra ele (setMonth do PeriodContext), aí
-// os cards de situação e a tabela abaixo acompanham.
+// Visão por mês (pedido do usuário, 07/10): o mês escolhido no meio, 2 antes
+// e 2 depois — total a pagar de cada mês (por vencimento) e quanto já foi
+// pago. O mês do meio segue o período do topo ("Mês específico"/"Este mês";
+// outros presets usam o mês de hoje). Busca a própria janela de 5 meses;
+// clicar num mês troca o período da página pra ele (setMonth), e a janela
+// recentra nele.
 function MesesCards() {
   const { activeClientId } = useActiveClient();
   const { preset, month, setMonth } = usePeriod();
   const [porMes, setPorMes] = useState(null);
 
   const hoje = new Date();
+  const mesHoje = iso(hoje).slice(0, 7);
+  const mesAtivo = preset === "mes-especifico" ? month : preset === "mes" ? mesHoje : null;
+  const [anoCentro, mesCentro] = (mesAtivo ?? mesHoje).split("-").map(Number);
   const meses = [-2, -1, 0, 1, 2].map((desloc) => {
-    const d = new Date(hoje.getFullYear(), hoje.getMonth() + desloc, 1);
-    return { chave: iso(d).slice(0, 7), nome: NOMES_MES[d.getMonth()], atual: desloc === 0 };
+    const d = new Date(anoCentro, mesCentro - 1 + desloc, 1);
+    const chave = iso(d).slice(0, 7);
+    const nome = NOMES_MES[d.getMonth()] + (d.getFullYear() !== hoje.getFullYear() ? ` ${d.getFullYear()}` : "");
+    return { chave, nome, atual: chave === mesHoje };
   });
   const de = `${meses[0].chave}-01`;
-  const ultimo = new Date(hoje.getFullYear(), hoje.getMonth() + 3, 0);
-  const ate = iso(ultimo);
+  const ate = iso(new Date(anoCentro, mesCentro + 2, 0));
 
   useEffect(() => {
     if (!activeClientId) return;
@@ -56,8 +61,6 @@ function MesesCards() {
       cancelado = true;
     };
   }, [activeClientId, de, ate]);
-
-  const mesAtivo = preset === "mes-especifico" ? month : preset === "mes" ? meses[2].chave : null;
 
   return (
     <div className="cap-meses" role="tablist" aria-label="Escolher mês">
