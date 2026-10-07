@@ -392,3 +392,16 @@
   color: var(--danger-text);
   font-weight: 600;
 }
+
+/* Dois cards lado a lado (Perfil|Aparência, Cadastro|Conexões, Convites|Cards
+   da Home). Card que não aparece pro papel do usuário só some — o outro
+   ocupa a linha. */
+.settings-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 16px;
+}
+
+.settings-pair > .settings-card {
+  min-width: 0;
+}

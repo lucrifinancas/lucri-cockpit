@@ -426,6 +426,21 @@ algum grupo em `categoria_pai_nome` — troque a mãe do grupo antes de apagar).
 
 ---
 
+## Mães de RECEITA (07/10) — `/maes-receita` e `PUT /categorias/receitas`
+
+Mesmo modelo das mães de despesa, com **lista própria** por cliente (tabelas
+`categoria_mae_receita` + `categoria_receita`, migração 0011).
+
+- `GET /api/clientes/:id/maes-receita` (`master`, `analista`) → `[{ "id", "nome" }]`
+- `POST /api/clientes/:id/maes-receita` (só `master`) → body `{ "nome" }`; `201`, ou `409` se o nome já existe.
+- `DELETE /api/clientes/:id/maes-receita/:maeId` (só `master`) → `404` se não existe, `409` se ainda tem receita nela.
+- `PUT /api/clientes/:id/categorias/receitas` (só `master`) → body
+  `{ "categorias": [{ "categoria_id", "categoria_nome", "mae_id" }] }` — só as
+  receitas **com** mãe; substitui a classificação inteira do cliente.
+- `GET /categorias` passa a trazer `mae_receita_id` em cada categoria.
+
+---
+
 ## `GET /api/contaazul/autorizar/:clienteId`
 
 Protegida (`master`, `analista`). Gera o link de autorização OAuth do Conta
@@ -533,13 +548,20 @@ Protegida (`master`, `analista`). Lista detalhada de recebimentos.
       "data_competencia": "2026-07-01",
       "categoria": "Receitas de Serviços",
       "categoria_id": "7a851b36-...",
-      "contraparte": "DONA VIOLETA SITIO CERCADO"
+      "contraparte": "DONA VIOLETA SITIO CERCADO",
+      "mae": "Receitas de Vendas e de Serviços",
+      "mae_exibicao": "Receitas de Vendas e de Serviços"
     }
   ]
 }
 ```
 `contraparte` é o nome do cliente que pagou (pode vir `null` se o Conta Azul
 não tiver essa informação vinculada ao lançamento).
+
+`mae` = categoria-mãe de receita escolhida em Ajustes (`PUT
+/categorias/receitas`), `null` se ainda não classificada; `mae_exibicao` é a
+mesma coisa com `"Sem mãe"` no lugar do `null`. Diferente de `/despesas`,
+`categoria` aqui continua sendo a categoria original do Conta Azul (07/10).
 
 ---
 

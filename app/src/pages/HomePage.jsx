@@ -155,12 +155,38 @@ export default function HomePage() {
   // pontual/outro, que era inventada no mock e não existe na API real.
   // Regime de caixa: soma valor_pago por lançamento, não valor (total do
   // título, pago ou não) — ver "⚠️ Regime de caixa" no API-CONTRACT.md.
-  const receitasPorCategoriaBruto = groupByCategoria(
-    (entradas?.lancamentos ?? []).map((l) => ({ ...l, valor: l.valor_pago }))
-  );
-  const receitasPorCategoria = reconciliarComTotal(receitasPorCategoriaBruto, totalEntradas);
+  // Agrupa pela categoria master escolhida em Ajustes → Categorias de
+  // Receita (`mae_exibicao`, "Sem mãe" se ainda não classificada); ao abrir,
+  // as categorias originais do Conta Azul. Sem `mae_exibicao` (backend
+  // antigo) cai na categoria original, igual era antes.
+  const receitasLanc = (entradas?.lancamentos ?? []).map((l) => ({
+    ...l,
+    valor: l.valor_pago,
+    subcategoria: l.categoria,
+    categoria: l.mae_exibicao ?? l.categoria,
+  }));
+  const receitasPorCategoria = reconciliarComTotal(groupByCategoria(receitasLanc), totalEntradas);
   const receitasChart = topCategorias(receitasPorCategoria);
-  const receitasTabela = receitasChart.map((d) => ({ label: d.categoria, value: d.valor, color: d.color }));
+  // Mesmo fator do reconciliarComTotal, pra soma das filhas bater com a mãe.
+  const somaBrutaReceitas = sumValores(receitasLanc);
+  const fatorReceitas = somaBrutaReceitas ? totalEntradas / somaBrutaReceitas : 1;
+  const receitasPorMae = new Map();
+  for (const l of receitasLanc) {
+    const filhas = receitasPorMae.get(l.categoria) ?? new Map();
+    const nome = l.subcategoria ?? "Sem categoria";
+    filhas.set(nome, (filhas.get(nome) ?? 0) + l.valor * fatorReceitas);
+    receitasPorMae.set(l.categoria, filhas);
+  }
+  const totalReceitasSemMae = sumValores(receitasLanc.filter((l) => "mae" in l && !l.mae)) * fatorReceitas;
+  const receitasTabela = receitasChart.map((d) => ({
+    label: d.categoria,
+    value: d.valor,
+    color: d.color,
+    children: [...(receitasPorMae.get(d.categoria) ?? [])]
+      .map(([label, value]) => ({ label, value }))
+      .filter((filho, _, todos) => !(todos.length === 1 && filho.label === d.categoria))
+      .sort((a, b) => b.value - a.value),
+  }));
 
   // Despesas por categoria: dado real, filtrado pelas categorias marcadas
   // em Ajustes → Categorias de Despesa (ver API-CONTRACT.md /despesas).
@@ -264,6 +290,14 @@ export default function HomePage() {
         <div className="chart-row chart-row-2">
           <div>
             <h2 className="section-title">Receitas por categoria</h2>
+            {totalReceitasSemMae > 0 && (
+              <p className="pending-notice">
+                {fmtBRL.format(totalReceitasSemMae)} em receitas ainda sem mãe.
+                <span className="pending-notice-actions">
+                  <Link to="/ajustes" className="pending-notice-link">Classificar em Ajustes →</Link>
+                </span>
+              </p>
+            )}
             <EntradasSummaryTable rows={receitasTabela} total={totalEntradas} />
           </div>
 

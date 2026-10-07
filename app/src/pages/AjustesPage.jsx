@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EnvelopeSimple, MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
+import { EnvelopeSimple, HandCoins, MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
@@ -19,7 +19,39 @@ const contaAzulParam = new URLSearchParams(window.location.search).get("contaazu
 // aqui em cima e clica nas despesas que pertencem a ela; pode marcar várias
 // de uma vez. Despesa sem categoria master aparece como "Sem mãe" na Home
 // (ver API-CONTRACT.md: /categorias, /maes, PUT /categorias/despesas).
-function CategoriasSection({ clienteId, clienteNome }) {
+// Receitas usam a mesma tela com lista de mães própria (/maes-receita, PUT
+// /categorias/receitas) e sem o override "conta como despesa?".
+const CATEGORIAS_TIPO = {
+  despesa: {
+    tipoContaAzul: "DESPESA",
+    campoMae: "mae_id",
+    rotaMaes: "maes",
+    rotaSalvar: "categorias/despesas",
+    titulo: "Categorias de Despesa",
+    Icone: Receipt,
+    item: "despesa",
+    itens: "despesas",
+    exemploMae: "Despesas Administrativas",
+    explicacao:
+      "O Conta Azul agrupa despesas do jeito dele, que às vezes mistura coisas sem relação (ex: exame médico junto de confraternização). Aqui você cria suas categorias master, escolhe uma como ativa e clica nas despesas que pertencem a ela — dá pra marcar várias de uma vez.",
+  },
+  receita: {
+    tipoContaAzul: "RECEITA",
+    campoMae: "mae_receita_id",
+    rotaMaes: "maes-receita",
+    rotaSalvar: "categorias/receitas",
+    titulo: "Categorias de Receita",
+    Icone: HandCoins,
+    item: "receita",
+    itens: "receitas",
+    exemploMae: "Serviços",
+    explicacao:
+      "Igual às despesas, com uma lista de categorias master só das receitas. Crie as categorias master, escolha uma como ativa e clique nas receitas que pertencem a ela. A Home e a página Entradas agrupam as receitas por elas.",
+  },
+};
+
+function CategoriasSection({ clienteId, clienteNome, tipo = "despesa" }) {
+  const config = CATEGORIAS_TIPO[tipo];
   const [categorias, setCategorias] = useState([]);
   const [maes, setMaes] = useState([]);
   const [maeAtivaId, setMaeAtivaId] = useState(null);
@@ -38,21 +70,21 @@ function CategoriasSection({ clienteId, clienteNome }) {
     setMaeAtivaId(null);
     Promise.all([
       apiFetch(`/api/clientes/${clienteId}/categorias`),
-      apiFetch(`/api/clientes/${clienteId}/maes`),
+      apiFetch(`/api/clientes/${clienteId}/${config.rotaMaes}`),
     ])
       .then(([cats, listaMaes]) => {
         if (cancelled) return;
-        const despesas = cats
-          .filter((cat) => cat.tipo === "DESPESA")
+        const doTipo = cats
+          .filter((cat) => cat.tipo === config.tipoContaAzul)
           .map((cat) => ({
             id: cat.id,
             nome: cat.nome,
-            mae_id: cat.mae_id,
+            mae_id: cat[config.campoMae],
             is_despesa: cat.is_despesa,
             overridden: cat.overridden,
           }))
           .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-        setCategorias(despesas);
+        setCategorias(doTipo);
         setMaes(listaMaes);
       })
       .catch((err) => {
@@ -64,7 +96,7 @@ function CategoriasSection({ clienteId, clienteNome }) {
     return () => {
       cancelled = true;
     };
-  }, [clienteId]);
+  }, [clienteId, config]);
 
   async function handleAdicionarMae(e) {
     e.preventDefault();
@@ -72,7 +104,7 @@ function CategoriasSection({ clienteId, clienteNome }) {
     if (!nome) return;
     setErro(null);
     try {
-      const criada = await apiFetch(`/api/clientes/${clienteId}/maes`, {
+      const criada = await apiFetch(`/api/clientes/${clienteId}/${config.rotaMaes}`, {
         method: "POST",
         body: JSON.stringify({ nome }),
       });
@@ -87,7 +119,7 @@ function CategoriasSection({ clienteId, clienteNome }) {
   async function handleRemoverMae(id) {
     setErro(null);
     try {
-      await apiFetch(`/api/clientes/${clienteId}/maes/${id}`, { method: "DELETE" });
+      await apiFetch(`/api/clientes/${clienteId}/${config.rotaMaes}/${id}`, { method: "DELETE" });
       setMaes((prev) => prev.filter((mae) => mae.id !== id));
       setCategorias((prev) => prev.map((cat) => (cat.mae_id === id ? { ...cat, mae_id: null } : cat)));
       setMaeAtivaId((atual) => (atual === id ? null : atual));
@@ -109,15 +141,20 @@ function CategoriasSection({ clienteId, clienteNome }) {
     setSalvando(true);
     setErro(null);
     try {
-      const atribuidas = categorias
-        .filter((cat) => cat.mae_id != null || cat.overridden)
-        .map((cat) => ({
-          categoria_id: cat.id,
-          categoria_nome: cat.nome,
-          mae_id: cat.mae_id ?? null,
-          is_despesa: cat.overridden ? cat.is_despesa : true,
-        }));
-      await apiFetch(`/api/clientes/${clienteId}/categorias/despesas`, {
+      const atribuidas =
+        tipo === "despesa"
+          ? categorias
+              .filter((cat) => cat.mae_id != null || cat.overridden)
+              .map((cat) => ({
+                categoria_id: cat.id,
+                categoria_nome: cat.nome,
+                mae_id: cat.mae_id ?? null,
+                is_despesa: cat.overridden ? cat.is_despesa : true,
+              }))
+          : categorias
+              .filter((cat) => cat.mae_id != null)
+              .map((cat) => ({ categoria_id: cat.id, categoria_nome: cat.nome, mae_id: cat.mae_id }));
+      await apiFetch(`/api/clientes/${clienteId}/${config.rotaSalvar}`, {
         method: "PUT",
         body: JSON.stringify({ categorias: atribuidas }),
       });
@@ -134,22 +171,19 @@ function CategoriasSection({ clienteId, clienteNome }) {
   const termo = busca.trim().toLowerCase();
   const visiveis = termo ? categorias.filter((cat) => cat.nome.toLowerCase().includes(termo)) : categorias;
   const semMae = categorias.filter((cat) => cat.mae_id == null).length;
+  const { Icone } = config;
 
   return (
     <section className="settings-card">
       <h2 className="settings-card-title">
-        <Receipt size={18} weight="regular" />
-        Categorias de Despesa{clienteNome ? ` — ${clienteNome}` : ""}
+        <Icone size={18} weight="regular" />
+        {config.titulo}{clienteNome ? ` — ${clienteNome}` : ""}
       </h2>
-      <p className="settings-hint">
-        O Conta Azul agrupa despesas do jeito dele, que às vezes mistura coisas sem relação (ex:
-        exame médico junto de confraternização). Aqui você cria suas categorias master, escolhe
-        uma como ativa e clica nas despesas que pertencem a ela — dá pra marcar várias de uma vez.
-      </p>
+      <p className="settings-hint">{config.explicacao}</p>
       {loading && <p className="settings-hint">Carregando categorias...</p>}
       {erro && <p className="settings-hint status-error">{erro}</p>}
       {!loading && categorias.length === 0 && !erro && (
-        <p className="settings-hint">Nenhuma categoria de despesa encontrada no Conta Azul.</p>
+        <p className="settings-hint">Nenhuma categoria de {config.item} encontrada no Conta Azul.</p>
       )}
       {!loading && categorias.length > 0 && (
         <>
@@ -157,7 +191,7 @@ function CategoriasSection({ clienteId, clienteNome }) {
             <form className="mae-cadastro-form" onSubmit={handleAdicionarMae}>
               <input
                 className="categoria-search"
-                placeholder="Cadastrar categoria master (ex: Despesas Administrativas)"
+                placeholder={`Cadastrar categoria master (ex: ${config.exemploMae})`}
                 value={novaMae}
                 onChange={(e) => setNovaMae(e.target.value)}
               />
@@ -195,19 +229,19 @@ function CategoriasSection({ clienteId, clienteNome }) {
           </div>
           <p className="settings-hint">
             {maeAtivaId
-              ? `Categoria master ativa: ${maePorId.get(maeAtivaId)}. Clica nas despesas abaixo pra marcar ou desmarcar.`
-              : "Clica numa categoria master acima pra começar a marcar as despesas dela."}
+              ? `Categoria master ativa: ${maePorId.get(maeAtivaId)}. Clica nas ${config.itens} abaixo pra marcar ou desmarcar.`
+              : `Clica numa categoria master acima pra começar a marcar as ${config.itens} dela.`}
           </p>
           <input
             className="categoria-search"
-            placeholder="Buscar despesa..."
+            placeholder={`Buscar ${config.item}...`}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
           <p className={"settings-hint" + (semMae > 0 ? " categoria-faltam" : "")}>
             {semMae > 0
-              ? `${semMae} de ${categorias.length} despesas sem categoria master.`
-              : `Todas as ${categorias.length} despesas têm categoria master.`}
+              ? `${semMae} de ${categorias.length} ${config.itens} sem categoria master.`
+              : `Todas as ${categorias.length} ${config.itens} têm categoria master.`}
           </p>
           <div className="settings-list-scroll despesa-cat-grid">
             {visiveis.length === 0 && <p className="settings-hint">Nada encontrado.</p>}
@@ -448,169 +482,176 @@ export default function AjustesPage() {
         </p>
       )}
 
-      <section className="settings-card">
-        <h2 className="settings-card-title">
-          <UserCircle size={18} weight="regular" />
-          Meu perfil
-        </h2>
-        <div className="profile-avatar-row">
-          <ClientAvatar client={{ name: profileName || profile.name, logoUrl: profile.avatarUrl }} size={64} />
-          <div>
-            <button type="button" className="profile-avatar-btn" onClick={() => avatarInputRef.current?.click()}>
-              Alterar foto
-            </button>
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleAvatarChange}
-            />
-          </div>
-        </div>
-        <form className="profile-form" onSubmit={handleSaveProfile}>
-          <label className="profile-field">
-            Nome
-            <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Seu nome" />
-          </label>
-          <div className="profile-field">
-            E-mail
-            <span className="status-badge status-role">{user?.email}</span>
-          </div>
-          <div className="profile-field">
-            Perfil de acesso
-            <span className="status-badge status-role">{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
-          </div>
-          <button type="submit" className="profile-save">
-            {profileSaved ? "Salvo!" : "Salvar"}
-          </button>
-        </form>
-
-        <form className="profile-form" onSubmit={handleAlterarSenha}>
-          <label className="profile-field">
-            Senha atual
-            <input
-              type="password"
-              value={senhaAtual}
-              onChange={(e) => setSenhaAtual(e.target.value)}
-              autoComplete="current-password"
-            />
-          </label>
-          <label className="profile-field">
-            Nova senha
-            <input
-              type="password"
-              value={senhaNova}
-              onChange={(e) => setSenhaNova(e.target.value)}
-              autoComplete="new-password"
-              placeholder="Mín. 8 caracteres"
-            />
-          </label>
-          <button type="submit" className="profile-save">
-            Trocar senha
-          </button>
-        </form>
-        {senhaMsg && <p className="settings-hint status-ok">{senhaMsg}</p>}
-        {senhaErro && <p className="settings-hint status-error">{senhaErro}</p>}
-      </section>
-
-      <section className="settings-card">
-        <h2 className="settings-card-title">
-          {theme === "dark" ? <MoonStars size={18} weight="regular" /> : <Sun size={18} weight="regular" />}
-          Aparência
-        </h2>
-        <label className="settings-row settings-row-toggle">
-          <span>Tema escuro</span>
-          <span className="toggle-switch">
-            <input type="checkbox" checked={theme === "dark"} onChange={toggleTheme} />
-            <span className="toggle-switch-track" />
-          </span>
-        </label>
-        <p className="settings-hint">Alterna entre tema claro e escuro em todo o dashboard.</p>
-      </section>
-
-      {isMaster && (
+      {/* Cards em pares lado a lado (empilham em tela estreita, ver AjustesPage.css). */}
+      <div className="settings-pair">
         <section className="settings-card">
           <h2 className="settings-card-title">
-            <Plugs size={18} weight="regular" />
-            Conexões (Conta Azul)
+            <UserCircle size={18} weight="regular" />
+            Meu perfil
           </h2>
-          <div className="settings-list">
-            {clients.map((c) => (
-              <div key={c.id} className="settings-row">
-                <span>{c.name}</span>
-                <button
-                  type="button"
-                  className="profile-avatar-btn"
-                  disabled={conectando === c.id}
-                  onClick={() => handleConectarContaAzul(c.id)}
-                >
-                  {conectando === c.id ? "Redirecionando..." : "Conectar Conta Azul"}
-                </button>
-              </div>
-            ))}
+          <div className="profile-avatar-row">
+            <ClientAvatar client={{ name: profileName || profile.name, logoUrl: profile.avatarUrl }} size={64} />
+            <div>
+              <button type="button" className="profile-avatar-btn" onClick={() => avatarInputRef.current?.click()}>
+                Alterar foto
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleAvatarChange}
+              />
+            </div>
           </div>
-          <p className="settings-hint">
-            Abre o login do Conta Azul pra autorizar o acesso desse cliente.
-          </p>
-        </section>
-      )}
-
-      {isEquipe && (
-        <section className="settings-card">
-          <h2 className="settings-card-title">
-            <SquaresFour size={18} weight="regular" />
-            Cards visíveis na Home{activeClient ? ` — ${activeClient.name}` : ""}
-          </h2>
-          <div className="settings-list">
-            {HOME_CARDS.map((card) => (
-              <label key={card.id} className="settings-row settings-row-toggle">
-                <span>{card.label}</span>
-                <span className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={isVisible(card.id)}
-                    onChange={(e) => setOverride(card.id, e.target.checked)}
-                  />
-                  <span className="toggle-switch-track" />
-                </span>
-              </label>
-            ))}
-          </div>
-          <p className="settings-hint">Marca só o que quer ver na Home desse cliente.</p>
-        </section>
-      )}
-
-      {isMaster && activeClientId && (
-        <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} />
-      )}
-
-      {isMaster && activeClientId && (
-        <ConvitesSection clienteId={activeClientId} clienteNome={activeClient?.name} />
-      )}
-
-      {isMaster && (
-        <section className="settings-card">
-          <h2 className="settings-card-title">
-            <UserPlus size={18} weight="regular" />
-            Cadastrar cliente novo
-          </h2>
-          <form className="onboarding-form" onSubmit={handleAddClient}>
-            <input
-              placeholder="Nome do cliente"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-            />
-            <button type="submit" disabled={criandoCliente}>
-              {criandoCliente ? "Cadastrando..." : "Cadastrar"}
+          <form className="profile-form" onSubmit={handleSaveProfile}>
+            <label className="profile-field">
+              Nome
+              <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Seu nome" />
+            </label>
+            <div className="profile-field">
+              E-mail
+              <span className="status-badge status-role">{user?.email}</span>
+            </div>
+            <div className="profile-field">
+              Perfil de acesso
+              <span className="status-badge status-role">{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
+            </div>
+            <button type="submit" className="profile-save">
+              {profileSaved ? "Salvo!" : "Salvar"}
             </button>
           </form>
-          {erroCliente && <p className="settings-hint status-error">{erroCliente}</p>}
-          <p className="settings-hint">
-            Depois de cadastrado, use "Conectar Conta Azul" acima pra autorizar o acesso aos dados
-            financeiros desse cliente.
-          </p>
+
+          <form className="profile-form" onSubmit={handleAlterarSenha}>
+            <label className="profile-field">
+              Senha atual
+              <input
+                type="password"
+                value={senhaAtual}
+                onChange={(e) => setSenhaAtual(e.target.value)}
+                autoComplete="current-password"
+              />
+            </label>
+            <label className="profile-field">
+              Nova senha
+              <input
+                type="password"
+                value={senhaNova}
+                onChange={(e) => setSenhaNova(e.target.value)}
+                autoComplete="new-password"
+                placeholder="Mín. 8 caracteres"
+              />
+            </label>
+            <button type="submit" className="profile-save">
+              Trocar senha
+            </button>
+          </form>
+          {senhaMsg && <p className="settings-hint status-ok">{senhaMsg}</p>}
+          {senhaErro && <p className="settings-hint status-error">{senhaErro}</p>}
         </section>
+        <section className="settings-card">
+          <h2 className="settings-card-title">
+            {theme === "dark" ? <MoonStars size={18} weight="regular" /> : <Sun size={18} weight="regular" />}
+            Aparência
+          </h2>
+          <label className="settings-row settings-row-toggle">
+            <span>Tema escuro</span>
+            <span className="toggle-switch">
+              <input type="checkbox" checked={theme === "dark"} onChange={toggleTheme} />
+              <span className="toggle-switch-track" />
+            </span>
+          </label>
+          <p className="settings-hint">Alterna entre tema claro e escuro em todo o dashboard.</p>
+        </section>
+      </div>
+
+      <div className="settings-pair">
+        {isMaster && (
+          <section className="settings-card">
+            <h2 className="settings-card-title">
+              <UserPlus size={18} weight="regular" />
+              Cadastrar cliente novo
+            </h2>
+            <form className="onboarding-form" onSubmit={handleAddClient}>
+              <input
+                placeholder="Nome do cliente"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+              <button type="submit" disabled={criandoCliente}>
+                {criandoCliente ? "Cadastrando..." : "Cadastrar"}
+              </button>
+            </form>
+            {erroCliente && <p className="settings-hint status-error">{erroCliente}</p>}
+            <p className="settings-hint">
+              Depois de cadastrado, use "Conectar Conta Azul" ao lado pra autorizar o acesso aos dados
+              financeiros desse cliente.
+            </p>
+          </section>
+        )}
+        {isMaster && (
+          <section className="settings-card">
+            <h2 className="settings-card-title">
+              <Plugs size={18} weight="regular" />
+              Conexões (Conta Azul)
+            </h2>
+            <div className="settings-list">
+              {clients.map((c) => (
+                <div key={c.id} className="settings-row">
+                  <span>{c.name}</span>
+                  <button
+                    type="button"
+                    className="profile-avatar-btn"
+                    disabled={conectando === c.id}
+                    onClick={() => handleConectarContaAzul(c.id)}
+                  >
+                    {conectando === c.id ? "Redirecionando..." : "Conectar Conta Azul"}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <p className="settings-hint">
+              Abre o login do Conta Azul pra autorizar o acesso desse cliente.
+            </p>
+          </section>
+        )}
+      </div>
+
+      <div className="settings-pair">
+        {isMaster && activeClientId && (
+          <ConvitesSection clienteId={activeClientId} clienteNome={activeClient?.name} />
+        )}
+        {isEquipe && (
+          <section className="settings-card">
+            <h2 className="settings-card-title">
+              <SquaresFour size={18} weight="regular" />
+              Cards visíveis na Home{activeClient ? ` — ${activeClient.name}` : ""}
+            </h2>
+            <div className="settings-list">
+              {HOME_CARDS.map((card) => (
+                <label key={card.id} className="settings-row settings-row-toggle">
+                  <span>{card.label}</span>
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={isVisible(card.id)}
+                      onChange={(e) => setOverride(card.id, e.target.checked)}
+                    />
+                    <span className="toggle-switch-track" />
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="settings-hint">Marca só o que quer ver na Home desse cliente.</p>
+          </section>
+        )}
+      </div>
+
+      {isMaster && activeClientId && (
+        <>
+          <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} />
+          <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} tipo="receita" />
+        </>
       )}
     </div>
   );

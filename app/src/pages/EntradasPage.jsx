@@ -8,6 +8,8 @@ import "../styles/page.css";
 const COLUMNS = [
   { key: "data", label: "Data" },
   { key: "descricao", label: "Descrição" },
+  { key: "mae", label: "Categoria" },
+  { key: "categoria", label: "Subcategoria" },
   { key: "contraparte", label: "Contraparte" },
   { key: "valor", label: "Valor" },
 ];
@@ -21,7 +23,16 @@ export default function EntradasPage() {
   const filtrados = filterLancamentos(lancamentos, busca);
   const rows = [...filtrados]
     .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))
-    .map((l) => ({ id: l.id, data: l.data_vencimento, descricao: l.descricao, contraparte: l.contraparte ?? "—", valor: l.valor_pago }));
+    .map((l) => ({
+      id: l.id,
+      data: l.data_vencimento,
+      descricao: l.descricao,
+      // Categoria = mãe de Ajustes → Categorias de Receita; Subcategoria = a do Conta Azul.
+      mae: l.mae_exibicao ?? "—",
+      categoria: l.categoria ?? "—",
+      contraparte: l.contraparte ?? "—",
+      valor: l.valor_pago,
+    }));
   const total = entradas?.totais?.pago?.valor ?? 0;
 
   return (

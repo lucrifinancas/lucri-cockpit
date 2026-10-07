@@ -55,7 +55,7 @@ export function filterLancamentos(lancamentos, termo) {
   if (!t) return lancamentos;
   return lancamentos.filter((l) => {
     const categoria = typeof l.categoria === "string" ? l.categoria : (l.categoria?.nome ?? "");
-    return [l.descricao, l.contraparte, categoria].some((v) => v?.toLowerCase().includes(t));
+    return [l.descricao, l.contraparte, categoria, l.mae_exibicao].some((v) => v?.toLowerCase().includes(t));
   });
 }
 

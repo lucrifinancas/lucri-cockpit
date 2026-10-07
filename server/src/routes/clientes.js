@@ -6,6 +6,13 @@ import { criarHashSenha } from "../auth/senha.js";
 import { salvarCategoriasDespesa, listarMaesPorCategoria, listarOverridesDespesa } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
 import { listarMaes, criarMae, removerMae } from "../db/categoriaMae.js";
+import {
+  listarMaesReceita,
+  criarMaeReceita,
+  removerMaeReceita,
+  listarMaesPorCategoriaReceita,
+  salvarCategoriasReceita,
+} from "../db/categoriaReceita.js";
 import { listarConvites, criarConvite, removerConvite } from "../db/convites.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { buscarCategorias } from "../contaazul/api.js";
@@ -70,10 +77,11 @@ clientesRoutes.get("/:id/categorias", async (c) => {
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const [categorias, marcadas, overridesDespesa] = await Promise.all([
+  const [categorias, marcadas, overridesDespesa, maesReceita] = await Promise.all([
     buscarCategorias(accessToken),
     listarMaesPorCategoria(c.env.DB, clienteId),
     listarOverridesDespesa(c.env.DB, clienteId),
+    listarMaesPorCategoriaReceita(c.env.DB, clienteId),
   ]);
 
   return c.json(
@@ -86,6 +94,7 @@ clientesRoutes.get("/:id/categorias", async (c) => {
         is_despesa: override !== undefined ? override : cat.tipo === "DESPESA",
         overridden: override !== undefined,
         mae_id: marcadas.get(cat.id)?.mae_id ?? null,
+        mae_receita_id: maesReceita.get(cat.id)?.mae_id ?? null,
         pai_id: cat.categoria_pai ?? null,
       };
     })
@@ -110,6 +119,25 @@ clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) 
   }
 
   await salvarCategoriasDespesa(c.env.DB, clienteId, categorias);
+  return c.json({ ok: true });
+});
+
+// Salva a mãe de cada receita (lista separada das despesas, ver
+// db/categoriaReceita.js). Só vêm as receitas com mãe. Só master.
+clientesRoutes.put("/:id/categorias/receitas", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { categorias } = await c.req.json();
+
+  if (!Array.isArray(categorias)) {
+    return c.json({ erro: "Campo 'categorias' precisa ser uma lista." }, 400);
+  }
+
+  const maesDoCliente = new Set((await listarMaesReceita(c.env.DB, clienteId)).map((mae) => mae.id));
+  if (categorias.some((cat) => !cat.categoria_id || !cat.categoria_nome || !maesDoCliente.has(cat.mae_id))) {
+    return c.json({ erro: "Cada receita precisa de categoria_id, categoria_nome e uma mae_id desse cliente." }, 400);
+  }
+
+  await salvarCategoriasReceita(c.env.DB, clienteId, categorias);
   return c.json({ ok: true });
 });
 
@@ -194,6 +222,42 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
   }
   if (resultado === "em_uso") {
     return c.json({ erro: "Essa mãe está em uso por algum grupo. Troque a mãe do grupo antes de apagar." }, 409);
+  }
+  return c.json({ ok: true });
+});
+
+// Mães das receitas — mesma coisa que /maes, lista própria.
+clientesRoutes.get("/:id/maes-receita", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  return c.json(await listarMaesReceita(c.env.DB, clienteId));
+});
+
+clientesRoutes.post("/:id/maes-receita", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { nome } = await c.req.json();
+  const nomeLimpo = typeof nome === "string" ? nome.trim() : "";
+
+  if (!nomeLimpo) {
+    return c.json({ erro: "Nome é obrigatório." }, 400);
+  }
+
+  const mae = await criarMaeReceita(c.env.DB, clienteId, nomeLimpo);
+  if (!mae) {
+    return c.json({ erro: "Esse cliente já tem uma categoria-mãe de receita com esse nome." }, 409);
+  }
+  return c.json(mae, 201);
+});
+
+clientesRoutes.delete("/:id/maes-receita/:maeId", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const maeId = Number(c.req.param("maeId"));
+
+  const resultado = await removerMaeReceita(c.env.DB, clienteId, maeId);
+  if (resultado === "nao_encontrada") {
+    return c.json({ erro: "Categoria-mãe não encontrada." }, 404);
+  }
+  if (resultado === "em_uso") {
+    return c.json({ erro: "Essa mãe ainda tem receitas. Tire as receitas dela antes de apagar." }, 409);
   }
   return c.json({ ok: true });
 });

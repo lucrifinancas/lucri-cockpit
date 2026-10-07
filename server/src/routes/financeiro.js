@@ -13,7 +13,8 @@ import {
 import { normalizarLancamento } from "../contaazul/normalizar.js";
 import { montarDre } from "../contaazul/dre.js";
 import { listarOverridesDespesa, listarMaesPorCategoria } from "../db/categoriaDespesa.js";
-import { classificarDespesas, idsDeDespesa } from "../utils/despesas.js";
+import { classificarDespesas, idsDeDespesa, SEM_MAE } from "../utils/despesas.js";
+import { listarMaesPorCategoriaReceita } from "../db/categoriaReceita.js";
 import { ultimosMeses, mesesJanelaBalanco } from "../contaazul/historico.js";
 import { listarHistoricoMensal, somarAbertoNaJanela } from "../db/historicoMensal.js";
 
@@ -28,12 +29,22 @@ financeiroRoutes.get("/:clienteId/entradas", exigirPapel("master", "analista"), 
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const dados = await buscarContasAReceber(accessToken, { de, ate });
+  const [dados, maePorCategoria] = await Promise.all([
+    buscarContasAReceber(accessToken, { de, ate }),
+    listarMaesPorCategoriaReceita(c.env.DB, clienteId),
+  ]);
 
+  // Mãe escolhida em Ajustes → Categorias de Receita. Diferente de /despesas,
+  // `categoria` continua sendo a original (quem já lia /entradas não muda);
+  // a mãe vem à parte em `mae` (nula = ainda sem mãe) e `mae_exibicao`.
   return c.json({
     periodo: { de, ate },
     totais: dados.totais,
-    lancamentos: dados.itens.map((item) => normalizarLancamento(item, "entrada")),
+    lancamentos: dados.itens.map((item) => {
+      const lancamento = normalizarLancamento(item, "entrada");
+      const mae = maePorCategoria.get(lancamento.categoria_id)?.mae_nome ?? null;
+      return { ...lancamento, mae, mae_exibicao: mae ?? SEM_MAE };
+    }),
   });
 });
 
