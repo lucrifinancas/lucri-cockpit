@@ -4,6 +4,8 @@ import { useFinanceData } from "../hooks/useFinanceData";
 import { useActiveClient } from "../context/ClientContext";
 import { usePeriod } from "../context/PeriodContext";
 import { apiFetch } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { Link } from "react-router-dom";
 import { filterLancamentos } from "../data/mockFinance";
 import DateRangePicker from "../components/DateRangePicker";
 import "../styles/page.css";
@@ -21,7 +23,9 @@ const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0
 // outros presets usam o mês de hoje). Busca a própria janela de 5 meses;
 // clicar num mês troca o período da página pra ele (setMonth), e a janela
 // recentra nele.
-function MesesCards() {
+// `maes`: Set com os nomes das mães escolhidas em Ajustes → Contas a pagar —
+// os meses somam só elas, igual o resto da página.
+function MesesCards({ maes }) {
   const { activeClientId } = useActiveClient();
   const { preset, month, setMonth } = usePeriod();
   const [porMes, setPorMes] = useState(null);
@@ -48,6 +52,7 @@ function MesesCards() {
         if (cancelado) return;
         const soma = new Map();
         for (const l of dados.lancamentos ?? []) {
+          if (!maes.has(l.mae)) continue;
           const chave = l.data_vencimento?.slice(0, 7);
           const atual = soma.get(chave) ?? { total: 0, pago: 0 };
           atual.total += l.valor;
@@ -60,7 +65,7 @@ function MesesCards() {
     return () => {
       cancelado = true;
     };
-  }, [activeClientId, de, ate]);
+  }, [activeClientId, de, ate, maes]);
 
   return (
     <div className="cap-meses" role="tablist" aria-label="Escolher mês">
@@ -121,6 +126,22 @@ function fmtData(iso) {
 // devolve esse campo (ver DADOS-CONTA-AZUL-API.md, "Quitação de parcela").
 export default function ContasAPagarPage() {
   const { saidas, loading } = useFinanceData();
+  const { activeClientId } = useActiveClient();
+  const { user } = useAuth();
+  // Mães que entram nesta página (Ajustes → Contas a pagar, só master
+  // escolhe). null = carregando; vazio = nada escolhido, página fica vazia.
+  const [maesPermitidas, setMaesPermitidas] = useState(null);
+  useEffect(() => {
+    if (!activeClientId) return;
+    let cancelado = false;
+    setMaesPermitidas(null);
+    apiFetch(`/api/clientes/${activeClientId}/contas-pagar-maes`)
+      .then((lista) => !cancelado && setMaesPermitidas(new Set(lista.map((m) => m.nome))))
+      .catch(() => !cancelado && setMaesPermitidas(new Set()));
+    return () => {
+      cancelado = true;
+    };
+  }, [activeClientId]);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [pagina, setPagina] = useState(1);
@@ -132,7 +153,9 @@ export default function ContasAPagarPage() {
   const d = new Date();
   const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-  const todos = (saidas?.lancamentos ?? []).map((l) => ({ ...l, situacao: situacaoDe(l, hoje) }));
+  const todos = (saidas?.lancamentos ?? [])
+    .filter((l) => maesPermitidas?.has(l.mae))
+    .map((l) => ({ ...l, situacao: situacaoDe(l, hoje) }));
   const opcoes = (campo) => [...new Set(todos.map((l) => l[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const categorias = opcoes("categoria");
   const fornecedores = opcoes("contraparte");
@@ -189,7 +212,18 @@ export default function ContasAPagarPage() {
     <div className="page">
       <h1 className="page-title">Contas a pagar</h1>
 
-      <MesesCards />
+      {maesPermitidas?.size === 0 && (
+        <p className="pending-notice">
+          Nenhuma categoria mãe escolhida pra esta página.
+          {user?.papel === "master" && (
+            <span className="pending-notice-actions">
+              <Link to="/ajustes" className="pending-notice-link">Escolher em Ajustes →</Link>
+            </span>
+          )}
+        </p>
+      )}
+
+      {maesPermitidas && <MesesCards maes={maesPermitidas} />}
 
       <div className="cap-cards" role="tablist" aria-label="Filtrar por situação">
         {cards.map((c) => (

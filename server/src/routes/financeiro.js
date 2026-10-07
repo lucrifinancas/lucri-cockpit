@@ -57,12 +57,22 @@ financeiroRoutes.get("/:clienteId/saidas", exigirPapel("master", "analista"), as
     return c.json({ erro: "Cliente ainda não conectou o Conta Azul." }, 404);
   }
 
-  const dados = await buscarContasAPagar(accessToken, { de, ate });
+  const [dados, maePorCategoria] = await Promise.all([
+    buscarContasAPagar(accessToken, { de, ate }),
+    listarMaesPorCategoria(c.env.DB, clienteId),
+  ]);
 
+  // Mesma mãe de Ajustes → Categorias de Despesa (pro filtro "Categoria mãe"
+  // de Contas a pagar, 07/10). `categoria` continua a original; saída sem
+  // mãe (ex: transferência) vem com `mae` nula e `mae_exibicao` "Sem mãe".
   return c.json({
     periodo: { de, ate },
     totais: dados.totais,
-    lancamentos: dados.itens.map((item) => normalizarLancamento(item, "saida")),
+    lancamentos: dados.itens.map((item) => {
+      const lancamento = normalizarLancamento(item, "saida");
+      const mae = maePorCategoria.get(lancamento.categoria_id)?.mae_nome ?? null;
+      return { ...lancamento, mae, mae_exibicao: mae ?? SEM_MAE };
+    }),
   });
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EnvelopeSimple, HandCoins, MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
+import { EnvelopeSimple, HandCoins, Invoice, MoonStars, Plus, Plugs, Receipt, SquaresFour, Sun, UserCircle, UserPlus, X } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
@@ -268,6 +268,107 @@ function CategoriasSection({ clienteId, clienteNome, tipo = "despesa" }) {
               );
             })}
           </div>
+          <button type="button" className="profile-save" onClick={handleSalvar} disabled={salvando}>
+            {salvando ? "Salvando..." : salvo ? "Salvo!" : "Salvar"}
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+
+// Quais categorias-mãe de despesa entram na página Contas a pagar (pedido do
+// usuário, 07/10). Só master. Nenhuma marcada = a página não mostra nada.
+function ContasPagarSection({ clienteId, clienteNome }) {
+  const [maes, setMaes] = useState([]);
+  const [marcadas, setMarcadas] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  useEffect(() => {
+    if (!clienteId) return;
+    let cancelled = false;
+    setLoading(true);
+    setErro(null);
+    Promise.all([
+      apiFetch(`/api/clientes/${clienteId}/maes`),
+      apiFetch(`/api/clientes/${clienteId}/contas-pagar-maes`),
+    ])
+      .then(([todas, escolhidas]) => {
+        if (cancelled) return;
+        setMaes(todas);
+        setMarcadas(new Set(escolhidas.map((m) => m.id)));
+      })
+      .catch((err) => !cancelled && setErro(err.message))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [clienteId]);
+
+  function alternar(id) {
+    setMarcadas((prev) => {
+      const nova = new Set(prev);
+      if (nova.has(id)) nova.delete(id);
+      else nova.add(id);
+      return nova;
+    });
+  }
+
+  async function handleSalvar() {
+    setSalvando(true);
+    setErro(null);
+    try {
+      await apiFetch(`/api/clientes/${clienteId}/contas-pagar-maes`, {
+        method: "PUT",
+        body: JSON.stringify({ mae_ids: [...marcadas] }),
+      });
+      setSalvo(true);
+      setTimeout(() => setSalvo(false), 2000);
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section className="settings-card">
+      <h2 className="settings-card-title">
+        <Invoice size={18} weight="regular" />
+        Contas a pagar{clienteNome ? ` — ${clienteNome}` : ""}
+      </h2>
+      <p className="settings-hint">
+        Marque as categorias master de despesa que entram na página Contas a pagar. Sem nenhuma
+        marcada, a página fica vazia.
+      </p>
+      {loading && <p className="settings-hint">Carregando...</p>}
+      {erro && <p className="settings-hint status-error">{erro}</p>}
+      {!loading && maes.length === 0 && !erro && (
+        <p className="settings-hint">Cadastre as categorias master em Categorias de Despesa primeiro.</p>
+      )}
+      {!loading && maes.length > 0 && (
+        <>
+          <div className="despesa-cat-grid">
+            {maes.map((mae) => (
+              <button
+                type="button"
+                key={mae.id}
+                className={"despesa-cat-chip" + (marcadas.has(mae.id) ? " despesa-cat-chip-selecionada" : "")}
+                aria-pressed={marcadas.has(mae.id)}
+                onClick={() => alternar(mae.id)}
+              >
+                {mae.nome}
+              </button>
+            ))}
+          </div>
+          <p className={"settings-hint" + (marcadas.size === 0 ? " categoria-faltam" : "")}>
+            {marcadas.size === 0
+              ? "Nenhuma marcada: Contas a pagar não vai mostrar nada."
+              : `${marcadas.size} de ${maes.length} categorias master entram em Contas a pagar.`}
+          </p>
           <button type="button" className="profile-save" onClick={handleSalvar} disabled={salvando}>
             {salvando ? "Salvando..." : salvo ? "Salvo!" : "Salvar"}
           </button>
@@ -651,6 +752,7 @@ export default function AjustesPage() {
         <>
           <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} />
           <CategoriasSection clienteId={activeClientId} clienteNome={activeClient?.name} tipo="receita" />
+          <ContasPagarSection clienteId={activeClientId} clienteNome={activeClient?.name} />
         </>
       )}
     </div>

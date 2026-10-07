@@ -5,7 +5,7 @@ import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
 import { salvarCategoriasDespesa, listarMaesPorCategoria, listarOverridesDespesa } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
-import { listarMaes, criarMae, removerMae } from "../db/categoriaMae.js";
+import { listarMaes, criarMae, removerMae, listarMaesContasPagar, salvarMaesContasPagar } from "../db/categoriaMae.js";
 import {
   listarMaesReceita,
   criarMaeReceita,
@@ -223,6 +223,30 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
   if (resultado === "em_uso") {
     return c.json({ erro: "Essa mãe está em uso por algum grupo. Troque a mãe do grupo antes de apagar." }, 409);
   }
+  return c.json({ ok: true });
+});
+
+// Quais mães de despesa entram na página Contas a pagar. Leitura pra equipe
+// (a página filtra por elas), escrita só master (Ajustes).
+clientesRoutes.get("/:id/contas-pagar-maes", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  return c.json(await listarMaesContasPagar(c.env.DB, clienteId));
+});
+
+clientesRoutes.put("/:id/contas-pagar-maes", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const { mae_ids } = await c.req.json();
+
+  if (!Array.isArray(mae_ids)) {
+    return c.json({ erro: "Campo 'mae_ids' precisa ser uma lista." }, 400);
+  }
+  const maesDoCliente = new Set((await listarMaes(c.env.DB, clienteId)).map((mae) => mae.id));
+  const ids = [...new Set(mae_ids.map(Number))];
+  if (ids.some((id) => !maesDoCliente.has(id))) {
+    return c.json({ erro: "mae_id não pertence a esse cliente." }, 400);
+  }
+
+  await salvarMaesContasPagar(c.env.DB, clienteId, ids);
   return c.json({ ok: true });
 });
 
