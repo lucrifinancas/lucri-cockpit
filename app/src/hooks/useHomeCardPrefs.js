@@ -9,13 +9,17 @@ const STORAGE_PREFIX = "lucri-dash.home-cards.";
 // real do Conta Azul não classifica lançamentos dessa forma (só `categoria`,
 // ver GUIA-INTEGRACAO-DADOS-REAIS.md), então esses cards eram baseados em
 // dado inventado no mock.
+// 14/10/2026: KPIs da Home Financeira (redesenho). Saídas e Contas a pagar
+// saíram da linha de KPIs (o andamento de contas a pagar tem card próprio);
+// "Contas vencidas" agora é só o que já venceu — id novo pra não herdar a
+// preferência do card antigo, que mostrava outra conta.
 export const HOME_CARDS = [
-  { id: "entradas", label: "Entradas" },
-  { id: "saidas", label: "Saídas" },
-  { id: "contasAPagar", label: "Contas a pagar" },
-  { id: "contasAReceberMes", label: "Contas vencidas (Valores a receber)" },
-  { id: "inadimplencia", label: "Inadimplência do mês" },
   { id: "saldoConta", label: "Saldo em conta" },
+  { id: "resultado", label: "Resultado do mês" },
+  { id: "entradas", label: "Receitas" },
+  { id: "despesas", label: "Despesas" },
+  { id: "contasVencidas", label: "Contas vencidas" },
+  { id: "inadimplencia", label: "Inadimplência do mês" },
 ];
 
 function readOverrides(clientId) {

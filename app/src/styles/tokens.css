@@ -24,6 +24,9 @@
   --accent: var(--lucri-sky);
   --cta: var(--lucri-mint);
   --danger: #e2453c;
+  /* {color.alert} do Design System (SYSTEM-DESIGNER-LUCRI.md): alerta/tag —
+     só marcador (ícone, anel, ponto), nunca fundo nem texto corrido. */
+  --alert: #e8622c;
 
   /* Variantes escurecidas pra TEXTO em fundo claro — --lucri-mint e --danger
      puros dão 1.59:1 e 4.08:1 contra --bg-panel branco (WCAG AA pede 3:1 em

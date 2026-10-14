@@ -1,0 +1,26 @@
+{
+  "project": "Lucri Cockpit",
+  "package": "Home Financeira Redesign V2",
+  "files": [
+    "00_READ_FIRST.md",
+    "01_SCOPE_AND_NON_GOALS.md",
+    "02_HOME_REDESIGN_SPEC.md",
+    "03_COMPONENTS_MAP.md",
+    "04_DATA_MAPPING.md",
+    "05_DESIGN_SYSTEM_RULES.md",
+    "06_RESPONSIVE_BEHAVIOR.md",
+    "07_ACCEPTANCE_CRITERIA.md",
+    "08_IMPLEMENTATION_PROMPT.md",
+    "09_SUGGESTED_FILE_CHANGES.md",
+    "10_HEALTH_SCORE_PROPOSAL.md",
+    "11_DESIGN_RECONCILIATION.md"
+  ],
+  "reference_image": "reference/home-financeira-conceito.png",
+  "note": "Design System da Lucri é a fonte de verdade; a imagem é apenas referência de composição.",
+  "design_system_sources": [
+    "design-system-source/index.html",
+    "design-system-source/MANUAL-DA-MARCA-LUCRI.md",
+    "design-system-source/SYSTEM-DESIGNER-LUCRI.md"
+  ],
+  "key_decision": "Cockpit usa Inter; imagem é referência de composição; cards de produto não usam sombra."
+}

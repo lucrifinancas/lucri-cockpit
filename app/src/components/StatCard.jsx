@@ -6,7 +6,9 @@ const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" 
 // como um pingo de status — evita o efeito "salada de frutas" de pílula
 // colorida em todo card. Ver skill de dataviz: texto usa token de texto,
 // nunca a cor da série.
-export default function StatCard({ label, value, tone = "neutral", format = "currency", icon: Icon, delta, invertDeltaColor = false, breakdown }) {
+// `highlight`: fundo de superfície alternada (Design System: destaque por
+// troca de superfície, nunca sombra) — usado no "Resultado do mês" da Home.
+export default function StatCard({ label, value, tone = "neutral", format = "currency", icon: Icon, delta, invertDeltaColor = false, breakdown, highlight = false }) {
   const display = format === "currency" && typeof value === "number" ? fmt.format(value) : value;
   // Sentimento da cor: por padrão "subiu" é bom (verde). Em métricas onde
   // subir é ruim (ex: Saídas), invertDeltaColor inverte só a cor — a seta
@@ -14,7 +16,7 @@ export default function StatCard({ label, value, tone = "neutral", format = "cur
   const sentiment = delta && (invertDeltaColor ? (delta.direction === "up" ? "down" : "up") : delta.direction);
   return (
     <div
-      className={`stat-card ${breakdown ? "stat-card-hoverable" : ""}`}
+      className={`stat-card ${breakdown ? "stat-card-hoverable" : ""} ${highlight ? "stat-card-highlight" : ""}`}
       tabIndex={breakdown ? 0 : undefined}
       aria-describedby={breakdown ? `${label}-breakdown` : undefined}
     >

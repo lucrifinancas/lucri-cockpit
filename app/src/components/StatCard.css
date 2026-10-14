@@ -10,6 +10,10 @@
   position: relative;
 }
 
+.stat-card-highlight {
+  background: var(--bg-subtle);
+}
+
 .stat-card-hoverable {
   cursor: default;
 }
@@ -66,6 +70,7 @@
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-card-value.tone-positive {

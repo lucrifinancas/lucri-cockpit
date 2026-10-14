@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lucri Design System V1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/tokens.css"><link rel="stylesheet" href="./css/components.css"><link rel="stylesheet" href="./css/docs.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+</svg>
+
+<nav class="nav"><div class="container nav-inner"><a class="brand" href="#">Lucri DS</a><div class="nav-links"><a href="#colors">Cores</a><a href="#type">Tipografia</a><a href="#components">Componentes</a><a href="#data">Dados</a><button class="button secondary" id="theme">Modo escuro</button></div></div></nav>
+
+<header class="hero"><div class="container"><div class="tiny muted">LUCRI · DESIGN SYSTEM · V1</div><h1 class="display-xl">Clareza para<br>decidir melhor.</h1><p>Design system code-first em HTML, CSS e JavaScript puro, com foco em interfaces financeiras claras, modernas e consistentes.</p><div class="hero-actions"><a class="button primary" href="#components">Ver componentes <svg class="icon"><use href="#arrow"/></svg></a><a class="button secondary" href="#data">Ver dados financeiros</a></div></div></header>
+
+<section class="section" id="colors"><div class="container"><div class="section-head"><div class="tiny muted">01 · FOUNDATION</div><h2 class="large-title">Cores</h2><p>Verde = ação principal. Azul = links, foco e informação. Noite Profunda = estrutura. Laranja = atenção.</p></div>
+<div class="swatches">
+<div class="swatch"><div class="swatch-color" style="background:#010116"></div><div class="swatch-meta"><strong>Noite Profunda</strong><code>#010116</code></div></div>
+<div class="swatch"><div class="swatch-color" style="background:#00EB85"></div><div class="swatch-meta"><strong>Verde Menta</strong><code>#00EB85</code></div></div>
+<div class="swatch"><div class="swatch-color" style="background:#00D0F5"></div><div class="swatch-meta"><strong>Céu Azul</strong><code>#00D0F5</code></div></div>
+<div class="swatch"><div class="swatch-color" style="background:#E8622C"></div><div class="swatch-meta"><strong>Alert</strong><code>#E8622C</code></div></div>
+</div></div></section>
+
+<section class="section" id="type"><div class="container"><div class="section-head"><div class="tiny muted">02 · FOUNDATION</div><h2 class="large-title">Tipografia</h2><p>Inter como família única. Displays grandes no marketing, UI mais contida e números com tabular nums.</p></div>
+<div class="card">
+<div class="type-row"><div class="display-xl">Display XL</div><div class="token">80 / 88 · 700 · -0.025em</div></div>
+<div class="type-row"><div class="display">Display</div><div class="token">64 / 72 · 700 · -0.025em</div></div>
+<div class="type-row"><div class="large-title">Large Title</div><div class="token">34 / 41 · 500</div></div>
+<div class="type-row"><div class="headline">Headline</div><div class="token">17 / 22 · 600</div></div>
+<div class="type-row"><div>Body — interface clara e confortável.</div><div class="token">17 / 22 · 400</div></div>
+<div class="type-row"><div class="metric">R$ 284.930</div><div class="token">Metric · 40 / 48 · 700 · tabular nums</div></div>
+</div></div></section>
+
+<section class="section" id="components"><div class="container"><div class="section-head"><div class="tiny muted">03 · COMPONENTS</div><h2 class="large-title">Botões & Inputs</h2><p>O Primary é reservado à ação mais importante do contexto.</p></div>
+<div class="grid"><div class="span12 card"><div class="demo"><button class="button primary"><svg class="icon"><use href="#plus"/></svg>Primary</button><button class="button secondary">Secondary</button><button class="button tertiary">Tertiary</button><button class="button link-btn">Link</button><button class="button destructive">Destructive</button><button class="button primary" disabled>Disabled</button></div></div>
+<div class="span6 card" style="display:grid;gap:20px">
+<label class="form-field"><span class="label">Empresa</span><span class="input-wrap"><input class="input" placeholder="Nome da empresa"></span></label>
+<label class="form-field"><span class="label">CNPJ</span><span class="input-wrap error"><input class="input" value="12.345"></span><span class="error-text">Informe um CNPJ válido.</span></label>
+</div>
+<div class="span6 card" style="display:grid;gap:20px;align-content:start"><label class="controls"><input type="checkbox" checked>Receber relatórios mensais</label><label class="controls"><input type="radio" name="period" checked>Mensal</label><label class="controls"><input type="radio" name="period">Trimestral</label><div class="controls"><div class="switch on" id="switch"></div>Ativar notificações</div></div>
+</div></div></section>
+
+<section class="section"><div class="container"><div class="section-head"><div class="tiny muted">04 · NAVIGATION & OVERLAYS</div><h2 class="large-title">Tabs, menus e modal</h2></div>
+<div class="grid"><div class="span6 card"><div class="tabs"><button class="tab active">Visão geral</button><button class="tab">Lançamentos</button><button class="tab">Indicadores</button></div><p id="tab-output" class="muted" style="margin-top:20px">Conteúdo ativo: Visão geral</p><div class="segmented" style="margin-top:24px"><button class="segment">Dia</button><button class="segment">Semana</button><button class="segment active">Mês</button><button class="segment">Ano</button></div></div>
+<div class="span6 card"><div class="demo"><div class="menu-wrap"><button class="button secondary" id="menu-btn">Ações <svg class="icon"><use href="#more"/></svg></button><div class="menu" id="menu"><button class="menu-item">Editar</button><button class="menu-item">Duplicar</button><div class="divider"></div><button class="menu-item danger">Excluir</button></div></div><button class="button primary" id="open-modal">Abrir modal</button></div></div></div>
+</div></section>
+
+<section class="section" id="data"><div class="container"><div class="section-head"><div class="tiny muted">05 · DATA DISPLAY</div><h2 class="large-title">Dados financeiros</h2><p>O olhar encontra primeiro o valor, depois o contexto e só então percebe a interface.</p></div>
+<div class="kpis">
+<div class="card kpi"><span class="muted">Receita</span><strong class="metric">R$ 284.930</strong><span class="trend good">+18,4% no mês</span></div>
+<div class="card kpi"><span class="muted">Lucro líquido</span><strong class="metric">R$ 42.850</strong><span class="trend good">+6,2% vs. mês anterior</span></div>
+<div class="card kpi"><span class="muted">Contas vencidas</span><strong class="metric">R$ 6.915</strong><span class="trend bad">Atenção necessária</span></div>
+</div>
+
+<div class="grid" style="margin-top:24px"><div class="span8"><div class="table-wrap"><table><thead><tr><th>Fornecedor</th><th>Vencimento</th><th>Status</th><th class="right">Valor</th></tr></thead><tbody>
+<tr><td><strong>PHD Distribuidora</strong><div class="tiny muted">Boleto 005177 - 1</div></td><td>18 set. 2026</td><td><span class="badge alert"><span class="dot"></span>Pendente</span></td><td class="right numeric">R$ 260,34</td></tr>
+<tr><td><strong>VHSYS</strong><div class="tiny muted">Sistema de gestão</div></td><td>20 set. 2026</td><td><span class="badge info"><span class="dot"></span>Agendado</span></td><td class="right numeric">R$ 89,90</td></tr>
+<tr><td><strong>Energia Elétrica</strong><div class="tiny muted">Unidade Boa Vista</div></td><td>23 set. 2026</td><td><span class="badge success"><span class="dot"></span>Pago</span></td><td class="right numeric">R$ 742,18</td></tr>
+</tbody></table></div></div>
+<div class="span4 card"><div class="tiny muted">RECEITA × DESPESA</div><h3 class="title-2" style="margin:8px 0 0">Últimos 6 meses</h3><div class="chart">
+<div class="bar-wrap"><div class="bar" style="height:54%"></div><div class="bar blue" style="height:36%"></div></div>
+<div class="bar-wrap"><div class="bar" style="height:66%"></div><div class="bar blue" style="height:40%"></div></div>
+<div class="bar-wrap"><div class="bar" style="height:72%"></div><div class="bar blue" style="height:48%"></div></div>
+<div class="bar-wrap"><div class="bar" style="height:62%"></div><div class="bar blue" style="height:42%"></div></div>
+<div class="bar-wrap"><div class="bar" style="height:84%"></div><div class="bar blue" style="height:50%"></div></div>
+<div class="bar-wrap"><div class="bar" style="height:92%"></div><div class="bar blue" style="height:56%"></div></div>
+</div></div></div></div></section>
+
+<footer class="footer"><div class="container">Lucri Design System V1 · HTML + CSS + JavaScript puro</div></footer>
+
+<div class="modal-bg" id="modal"><section class="modal" role="dialog" aria-modal="true"><div class="modal-head"><div><h2 class="title-2">Adicionar pagamento</h2><p class="muted">Exemplo real do componente modal.</p></div><button class="icon-btn" data-close><svg class="icon"><use href="#x"/></svg></button></div><div class="modal-body"><label class="form-field"><span class="label">Fornecedor</span><span class="input-wrap"><input class="input" placeholder="Nome do fornecedor"></span></label></div><div class="modal-foot"><button class="button secondary" data-close>Cancelar</button><button class="button primary" data-close>Adicionar pagamento</button></div></section></div>
+
+<script src="./js/main.js"></script>
+</body></html>

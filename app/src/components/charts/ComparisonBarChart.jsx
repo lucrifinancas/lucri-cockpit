@@ -21,6 +21,7 @@ export default function ComparisonBarChart({ data, series }) {
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => numberFmt.format(v)}
+            width={84}
           />
           <Tooltip cursor={{ fill: "var(--bg-subtle)" }} allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
           <Legend wrapperStyle={{ fontSize: 13, color: "var(--text-secondary)" }} />
