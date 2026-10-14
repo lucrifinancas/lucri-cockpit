@@ -82,6 +82,25 @@
   margin-bottom: 4px;
 }
 
+/* Ícone da seção: quadradinho em superfície alternada (sem sombra). */
+.aj-secao-head-texto {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.aj-secao-icone {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-control);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
 .aj-secao-titulo {
   font-size: 22px;
   font-weight: 700;
@@ -445,15 +464,17 @@
   color: var(--text-secondary);
 }
 
-.aj-status i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-muted);
+.aj-status svg { flex: none; color: var(--text-muted); }
+.aj-status-ok { color: var(--text-primary); }
+.aj-status-ok svg { color: var(--lucri-mint-text); }
+
+.aj-usuarios {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.aj-status-ok { color: var(--text-primary); }
-.aj-status-ok i { background: var(--lucri-mint); }
+.aj-usuarios svg { color: var(--text-muted); }
 
 /* ---------- listas (integrações, acessos) ---------- */
 .aj-lista {
@@ -579,7 +600,7 @@
 /* ---------- mapeamento de categorias ---------- */
 .aj-mapa {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 270px minmax(0, 1fr);
   gap: 24px;
 }
 
@@ -782,3 +803,23 @@
   flex: none;
   width: 28px;
 }
+
+/* ---------- ícones (pedido do usuário, 14/10) ---------- */
+.aj-card-titulo svg { color: var(--text-secondary); flex: none; }
+
+.aj-pessoa { justify-content: flex-start; }
+.aj-pessoa > div,
+.aj-pessoa > span:not(.aj-badge) { flex: 1; }
+.aj-pessoa-icone { flex: none; color: var(--text-muted); }
+
+.aj-check-icone { flex: none; color: var(--text-secondary); }
+
+.aj-mapa-lado li > button:first-child span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aj-mapa-lado li > button:first-child span svg { flex: none; color: var(--text-muted); }
+.aj-mapa-lado .aj-ic-alerta { color: var(--alert) !important; }
+.aj-mapa-lado .aj-ic-ok { color: var(--lucri-mint-text) !important; }

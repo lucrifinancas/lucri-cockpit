@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Camera, IdentificationCard, Lock } from "@phosphor-icons/react";
 import { useAuth } from "../../auth/AuthContext";
 import { ROLE_LABELS } from "../../auth/roles";
 import { useLocalProfile } from "../../hooks/useLocalProfile";
@@ -6,7 +7,7 @@ import ClientAvatar from "../../components/ClientAvatar";
 import { SecaoHeader } from "./comum";
 
 // Minha conta → Perfil: dados pessoais e, separado, a troca de senha.
-export default function PerfilSecao() {
+export default function PerfilSecao({ icone }) {
   const { user, alterarSenha } = useAuth();
   const profile = useLocalProfile(user?.email);
   const [nome, setNome] = useState(profile.name);
@@ -61,7 +62,7 @@ export default function PerfilSecao() {
 
   return (
     <>
-      <SecaoHeader titulo="Meu perfil" descricao="Seu nome e foto aparecem na barra de cima do Cockpit." />
+      <SecaoHeader icone={icone} titulo="Meu perfil" descricao="Seu nome e foto aparecem na barra de cima do Cockpit." />
 
       <section className="aj-card">
         <div className="aj-perfil-topo">
@@ -70,11 +71,11 @@ export default function PerfilSecao() {
             <strong>{profile.name}</strong>
             <span className="aj-badge">{papel}</span>
           </div>
-          <button type="button" className="aj-btn-util" onClick={() => avatarRef.current?.click()}>Alterar foto</button>
+          <button type="button" className="aj-btn-util" onClick={() => avatarRef.current?.click()}><Camera size={15} aria-hidden="true" /> Alterar foto</button>
           <input ref={avatarRef} type="file" accept="image/*" hidden onChange={trocarFoto} />
         </div>
 
-        <h3 className="aj-card-titulo">Dados pessoais</h3>
+        <h3 className="aj-card-titulo"><IdentificationCard size={18} aria-hidden="true" /> Dados pessoais</h3>
         <form className="aj-form" onSubmit={salvarPerfil}>
           <label className="aj-campo">
             Nome
@@ -95,7 +96,7 @@ export default function PerfilSecao() {
       </section>
 
       <section className="aj-card">
-        <h3 className="aj-card-titulo">Segurança</h3>
+        <h3 className="aj-card-titulo"><Lock size={18} aria-hidden="true" /> Segurança</h3>
         <p className="aj-hint">Troque a senha de entrada no Cockpit. Mínimo de 8 caracteres.</p>
         <form className="aj-form" onSubmit={trocarSenha}>
           <label className="aj-campo">

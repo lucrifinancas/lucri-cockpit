@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Plugs } from "@phosphor-icons/react";
-import { SecaoHeader } from "./comum";
+import { ArrowsClockwise, Cloud, Link as LinkIcone } from "@phosphor-icons/react";
+import { SecaoHeader, StatusContaAzul } from "./comum";
 import { fmtData } from "./util";
 import { conectarContaAzul, useClientesResumo } from "./useClientesResumo";
 
@@ -8,7 +8,7 @@ import { conectarContaAzul, useClientesResumo } from "./useClientesResumo";
 // "Renovado em" = última vez que o acesso foi criado/renovado (acontece
 // sempre que o Cockpit busca dados). Se o Conta Azul derrubar o acesso, a
 // Home avisa e aqui o caminho é Reconectar.
-export default function IntegracoesSecao() {
+export default function IntegracoesSecao({ icone }) {
   const { lista, loading, erro } = useClientesResumo();
   const [conectando, setConectando] = useState(null);
 
@@ -19,9 +19,9 @@ export default function IntegracoesSecao() {
 
   return (
     <>
-      <SecaoHeader titulo="Integrações" descricao="Conexão de cada cliente com a Conta Azul, de onde vêm todos os números do Cockpit." />
+      <SecaoHeader icone={icone} titulo="Integrações" descricao="Conexão de cada cliente com a Conta Azul, de onde vêm todos os números do Cockpit." />
       <section className="aj-card">
-        <h3 className="aj-card-titulo"><Plugs size={18} weight="regular" aria-hidden="true" /> Conta Azul</h3>
+        <h3 className="aj-card-titulo"><Cloud size={18} aria-hidden="true" /> Conta Azul</h3>
         {loading && <p className="aj-hint">Carregando...</p>}
         {erro && <p className="aj-hint aj-erro">{erro}</p>}
         <ul className="aj-lista">
@@ -29,11 +29,7 @@ export default function IntegracoesSecao() {
             <li key={c.id} className="aj-integracao">
               <div>
                 <strong>{c.nome}</strong>
-                {c.conta_azul_conectado ? (
-                  <span className="aj-status aj-status-ok"><i aria-hidden="true" /> Conectada · acesso renovado em {fmtData(c.conta_azul_atualizado_em)}</span>
-                ) : (
-                  <span className="aj-status"><i aria-hidden="true" /> Não conectada</span>
-                )}
+                <StatusContaAzul conectado={c.conta_azul_conectado} detalhe={c.conta_azul_conectado ? `acesso renovado em ${fmtData(c.conta_azul_atualizado_em)}` : null} />
               </div>
               <button
                 type="button"
@@ -41,6 +37,7 @@ export default function IntegracoesSecao() {
                 disabled={conectando === c.id}
                 onClick={() => conectar(c.id)}
               >
+                {c.conta_azul_conectado ? <ArrowsClockwise size={15} aria-hidden="true" /> : <LinkIcone size={15} aria-hidden="true" />}
                 {conectando === c.id ? "Abrindo..." : c.conta_azul_conectado ? "Reconectar" : "Conectar Conta Azul"}
               </button>
             </li>

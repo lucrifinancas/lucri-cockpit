@@ -6,7 +6,7 @@ import { rotuloSalvar } from "./util";
 
 // Cockpit → Contas a pagar: quais categorias master de despesa entram na
 // página Contas a pagar (pedido do usuário, 07/10). Nenhuma = página vazia.
-export default function ContasPagarSecao() {
+export default function ContasPagarSecao({ icone }) {
   const { activeClientId } = useActiveClient();
   const [maes, setMaes] = useState([]);
   const [marcadas, setMarcadas] = useState(new Set());
@@ -51,7 +51,7 @@ export default function ContasPagarSecao() {
 
   return (
     <>
-      <SecaoHeader titulo="Contas a pagar" descricao="O que deve aparecer na página Contas a pagar?">
+      <SecaoHeader icone={icone} titulo="Contas a pagar" descricao="O que deve aparecer na página Contas a pagar?">
         <ClienteAlvo />
       </SecaoHeader>
       <section className="aj-card">

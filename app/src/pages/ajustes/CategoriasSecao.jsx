@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CaretDown, Plus, Warning, X } from "@phosphor-icons/react";
+import { ArrowRight, CaretDown, CheckCircle, ListBullets, Plus, Tag, Warning, X } from "@phosphor-icons/react";
 import { apiFetch } from "../../api/client";
 import { useActiveClient } from "../../context/ClientContext";
 import { ClienteAlvo, SecaoHeader } from "./comum";
@@ -164,18 +164,18 @@ function Mapeamento({ clienteId, tipo }) {
           <ul>
             <li>
               <button type="button" className={filtro === TODAS ? "ativo" : ""} onClick={() => setFiltro(TODAS)}>
-                <span>Todas</span><em>{categorias.length}</em>
+                <span><ListBullets size={14} aria-hidden="true" /> Todas</span><em>{categorias.length}</em>
               </button>
             </li>
             <li>
               <button type="button" className={`aj-mapa-sem ${filtro === SEM ? "ativo" : ""}`} onClick={() => setFiltro(SEM)}>
-                <span>Sem categoria</span><em>{semMae}</em>
+                <span>{semMae > 0 ? <Warning size={14} weight="fill" className="aj-ic-alerta" aria-hidden="true" /> : <CheckCircle size={14} weight="fill" className="aj-ic-ok" aria-hidden="true" />} Sem categoria</span><em>{semMae}</em>
               </button>
             </li>
             {maes.map((m) => (
               <li key={m.id} className="aj-mapa-mae">
                 <button type="button" className={filtro === m.id ? "ativo" : ""} onClick={() => setFiltro(m.id)}>
-                  <span>{m.nome}</span><em>{contagem.get(m.id) ?? 0}</em>
+                  <span><Tag size={14} aria-hidden="true" /> {m.nome}</span><em>{contagem.get(m.id) ?? 0}</em>
                 </button>
                 <button type="button" className="aj-btn-icone" onClick={() => removerMae(m)} aria-label={`Remover ${m.nome}`} title="Remover categoria master">
                   <X size={12} weight="bold" />
@@ -234,12 +234,12 @@ function Mapeamento({ clienteId, tipo }) {
 }
 
 // Cockpit → Categorias: abas Despesas | Receitas.
-export default function CategoriasSecao() {
+export default function CategoriasSecao({ icone }) {
   const { activeClientId } = useActiveClient();
   const [tipo, setTipo] = useState("despesa");
   return (
     <>
-      <SecaoHeader titulo="Categorias" descricao="Ligue cada categoria do Conta Azul a uma categoria master da Lucri. É assim que a Home agrupa receitas e despesas.">
+      <SecaoHeader icone={icone} titulo="Categorias" descricao="Ligue cada categoria do Conta Azul a uma categoria master da Lucri. É assim que a Home agrupa receitas e despesas.">
         <ClienteAlvo />
       </SecaoHeader>
       <div className="aj-abas" role="tablist" aria-label="Tipo de categoria">

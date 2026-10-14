@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Plus } from "@phosphor-icons/react";
+import { Link as LinkIcone, Plus, UserPlus, Users } from "@phosphor-icons/react";
 import { apiFetch } from "../../api/client";
 import { useActiveClient } from "../../context/ClientContext";
 import ClientAvatar from "../../components/ClientAvatar";
-import { SecaoHeader } from "./comum";
+import { SecaoHeader, StatusContaAzul } from "./comum";
 import { fmtData } from "./util";
 import { conectarContaAzul, useClientesResumo } from "./useClientesResumo";
 
 // Clientes → Clientes: lista com status de cada empresa + cadastro de novo.
-export default function ClientesSecao({ irPara }) {
+export default function ClientesSecao({ irPara, icone }) {
   const { addClient, setSelectedClientId } = useActiveClient();
   const { lista, loading, erro, recarregar } = useClientesResumo();
   const [abrirNovo, setAbrirNovo] = useState(false);
@@ -47,7 +47,7 @@ export default function ClientesSecao({ irPara }) {
 
   return (
     <>
-      <SecaoHeader titulo="Clientes" descricao="Empresas atendidas no Cockpit. Depois de cadastrar, conecte a Conta Azul pra liberar os dados.">
+      <SecaoHeader icone={icone} titulo="Clientes" descricao="Empresas atendidas no Cockpit. Depois de cadastrar, conecte a Conta Azul pra liberar os dados.">
         <button type="button" className="aj-btn-primario" onClick={() => setAbrirNovo((v) => !v)} aria-expanded={abrirNovo}>
           <Plus size={14} weight="bold" aria-hidden="true" /> Novo cliente
         </button>
@@ -92,25 +92,21 @@ export default function ClientesSecao({ irPara }) {
                     </span>
                   </td>
                   <td>
-                    {c.conta_azul_conectado ? (
-                      <span className="aj-status aj-status-ok" title={`Acesso renovado em ${fmtData(c.conta_azul_atualizado_em)}`}>
-                        <i aria-hidden="true" /> Conectada
-                      </span>
-                    ) : (
-                      <span className="aj-status"><i aria-hidden="true" /> Não conectada</span>
-                    )}
+                    <span title={c.conta_azul_conectado ? `Acesso renovado em ${fmtData(c.conta_azul_atualizado_em)}` : undefined}>
+                      <StatusContaAzul conectado={c.conta_azul_conectado} />
+                    </span>
                   </td>
                   <td className="num">
-                    {c.usuarios}
+                    <span className="aj-usuarios"><Users size={15} aria-hidden="true" /> {c.usuarios}</span>
                     {c.convites > 0 && <span className="aj-hint-inline"> + {c.convites} convite{c.convites > 1 ? "s" : ""}</span>}
                   </td>
                   <td className="aj-acoes-linha">
                     {!c.conta_azul_conectado && (
                       <button type="button" className="aj-btn-secundario" disabled={conectando === c.id} onClick={() => conectar(c.id)}>
-                        {conectando === c.id ? "Abrindo..." : "Conectar Conta Azul"}
+                        <LinkIcone size={15} aria-hidden="true" /> {conectando === c.id ? "Abrindo..." : "Conectar Conta Azul"}
                       </button>
                     )}
-                    <button type="button" className="aj-btn-util" onClick={() => configurar(c.id)}>Acessos</button>
+                    <button type="button" className="aj-btn-util" onClick={() => configurar(c.id)}><UserPlus size={15} aria-hidden="true" /> Acessos</button>
                   </td>
                 </tr>
               ))}
