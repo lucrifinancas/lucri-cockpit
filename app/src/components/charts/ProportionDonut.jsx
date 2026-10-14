@@ -1,4 +1,5 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import ChartTooltip from "./ChartTooltip";
 import { currencyFmt } from "./chartUtils";
 import "./charts.css";
 
@@ -22,7 +23,7 @@ export default function ProportionDonut({ data }) {
                 <Cell key={d.name} fill={d.color} />
               ))}
             </Pie>
-            <Tooltip allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => currencyFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
+            <Tooltip allowEscapeViewBox={{ x: true, y: true }} content={<ChartTooltip />} />
           </PieChart>
         </ResponsiveContainer>
         <div className="chart-donut-center">

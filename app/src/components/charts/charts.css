@@ -307,3 +307,48 @@
 @media (prefers-reduced-motion: reduce) {
   .progress-seg { transition: none; }
 }
+
+/* ---------- acabamento comum (Home) ---------- */
+.chart-legend-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.chart-legend-row .chart-legend-single {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+/* Balão do tooltip (ChartTooltip em chartUtils.js). Tooltip flutua sobre o
+   gráfico — por isso pode ter sombra (não é card). */
+.chart-tooltip {
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 8px 24px rgba(1, 1, 22, 0.12);
+  font-size: 12px;
+}
+
+.chart-tooltip-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.chart-tooltip-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+}
+
+.chart-tooltip-row strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}

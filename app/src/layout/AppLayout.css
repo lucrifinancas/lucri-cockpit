@@ -14,7 +14,7 @@
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   height: 56px;
   margin: 16px;
   padding: 0 20px;
@@ -73,9 +73,9 @@
   align-items: center;
   gap: 6px;
   height: 34px;
-  padding: 0 12px;
+  padding: 0 10px;
   border-radius: var(--radius-control);
-  color: var(--lucri-cream);
+  color: rgba(247, 247, 242, 0.62);
   text-decoration: none;
   font-family: var(--font-body);
   font-size: 13px;
@@ -106,6 +106,9 @@
   background: rgba(42, 232, 164, 0.12);
   color: var(--lucri-white);
   font-weight: 700;
+  /* Acento verde do item ativo (Design System: barra sólida verde + fundo
+     ~12%); na barra horizontal a barra fica embaixo. Linha, não elevação. */
+  box-shadow: inset 0 -2px 0 var(--lucri-mint-on-dark);
 }
 
 .topnav-actions {
@@ -217,6 +220,67 @@
   color: var(--lucri-white);
 }
 
+/* Bloco de contexto (empresa + período): uma superfície só, controles sem
+   borda própria dentro dele — menos "barra cheia de controles". */
+.topnav-contexto {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 6px;
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.topnav-contexto .select-wrap select {
+  border-color: transparent;
+  background: transparent;
+  height: 34px;
+}
+
+.topnav-contexto .select-wrap select:hover {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.topnav-contexto .period-selector {
+  padding-left: 4px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .app-content {
   padding: 24px;
+}
+
+/* Nome/papel do usuário somem antes dos links (ficam no title do avatar). */
+@media (max-width: 1680px) {
+  .topnav-user-text { display: none; }
+  .topnav-version { display: none; }
+  /* Só o símbolo da marca: o nome "Lucri Cockpit" cede espaço pros links (DRE sumia). */
+  .topnav-name { display: none; }
+}
+
+/* Tela estreita: a barra quebra em 2 linhas (marca + ações em cima, links
+   embaixo com rolagem lateral própria) — antes ela empurrava a página pra
+   1000px de largura no celular. */
+@media (max-width: 1180px) {
+  .topnav {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: 10px 14px;
+    border-radius: var(--radius-lg);
+  }
+  .topnav-actions { margin-left: auto; height: auto; }
+  .topnav-nav { order: 3; flex-basis: 100%; min-width: 0; max-width: 100%; height: auto; padding-bottom: 2px; }
+}
+
+@media (max-width: 640px) {
+  .topnav { margin: 10px; top: 10px; }
+  .topnav-name { display: none; }
+  /* No celular as ações viram uma linha inteira e o contexto quebra por dentro. */
+  .topnav-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; flex: 1 1 100%; flex-shrink: 1; min-width: 0; margin-left: 0; }
+  .topnav-contexto { flex-wrap: wrap; flex: 1 1 100%; min-width: 0; }
+  .topnav-contexto .period-selector { flex-wrap: wrap; border-left: none; padding-left: 0; }
+  .topnav-user { padding-left: 8px; }
+  .app-content { padding: 16px; }
 }

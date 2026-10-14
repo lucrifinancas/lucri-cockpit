@@ -1,5 +1,6 @@
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { numberFmt } from "./chartUtils";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import ChartTooltip from "./ChartTooltip";
+import { GRID_PROPS, TICK, mesCurto, numberFmt } from "./chartUtils";
 import "./charts.css";
 
 // Rótulo fora da barra, acima quando positivo e abaixo quando negativo — pra
@@ -14,7 +15,7 @@ function BarValueLabel({ x, y, width, height, value }) {
   const bottom = Math.max(y, y + height);
   const labelY = value < 0 ? bottom + 14 : top - 8;
   return (
-    <text x={x + width / 2} y={labelY} textAnchor="middle" fill="var(--text-primary)" fontSize={11} fontWeight={700}>
+    <text x={x + width / 2} y={labelY} textAnchor="middle" fill="var(--text-secondary)" fontSize={10.5} fontWeight={600}>
       {numberFmt.format(value)}
     </text>
   );
@@ -38,30 +39,27 @@ function RoundedBar({ x, y, width, height, value, fill, radius = 4 }) {
 export default function HistoryBarChart({ data, dataKey, color, label, colorBySign = false }) {
   return (
     <div className="chart-block">
-      {label && (
-        <div className="chart-legend-single">
-          <span className="chart-legend-dot" style={{ background: color }} />
-          {label}
+      {colorBySign ? (
+        <div className="chart-legend-row">
+          <span className="chart-legend-single"><span className="chart-legend-dot" style={{ background: "var(--chart-caixa)" }} />Lucro</span>
+          <span className="chart-legend-single"><span className="chart-legend-dot" style={{ background: "var(--chart-despesa)" }} />Prejuízo</span>
         </div>
+      ) : (
+        label && (
+          <div className="chart-legend-row">
+            <span className="chart-legend-single"><span className="chart-legend-dot" style={{ background: color }} />{label}</span>
+          </div>
+        )
       )}
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} margin={{ top: 24, right: 8, left: 4, bottom: 16 }}>
-          <CartesianGrid vertical={false} stroke="var(--border-subtle)" />
-          <XAxis
-            dataKey="month"
-            tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-            axisLine={{ stroke: "var(--border-subtle)" }}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v) => numberFmt.format(v)}
-            width={84}
-          />
-          <Tooltip cursor={{ fill: "var(--bg-subtle)" }} allowEscapeViewBox={{ x: true, y: true }} formatter={(v) => numberFmt.format(v)} contentStyle={{ borderRadius: 8, borderColor: "var(--border-subtle)", background: "var(--bg-panel)", color: "var(--text-primary)" }} />
-          <Bar dataKey={dataKey} fill={color} shape={(props) => <RoundedBar {...props} radius={4} />} maxBarSize={40}>
+          <CartesianGrid vertical={false} {...GRID_PROPS} />
+          <XAxis dataKey="month" tick={TICK} tickFormatter={mesCurto} interval={0} axisLine={false} tickLine={false} />
+          <YAxis tick={TICK} axisLine={false} tickLine={false} tickFormatter={(v) => numberFmt.format(v)} width={84} />
+          {/* Linha do zero mais forte: é ela que separa lucro de prejuízo. */}
+          <ReferenceLine y={0} stroke="var(--text-muted)" strokeWidth={1.5} />
+          <Tooltip cursor={{ fill: "var(--bg-subtle)" }} allowEscapeViewBox={{ x: true, y: true }} content={<ChartTooltip formatter={(v) => numberFmt.format(v)} corDe={colorBySign ? (p) => (p.value < 0 ? "var(--chart-despesa)" : "var(--chart-caixa)") : undefined} />} />
+          <Bar dataKey={dataKey} name={label ?? dataKey} fill={color} shape={(props) => <RoundedBar {...props} radius={4} />} maxBarSize={40}>
             {colorBySign &&
               data.map((d, i) => (
                 <Cell key={i} fill={d[dataKey] < 0 ? "var(--chart-despesa)" : "var(--chart-caixa)"} />

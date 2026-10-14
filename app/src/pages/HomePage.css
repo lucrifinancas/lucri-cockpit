@@ -2,14 +2,42 @@
    sombra (Design System: hierarquia por superfície e borda, nunca elevação).
    Ordem de leitura: agora → saúde → operacional → histórico → categorias → atenção. */
 
+/* Ritmo por "capítulos": o gap base é 0 e cada bloco diz a distância do
+   anterior — perto (mesmo assunto) ou longe (assunto novo). */
 .home {
-  gap: 20px;
+  gap: 0;
 }
+
+.home-cap-perto { margin-top: 16px; }
+.home-cap-longe { margin-top: 40px; }
 
 .home-head {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+  flex-wrap: wrap;
+  margin: 8px 0 24px;
+}
+
+.home-head .page-title {
+  margin-bottom: 4px;
+}
+
+.home-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.home-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lucri-mint);
 }
 
 .home-sub {
@@ -19,9 +47,11 @@
 }
 
 /* ---------- card genérico da Home ---------- */
+/* Borda mais leve que a padrão: o card separa pelo fundo, a borda só
+   contorna (sem sombra, Design System). */
 .home-card {
   background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
   border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
@@ -80,6 +110,7 @@
 
 .home-kpis .stat-card {
   min-width: 0;
+  border-color: color-mix(in srgb, var(--border-subtle) 60%, transparent);
 }
 
 .home-kpis .stat-card-value {
@@ -326,17 +357,49 @@
 
 /* ---------- mais detalhes ---------- */
 .home-detalhes {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
   border-radius: var(--radius-lg);
   background: var(--bg-panel);
 }
 
 .home-detalhes summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   cursor: pointer;
-  padding: 16px 20px;
-  font-weight: 700;
-  font-size: 15px;
+  list-style: none;
+  padding: 18px 20px;
   border-radius: var(--radius-lg);
+}
+
+.home-detalhes summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-detalhes summary:hover {
+  background: var(--bg-panel-hover);
+}
+
+.home-detalhes summary strong {
+  display: block;
+  font-size: 15px;
+}
+
+.home-detalhes-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.home-detalhes-caret {
+  flex: none;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.home-detalhes[open] .home-detalhes-caret {
+  transform: rotate(90deg);
 }
 
 .home-detalhes summary:focus-visible {

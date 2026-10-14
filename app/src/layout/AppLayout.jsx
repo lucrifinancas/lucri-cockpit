@@ -61,6 +61,8 @@ export default function AppLayout() {
         </nav>
 
         <div className="topnav-actions">
+          {/* Contexto (empresa + período) num bloco só, separado da navegação e do usuário. */}
+          <div className="topnav-contexto">
           <div className="topnav-client">
             <ClientAvatar client={activeClient} size={28} />
             {canSwitchClient ? (
@@ -84,8 +86,9 @@ export default function AppLayout() {
           </div>
 
           <PeriodSelector />
+          </div>
 
-          <div className="topnav-user">
+          <div className="topnav-user" title={`${profile.name} · ${ROLE_LABELS[user?.papel] ?? user?.papel ?? ""}`}>
             <ClientAvatar client={{ name: profile.name, logoUrl: profile.avatarUrl }} size={32} />
             <div className="topnav-user-text">
               <strong>{profile.name}</strong>

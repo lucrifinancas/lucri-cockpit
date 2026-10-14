@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowCircleDown, ArrowCircleUp, ChartBar, ChartPieSlice, HandCoins, Percent, TrendDown, TrendUp, Wallet } from "@phosphor-icons/react";
+import { ArrowCircleDown, ArrowCircleUp, CaretRight, ChartBar, ChartPieSlice, HandCoins, Percent, TrendDown, TrendUp, Wallet } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
 import { sumValores, groupByCategoria, CATEGORY_PALETTE, DESPESA_PALETTE, computeDelta } from "../data/mockFinance";
@@ -107,6 +108,9 @@ export default function HomePage() {
   const historico = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
+  // Hora em que estes dados chegaram do Conta Azul (pelo backend) — muda a
+  // cada nova busca (troca de período/cliente), não a cada renderização.
+  const carregadoEm = useMemo(() => (home ? new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null), [home]);
 
   if (loading) {
     return (
@@ -269,8 +273,15 @@ export default function HomePage() {
   return (
     <div className="page home">
       <header className="home-head">
-        <h1 className="page-title">Home Financeira</h1>
-        <p className="home-sub">Visão consolidada do caixa, desempenho e saúde financeira da empresa.</p>
+        <div>
+          <h1 className="page-title">Home Financeira</h1>
+          <p className="home-sub">Visão consolidada do caixa, desempenho e saúde financeira da empresa.</p>
+        </div>
+        {/* Só afirma o que é verdade: se a Home carregou, a conexão funcionou. */}
+        <p className="home-status">
+          <span className="home-status-dot" aria-hidden="true" />
+          Conta Azul conectada · dados de {carregadoEm}
+        </p>
       </header>
 
       {/* 1. O que está acontecendo agora? */}
@@ -311,7 +322,7 @@ export default function HomePage() {
       </div>
 
       {/* 2. Está saudável? 3. O operacional está em dia? */}
-      <div className="home-faixa-saude">
+      <div className="home-faixa-saude home-cap-perto">
         <FinancialHealthCard
           score={saude.score}
           status={saude.status}
@@ -343,7 +354,7 @@ export default function HomePage() {
       </div>
 
       {/* 4. Como vem performando? (últimos 12 meses, independe do período) */}
-      <div className="home-par">
+      <div className="home-par home-cap-longe">
         <section className="home-card" aria-labelledby="home-hist">
           <header className="home-card-head">
             <h2 className="section-title" id="home-hist">Receitas x Despesas — Histórico mensal</h2>
@@ -375,7 +386,7 @@ export default function HomePage() {
       </div>
 
       {/* 5. Para onde vai o dinheiro? */}
-      <div className="home-par">
+      <div className="home-par home-cap-longe">
         <section className="home-card" aria-labelledby="home-cat-rec">
           <header className="home-card-head">
             <h2 className="section-title" id="home-cat-rec">Principais receitas por categoria</h2>
@@ -405,7 +416,7 @@ export default function HomePage() {
       </div>
 
       {/* 6. O que merece atenção? */}
-      <div className="home-par">
+      <div className="home-par home-cap-perto">
         <section className="home-card" aria-labelledby="home-top">
           <header className="home-card-head">
             <h2 className="section-title" id="home-top">Top gastos do mês</h2>
@@ -421,8 +432,14 @@ export default function HomePage() {
       </div>
 
       {/* Tudo que a Home tinha antes e não está nos blocos acima — nada se perde. */}
-      <details className="home-detalhes">
-        <summary>Mais detalhes</summary>
+      <details className="home-detalhes home-cap-longe">
+        <summary>
+          <CaretRight size={16} weight="bold" className="home-detalhes-caret" aria-hidden="true" />
+          <span>
+            <strong>Análises adicionais</strong>
+            <span className="home-detalhes-sub">Detalhamento de categorias · Contas vencidas por mês · Atraso (Ageing)</span>
+          </span>
+        </summary>
         <div className="home-detalhes-corpo">
           <div className="chart-row chart-row-2">
             <section className="page-section">
