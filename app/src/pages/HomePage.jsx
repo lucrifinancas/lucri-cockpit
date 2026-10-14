@@ -169,6 +169,9 @@ export default function HomePage() {
   const deltaDespesas = previousEntradas ? computeDelta(totalDespesas, prevDespesas) : null;
   const deltaRes = previousEntradas ? deltaResultado(resultado, prevEntradas - prevDespesas) : null;
   const deltaVencidas = previousHome ? computeDelta(contasVencidas, previousHome.contas_a_receber.vencido.valor) : null;
+  // Inadimplência já é %: variação em pontos percentuais (p.p.), não "% de %".
+  const prevInad = previousHome && previousHome.contas_a_receber.todos > 0 ? (previousHome.contas_a_receber.vencido.valor / previousHome.contas_a_receber.todos) * 100 : previousHome ? 0 : null;
+  const deltaInad = prevInad != null ? { pct: inadimplenciaPct - prevInad, direction: inadimplenciaPct - prevInad >= 0 ? "up" : "down", unit: "p.p." } : null;
 
   const ageingChart = buildAgeing(entradas?.lancamentos ?? []);
 
@@ -239,8 +242,8 @@ export default function HomePage() {
   }));
 
   // Home: resumos (top 5 + "Outros"); as tabelas completas ficam em "Mais detalhes".
-  const receitasDonut = topCategorias(receitasPorCategoria, 5);
-  const despesasDonut = topCategorias(despesasPorCategoria, 5, DESPESA_PALETTE);
+  const receitasDonut = topCategorias(receitasPorCategoria, 4);
+  const despesasDonut = topCategorias(despesasPorCategoria, 4, DESPESA_PALETTE);
   const topGastos = despesasPorCategoria.slice(0, 5).map((d, i) => ({ ...d, color: DESPESA_PALETTE[i % DESPESA_PALETTE.length] }));
 
   const periodo = rotuloPeriodo(range);
@@ -273,7 +276,7 @@ export default function HomePage() {
       {/* 1. O que está acontecendo agora? */}
       <div className="home-kpis">
         {isVisible("saldoConta") && (
-          <StatCard label="Saldo em conta" value={saldoTotal} icon={Wallet} breakdown={saldoPorConta} tone={saldoTotal < 0 ? "negative" : "neutral"} />
+          <StatCard label="Saldo em conta" value={saldoTotal} icon={Wallet} breakdown={saldoPorConta} tone={saldoTotal < 0 ? "negative" : "neutral"} hideDot context="Saldo de hoje, todas as contas" />
         )}
         {isVisible("resultado") && (
           <StatCard
@@ -283,12 +286,14 @@ export default function HomePage() {
             delta={deltaRes}
             tone={resultado < 0 ? "negative" : "positive"}
             highlight
+            hideDot
+            context="Receitas − despesas"
           />
         )}
-        {isVisible("entradas") && <StatCard label="Receitas" value={totalEntradas} icon={ArrowCircleDown} delta={deltaEntradas} />}
-        {isVisible("despesas") && <StatCard label="Despesas" value={totalDespesas} icon={ArrowCircleUp} delta={deltaDespesas} invertDeltaColor />}
+        {isVisible("entradas") && <StatCard label="Receitas" value={totalEntradas} icon={ArrowCircleDown} delta={deltaEntradas} context="Recebido no período" />}
+        {isVisible("despesas") && <StatCard label="Despesas" value={totalDespesas} icon={ArrowCircleUp} delta={deltaDespesas} invertDeltaColor context="Pago no período" />}
         {isVisible("contasVencidas") && (
-          <StatCard label="Contas vencidas" value={contasVencidas} icon={HandCoins} delta={deltaVencidas} invertDeltaColor tone={contasVencidas > 0 ? "negative" : "neutral"} />
+          <StatCard label="Contas vencidas" value={contasVencidas} icon={HandCoins} delta={deltaVencidas} invertDeltaColor tone={contasVencidas > 0 ? "negative" : "neutral"} hideDot context="A receber, já vencido" />
         )}
         {isVisible("inadimplencia") && (
           <StatCard
@@ -297,6 +302,10 @@ export default function HomePage() {
             format="count"
             tone={inadimplenciaPct > 0 ? "negative" : "neutral"}
             icon={Percent}
+            delta={deltaInad}
+            invertDeltaColor
+            hideDot
+            context="Vencido ÷ total a receber"
           />
         )}
       </div>
@@ -307,6 +316,7 @@ export default function HomePage() {
           score={saude.score}
           status={saude.status}
           tone={saude.tone}
+          headline={saude.headline}
           summary={saude.summary}
           periodLabel={periodo}
           metrics={[

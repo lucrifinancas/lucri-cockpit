@@ -49,19 +49,25 @@ function notaVencidas(vencidas, aReceberEmAberto) {
   return 0;
 }
 
-const pctFmt = (v) => `${Math.round(v)}%`;
+const pct1 = (v) => `${v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+const pct0 = (v) => `${Math.round(v)}%`;
 
-// Resumo em 1–2 frases, sempre tirado dos números (nunca texto solto).
-function resumir({ receitas, despesas, resultado, saldo, inadimplenciaPct, vencidas }) {
-  const frases = [];
-  if (!receitas && !despesas) return "Sem receitas nem despesas no período selecionado.";
-  if (resultado < 0) frases.push("As despesas superaram as receitas no período");
-  else frases.push("As receitas cobriram as despesas no período");
-  if (despesas > 0) frases.push(`o saldo em conta cobre ${pctFmt(Math.max(0, (saldo / despesas) * 100))} das despesas`);
-  let texto = frases.join(" e ") + ".";
-  if (inadimplenciaPct > 0) texto += ` Inadimplência de ${inadimplenciaPct.toFixed(1).replace(".", ",")}%.`;
-  else if (vencidas <= 0) texto += " Nenhuma conta a receber vencida.";
-  return texto;
+// Diagnóstico em 2 partes, sempre tirado dos números (nunca texto solto):
+// `headline` = a conclusão em 1 frase curta; `summary` = o porquê.
+function diagnosticar({ receitas, despesas, resultado, saldo, inadimplenciaPct, vencidas }) {
+  if (!receitas && !despesas) return { headline: "Sem movimento no período.", summary: "Nenhuma receita ou despesa registrada no período selecionado." };
+  const headline = resultado < 0 ? "Sua empresa fechou o período no vermelho." : "Sua empresa fechou o período no azul.";
+  const partes = [];
+  if (receitas > 0 && despesas > 0) {
+    partes.push(resultado < 0
+      ? `As despesas ficaram ${pct1((despesas / receitas - 1) * 100)} acima das receitas`
+      : `As receitas ficaram ${pct1((receitas / despesas - 1) * 100)} acima das despesas`);
+  } else if (!receitas) partes.push("Não houve receita no período");
+  if (despesas > 0) partes.push(`o saldo disponível cobre ${pct0(Math.max(0, (saldo / despesas) * 100))} das despesas`);
+  let summary = partes.join(", enquanto ") + ".";
+  if (inadimplenciaPct > 0) summary += ` A inadimplência está em ${pct1(inadimplenciaPct)}.`;
+  else if (vencidas <= 0) summary += " A inadimplência permanece zerada.";
+  return { headline, summary };
 }
 
 // Entrada: números já calculados pela Home (mesmas definições dos KPIs).
@@ -75,5 +81,5 @@ export function calcularSaude({ receitas, despesas, saldo, inadimplenciaPct, ven
   };
   const score = Math.round(Object.entries(PESOS).reduce((acc, [k, peso]) => acc + partes[k] * peso, 0));
   const faixa = FAIXAS.find((f) => score >= f.min);
-  return { score, status: faixa.status, tone: faixa.tone, partes, summary: resumir({ receitas, despesas, resultado, saldo, inadimplenciaPct, vencidas }) };
+  return { score, status: faixa.status, tone: faixa.tone, partes, ...diagnosticar({ receitas, despesas, resultado, saldo, inadimplenciaPct, vencidas }) };
 }

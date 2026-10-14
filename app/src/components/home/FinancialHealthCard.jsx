@@ -1,11 +1,12 @@
 import { Info } from "@phosphor-icons/react";
 
-const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const compacto = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 });
 const AJUDA = "Indicador gerencial calculado a partir dos dados financeiros do período.";
 
-// Anel de 0 a 100 + resumo + 4 números de apoio. Score, status e resumo
-// chegam prontos (src/data/financialHealth.js) — aqui só exibe.
-export default function FinancialHealthCard({ score, status, tone, summary, metrics, periodLabel }) {
+// Componente "assinatura" da Home: nota 0–100 + diagnóstico (frase curta e
+// o porquê) + os 4 números que formam a nota numa linha só. Score, status e
+// textos chegam prontos (src/data/financialHealth.js) — aqui só exibe.
+export default function FinancialHealthCard({ score, status, tone, headline, summary, metrics, periodLabel }) {
   const r = 52;
   const volta = 2 * Math.PI * r;
   return (
@@ -36,20 +37,19 @@ export default function FinancialHealthCard({ score, status, tone, summary, metr
           <div className="home-saude-nota">
             <strong>{score}</strong>
             <span>/100</span>
-            <em className={`home-saude-status tone-${tone}`}>{status}</em>
+            <em className="home-saude-status">{status}</em>
           </div>
         </div>
         <div className="home-saude-texto">
+          <p className="home-saude-headline">{headline}</p>
           <p className="home-saude-resumo">{summary}</p>
-          <dl className="home-saude-metricas">
+          <ul className="home-saude-fatores" aria-label="Números do período">
             {metrics.map((m) => (
-              <div key={m.label}>
-                <dt>{m.label}</dt>
-                <dd className={m.value < 0 ? "tone-negative" : undefined}>{fmt.format(m.value)}</dd>
-              </div>
+              <li key={m.label}>
+                <span>{m.label}</span> <strong className={m.value < 0 ? "tone-negative" : undefined}>{compacto.format(m.value)}</strong>
+              </li>
             ))}
-          </dl>
-          <p className="home-saude-nota-rodape">{AJUDA}</p>
+          </ul>
         </div>
       </div>
     </section>

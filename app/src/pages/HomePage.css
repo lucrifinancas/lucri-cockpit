@@ -167,59 +167,53 @@
 .home-saude-texto {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
   flex: 1;
 }
 
-.home-saude-resumo {
+.home-saude-headline {
   margin: 0;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
-.home-saude-metricas {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+.home-saude-resumo {
   margin: 0;
-}
-
-.home-saude-metricas div {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  min-width: 0;
-}
-
-.home-saude-metricas dt {
-  font-size: 12px;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--text-secondary);
 }
 
-.home-saude-metricas dd {
-  margin: 4px 0 0;
-  font-size: 15px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Os 4 números da nota numa linha leve (sem mini-cards). */
+.home-saude-fatores {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
-.home-saude-metricas dd.tone-negative {
-  color: var(--danger-text);
-}
-
-.home-saude-nota-rodape {
-  margin: 0;
-  font-size: 11px;
+.home-saude-fatores li + li::before {
+  content: "·";
+  margin: 0 10px;
   color: var(--text-muted);
+}
+
+.home-saude-fatores strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-saude-fatores strong.tone-negative {
+  color: var(--danger-text);
 }
 
 /* ---------- 4–6. pares lado a lado ---------- */
@@ -230,7 +224,7 @@
   align-items: stretch;
 }
 
-/* ---------- alertas ---------- */
+/* ---------- alertas (2º componente assinatura) ---------- */
 .home-insights {
   list-style: none;
   margin: 0;
@@ -239,31 +233,61 @@
   flex-direction: column;
 }
 
-.home-insights li {
+.home-insight {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
-  padding: 10px 0;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--text-primary);
+  padding: 12px 0;
   border-top: 1px solid var(--border-subtle);
 }
 
-.home-insights li:first-child {
+.home-insight:first-child {
   border-top: none;
   padding-top: 0;
 }
 
 .home-insight-icon {
   flex: none;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .home-insight-icon.tone-good { color: var(--lucri-mint-text); }
 .home-insight-icon.tone-warning { color: var(--alert); }
 .home-insight-icon.tone-bad { color: var(--danger); }
 .home-insight-icon.tone-info { color: var(--accent); }
+
+.home-insight-rotulo {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.home-insight-texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+/* Peso pela gravidade: crítico e atenção em destaque, o resto em leitura normal. */
+.home-insight.tone-bad .home-insight-texto,
+.home-insight.tone-warning .home-insight-texto {
+  font-weight: 600;
+}
+
+.home-insight.tone-good .home-insight-texto {
+  color: var(--text-secondary);
+}
+
+.home-insight .pending-notice-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+}
 
 /* ---------- estado vazio ---------- */
 .home-empty {
@@ -343,7 +367,6 @@
   .home-faixa-saude { grid-template-columns: 1fr; }
   .home-saude-corpo { flex-direction: column; align-items: stretch; }
   .home-saude-anel { align-self: center; }
-  .home-saude-metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 560px) {

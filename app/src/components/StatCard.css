@@ -86,6 +86,11 @@
   font-weight: 600;
 }
 
+.stat-card-delta.delta-flat {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .stat-card-delta.delta-up {
   color: var(--lucri-mint-text);
 }
