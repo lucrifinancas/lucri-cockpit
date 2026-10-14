@@ -209,8 +209,29 @@ Protegida (`master`, `analista`). Lista todos os clientes cadastrados.
 **Resposta `200`:**
 ```json
 [
-  { "id": 1, "nome": "Nick Publicidade", "criado_em": "2026-07-27 21:12:39" }
+  {
+    "id": 1, "nome": "Nick Publicidade", "criado_em": "2026-07-27 21:12:39",
+    "conta_azul_conectado": true, "conta_azul_atualizado_em": "2026-10-14 14:32:10",
+    "usuarios": 1, "convites": 0
+  }
 ]
+```
+- `conta_azul_conectado`/`conta_azul_atualizado_em` (14/10/2026): existe conexão
+  salva e a última vez que o acesso foi criado/renovado. **Não garante** que ainda
+  vale — se o Conta Azul derrubar, a linha continua e as rotas de dados devolvem
+  `409 conta_azul_desconectada`. Nunca expõe tokens.
+- `usuarios` = contas papel `cliente` da empresa; `convites` = convites pendentes.
+
+---
+
+## `GET /api/clientes/:id/usuarios`
+
+Protegida (`master`). Contas de acesso (papel `cliente`) da empresa — tela
+Ajustes → Acessos. Sem `senha_hash`.
+
+**Resposta `200`:**
+```json
+[{ "id": 7, "email": "dono@empresa.com", "nome": "Ana", "sobrenome": "Silva", "criado_em": "2026-09-22 10:00:00" }]
 ```
 
 ---

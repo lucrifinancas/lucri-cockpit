@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { exigirPapel } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
-import { criarUsuarioCliente, buscarUsuarioPorEmail } from "../db/usuarios.js";
+import { criarUsuarioCliente, buscarUsuarioPorEmail, listarUsuariosDoCliente } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
 import { salvarCategoriasDespesa, listarMaesPorCategoria, listarOverridesDespesa } from "../db/categoriaDespesa.js";
 import { listarNomesPai, salvarNomesPai } from "../db/categoriaPaiNome.js";
@@ -288,6 +288,14 @@ clientesRoutes.delete("/:id/maes-receita/:maeId", exigirPapel("master"), async (
 
 // Convites de acesso pendentes desse cliente — a pessoa aceita entrando com
 // Google (ver server/src/routes/authGoogle.js), sem precisar de senha.
+// Quem já tem conta de acesso (papel "cliente") nessa empresa. Só master —
+// mesma regra dos convites e do cadastro de login.
+clientesRoutes.get("/:id/usuarios", exigirPapel("master"), async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id)) return c.json({ erro: "Cliente inválido." }, 400);
+  return c.json(await listarUsuariosDoCliente(c.env.DB, id));
+});
+
 clientesRoutes.get("/:id/convites", async (c) => {
   const clienteId = Number(c.req.param("id"));
   return c.json(await listarConvites(c.env.DB, clienteId));

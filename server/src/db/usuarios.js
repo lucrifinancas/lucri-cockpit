@@ -95,3 +95,13 @@ export async function criarUsuarioClienteGoogle(db, clienteId, email, nome, sobr
     .bind(email, senhaHashAleatorio, clienteId, nome, sobrenome)
     .first();
 }
+
+// Contas de acesso (papel "cliente") de uma empresa — Ajustes → Acessos.
+// Sem senha_hash, claro.
+export async function listarUsuariosDoCliente(db, clienteId) {
+  const { results } = await db
+    .prepare("SELECT id, email, nome, sobrenome, criado_em FROM usuarios WHERE cliente_id = ? AND papel = 'cliente' ORDER BY email")
+    .bind(clienteId)
+    .all();
+  return results;
+}

@@ -1,0 +1,123 @@
+import { useState } from "react";
+import { Plus } from "@phosphor-icons/react";
+import { apiFetch } from "../../api/client";
+import { useActiveClient } from "../../context/ClientContext";
+import ClientAvatar from "../../components/ClientAvatar";
+import { SecaoHeader } from "./comum";
+import { fmtData } from "./util";
+import { conectarContaAzul, useClientesResumo } from "./useClientesResumo";
+
+// Clientes → Clientes: lista com status de cada empresa + cadastro de novo.
+export default function ClientesSecao({ irPara }) {
+  const { addClient, setSelectedClientId } = useActiveClient();
+  const { lista, loading, erro, recarregar } = useClientesResumo();
+  const [abrirNovo, setAbrirNovo] = useState(false);
+  const [nome, setNome] = useState("");
+  const [criando, setCriando] = useState(false);
+  const [erroNovo, setErroNovo] = useState(null);
+  const [conectando, setConectando] = useState(null);
+
+  async function criar(e) {
+    e.preventDefault();
+    if (!nome.trim()) return;
+    setCriando(true);
+    setErroNovo(null);
+    try {
+      const novo = await apiFetch("/api/clientes", { method: "POST", body: JSON.stringify({ nome: nome.trim() }) });
+      addClient({ id: novo.id, name: novo.nome, logoUrl: null });
+      setNome("");
+      setAbrirNovo(false);
+      recarregar();
+    } catch (err) {
+      setErroNovo(err.message);
+    } finally {
+      setCriando(false);
+    }
+  }
+
+  function configurar(id) {
+    setSelectedClientId(id);
+    irPara("acessos");
+  }
+
+  async function conectar(id) {
+    setConectando(id);
+    try { await conectarContaAzul(id); } catch { setConectando(null); }
+  }
+
+  return (
+    <>
+      <SecaoHeader titulo="Clientes" descricao="Empresas atendidas no Cockpit. Depois de cadastrar, conecte a Conta Azul pra liberar os dados.">
+        <button type="button" className="aj-btn-primario" onClick={() => setAbrirNovo((v) => !v)} aria-expanded={abrirNovo}>
+          <Plus size={14} weight="bold" aria-hidden="true" /> Novo cliente
+        </button>
+      </SecaoHeader>
+
+      {abrirNovo && (
+        <section className="aj-card">
+          <form className="aj-form aj-form-linha" onSubmit={criar}>
+            <label className="aj-campo aj-campo-largo">
+              Nome do cliente
+              <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Mania Natural" autoFocus />
+            </label>
+            <div className="aj-form-acoes">
+              <button type="button" className="aj-btn-util" onClick={() => setAbrirNovo(false)}>Cancelar</button>
+              <button type="submit" className="aj-btn-primario" disabled={criando || !nome.trim()}>{criando ? "Cadastrando..." : "Cadastrar"}</button>
+            </div>
+          </form>
+          {erroNovo && <p className="aj-hint aj-erro" role="alert">{erroNovo}</p>}
+        </section>
+      )}
+
+      <section className="aj-card aj-card-tabela">
+        {loading && <p className="aj-hint">Carregando clientes...</p>}
+        {erro && <p className="aj-hint aj-erro">{erro}</p>}
+        {!loading && !erro && (
+          <table className="aj-tabela">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Conta Azul</th>
+                <th className="num">Usuários</th>
+                <th><span className="aj-sr">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    <span className="aj-cliente-nome">
+                      <ClientAvatar client={{ name: c.nome }} size={28} />
+                      {c.nome}
+                    </span>
+                  </td>
+                  <td>
+                    {c.conta_azul_conectado ? (
+                      <span className="aj-status aj-status-ok" title={`Acesso renovado em ${fmtData(c.conta_azul_atualizado_em)}`}>
+                        <i aria-hidden="true" /> Conectada
+                      </span>
+                    ) : (
+                      <span className="aj-status"><i aria-hidden="true" /> Não conectada</span>
+                    )}
+                  </td>
+                  <td className="num">
+                    {c.usuarios}
+                    {c.convites > 0 && <span className="aj-hint-inline"> + {c.convites} convite{c.convites > 1 ? "s" : ""}</span>}
+                  </td>
+                  <td className="aj-acoes-linha">
+                    {!c.conta_azul_conectado && (
+                      <button type="button" className="aj-btn-secundario" disabled={conectando === c.id} onClick={() => conectar(c.id)}>
+                        {conectando === c.id ? "Abrindo..." : "Conectar Conta Azul"}
+                      </button>
+                    )}
+                    <button type="button" className="aj-btn-util" onClick={() => configurar(c.id)}>Acessos</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </>
+  );
+}
