@@ -106,9 +106,10 @@
   background: rgba(42, 232, 164, 0.12);
   color: var(--lucri-white);
   font-weight: 700;
-  /* Acento verde do item ativo (Design System: barra sólida verde + fundo
-     ~12%); na barra horizontal a barra fica embaixo. Linha, não elevação. */
-  box-shadow: inset 0 -2px 0 var(--lucri-mint-on-dark);
+  /* Acento verde do item ativo: contorno fino inteiro (segue o canto
+     arredondado; a linha só embaixo virava "meia-lua" — pedido do usuário,
+     14/10, vale pra todos os "ativos" do Cockpit). Linha, não elevação. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lucri-mint-on-dark) 70%, transparent);
 }
 
 .topnav-actions {

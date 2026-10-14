@@ -56,12 +56,13 @@
   color: var(--text-primary);
 }
 
-/* Ativo: fundo verde suave + barra verde à esquerda (Design System, sidebar). */
+/* Ativo: fundo verde suave + contorno verde fino inteiro (não faixa lateral,
+   que virava "meia-lua" no canto arredondado — pedido do usuário, 14/10). */
 .aj-nav-item.ativo {
   background: color-mix(in srgb, var(--cta) 14%, transparent);
   color: var(--text-primary);
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--cta);
+  box-shadow: inset 0 0 0 1px var(--cta);
 }
 
 .aj-conteudo {
@@ -558,15 +559,18 @@
 .aj-aviso-ok svg { color: var(--lucri-mint-text); }
 .aj-aviso-erro svg { color: var(--danger); }
 
-/* Pendência de categorias: marcador laranja (alerta), texto em tinta normal. */
+/* Pendência de categorias: contorno laranja fino (alerta) em volta do aviso
+   todo — a faixa só à esquerda virava uma "meia-lua" nos cantos
+   arredondados. Fundo neutro e texto em tinta normal (laranja nunca é
+   fundo nem texto corrido, Design System). */
 .aj-pendencia {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-  box-shadow: inset 3px 0 0 var(--alert);
+  background: var(--bg-panel);
+  border: 1px solid var(--alert);
 }
 
 .aj-pendencia svg { flex: none; color: var(--alert); }
@@ -728,7 +732,7 @@
 }
 
 .aj-mapa-linhas li:hover { background: var(--bg-panel-hover); }
-.aj-mapa-linhas li.mudou { box-shadow: inset 3px 0 0 var(--accent); }
+.aj-mapa-linhas li.mudou { box-shadow: inset 0 0 0 1px var(--accent); }
 
 .aj-mapa-ca {
   font-size: 14px;
@@ -777,7 +781,6 @@
   .aj-nav-grupo { flex-direction: row; gap: 4px; }
   .aj-nav-titulo { display: none; }
   .aj-nav-item { width: auto; white-space: nowrap; }
-  .aj-nav-item.ativo { box-shadow: inset 0 -2px 0 var(--cta); }
   .aj-mapa { grid-template-columns: 1fr; }
   .aj-mapa-lado { border-right: none; padding-right: 0; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; }
   .aj-mapa-lado ul { max-height: 200px; }

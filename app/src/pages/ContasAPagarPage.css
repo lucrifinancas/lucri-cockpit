@@ -25,11 +25,12 @@
   background: var(--bg-panel-hover);
 }
 
-/* Card escolhido: só uma faixa verde da marca na base + fundo levemente
-   destacado — sem contorno escuro (usuário achou pesado). */
+/* Card escolhido: contorno VERDE fino inteiro + fundo levemente destacado
+   (14/10: a faixa só na base virava "meia-lua" no canto arredondado; o
+   contorno escuro de antes o usuário achou pesado — por isso verde e fino). */
 .cap-card.active {
   background: var(--bg-panel-hover);
-  box-shadow: inset 0 -3px 0 var(--lucri-mint);
+  box-shadow: inset 0 0 0 1px var(--lucri-mint);
 }
 
 .cap-card:focus-visible {
