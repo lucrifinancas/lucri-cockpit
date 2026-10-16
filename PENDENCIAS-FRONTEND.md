@@ -128,6 +128,61 @@ Home. Confirmado direto no código em 23/09. Nada a fazer aqui.
   contábil hierárquica que DRE vai usar, mas mais simples — só duas
   seções, Ativo e Passivo, sem os vários níveis de subtotal do DRE).
 
+## 6. Relatórios antigos em PDF (novo, 16/10)
+
+Seção interna (equipe Lucri — master/analista), sugerida pelo dev: uma
+tela pra ver e adicionar relatórios antigos (PDF) de cada cliente —
+apresentações pro cliente sobre um período específico. **Não aparece no
+portal do cliente final.**
+
+```
+GET    /api/clientes/:id/relatorios                    (master ou analista)
+200 →  [{ "id": 1, "referencia": "2025-01",
+           "nome_arquivo": "dre-jan-2025.pdf",
+           "tamanho_bytes": 48213, "criado_em": "...",
+           "enviado_por_email": "..." }, ...]
+
+POST   /api/clientes/:id/relatorios                    (só master)
+Body:  multipart/form-data — campo referencia (texto) + arquivo (o PDF).
+       Limite 20 MB, só aceita PDF de verdade.
+201 →  { "id": 1, "referencia": "...", "nome_arquivo": "...",
+         "tamanho_bytes": ..., "criado_em": "..." }
+400 →  campo faltando, arquivo > 20 MB, ou não é PDF de verdade
+
+GET    /api/clientes/:id/relatorios/:relatorioId/arquivo   (master ou analista)
+→ binário do PDF (Content-Type: application/pdf, Content-Disposition: inline)
+
+DELETE /api/clientes/:id/relatorios/:relatorioId       (só master)
+200 →  { "ok": true }
+404 →  { "erro": "Relatório não encontrado." }
+```
+
+**Importante pro upload no front**: é `FormData`, não JSON — não usar o
+`apiFetch` padrão com `Content-Type: application/json`. Exemplo:
+
+```js
+const formData = new FormData();
+formData.append("referencia", referencia);
+formData.append("arquivo", arquivoSelecionado); // um File do <input type="file">
+
+fetch(`${BASE_URL}/api/clientes/${clienteId}/relatorios`, {
+  method: "POST",
+  credentials: "include",
+  body: formData, // NÃO definir Content-Type manualmente — o navegador
+                   // monta o boundary do multipart sozinho
+});
+```
+
+**Falta no front**: uma seção/aba nova (provavelmente dentro de Ajustes,
+ou uma aba própria "Relatórios") com:
+- Lista dos relatórios do cliente (período de referência, data de envio,
+  quem enviou, tamanho) — link/botão pra abrir o PDF
+  (`/relatorios/:id/arquivo`) e, se master, botão de apagar
+- Formulário de upload (mês/ano de referência + seletor de arquivo) — só
+  visível pro master
+- Essa seção não entra no portal do cliente final, só na visão
+  master/analista
+
 ---
 
 ## Referência

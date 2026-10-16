@@ -14,8 +14,16 @@ import {
   salvarCategoriasReceita,
 } from "../db/categoriaReceita.js";
 import { listarConvites, criarConvite, removerConvite } from "../db/convites.js";
+import { listarRelatorios, criarRelatorio, buscarRelatorio, apagarRelatorio } from "../db/relatorios.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { buscarCategorias } from "../contaazul/api.js";
+
+const RELATORIO_TAMANHO_MAXIMO_BYTES = 20 * 1024 * 1024; // 20 MB
+const ASSINATURA_PDF = [0x25, 0x50, 0x44, 0x46, 0x2d]; // "%PDF-"
+
+function ehPdf(bytes) {
+  return ASSINATURA_PDF.every((byte, i) => bytes[i] === byte);
+}
 
 export const clientesRoutes = new Hono();
 
@@ -325,5 +333,94 @@ clientesRoutes.delete("/:id/convites/:conviteId", exigirPapel("master"), async (
   if (resultado === "nao_encontrado") {
     return c.json({ erro: "Convite não encontrado." }, 404);
   }
+  return c.json({ ok: true });
+});
+
+// Relatórios antigos (PDF) do cliente — seção interna da equipe Lucri, não
+// aparece no portal do cliente final. Metadados no D1, arquivo no R2 (ver
+// db/relatorios.js e o binding RELATORIOS_BUCKET no wrangler.toml).
+clientesRoutes.get("/:id/relatorios", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  return c.json(await listarRelatorios(c.env.DB, clienteId));
+});
+
+// Upload — multipart/form-data com os campos referencia (texto) e arquivo
+// (o PDF). Só master.
+clientesRoutes.post("/:id/relatorios", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const usuario = c.get("usuario");
+
+  const cliente = await buscarClientePorId(c.env.DB, clienteId);
+  if (!cliente) {
+    return c.json({ erro: "Cliente não encontrado." }, 404);
+  }
+
+  const body = await c.req.parseBody();
+  const arquivo = body.arquivo;
+  const referencia = typeof body.referencia === "string" ? body.referencia.trim() : "";
+
+  if (!referencia) {
+    return c.json({ erro: "Referência é obrigatória." }, 400);
+  }
+  if (!(arquivo instanceof File)) {
+    return c.json({ erro: "Arquivo é obrigatório." }, 400);
+  }
+  if (arquivo.size > RELATORIO_TAMANHO_MAXIMO_BYTES) {
+    return c.json({ erro: "Arquivo maior que o limite de 20 MB." }, 400);
+  }
+
+  const bytes = new Uint8Array(await arquivo.arrayBuffer());
+  if (!ehPdf(bytes)) {
+    return c.json({ erro: "Só são aceitos arquivos PDF." }, 400);
+  }
+
+  const r2Key = `clientes/${clienteId}/${crypto.randomUUID()}.pdf`;
+  await c.env.RELATORIOS_BUCKET.put(r2Key, bytes, {
+    httpMetadata: { contentType: "application/pdf" },
+  });
+
+  const relatorio = await criarRelatorio(c.env.DB, clienteId, {
+    referencia,
+    r2Key,
+    nomeArquivo: arquivo.name,
+    tamanhoBytes: arquivo.size,
+    enviadoPor: usuario.sub,
+  });
+
+  return c.json(relatorio, 201);
+});
+
+// Baixa/abre o PDF em si (o resto dos campos já veio em GET /relatorios).
+clientesRoutes.get("/:id/relatorios/:relatorioId/arquivo", async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const relatorioId = Number(c.req.param("relatorioId"));
+
+  const relatorio = await buscarRelatorio(c.env.DB, clienteId, relatorioId);
+  if (!relatorio) {
+    return c.json({ erro: "Relatório não encontrado." }, 404);
+  }
+
+  const objeto = await c.env.RELATORIOS_BUCKET.get(relatorio.r2_key);
+  if (!objeto) {
+    return c.json({ erro: "Arquivo não encontrado no armazenamento." }, 404);
+  }
+
+  const nomeArquivoSeguro = relatorio.nome_arquivo.replace(/"/g, "");
+  return c.body(objeto.body, 200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${nomeArquivoSeguro}"`,
+  });
+});
+
+clientesRoutes.delete("/:id/relatorios/:relatorioId", exigirPapel("master"), async (c) => {
+  const clienteId = Number(c.req.param("id"));
+  const relatorioId = Number(c.req.param("relatorioId"));
+
+  const apagado = await apagarRelatorio(c.env.DB, clienteId, relatorioId);
+  if (!apagado) {
+    return c.json({ erro: "Relatório não encontrado." }, 404);
+  }
+
+  await c.env.RELATORIOS_BUCKET.delete(apagado.r2_key);
   return c.json({ ok: true });
 });
