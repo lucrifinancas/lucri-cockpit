@@ -347,8 +347,8 @@ clientesRoutes.get("/:id/relatorios", async (c) => {
 });
 
 // Upload — multipart/form-data com os campos referencia (texto) e arquivo
-// (o PDF). Só master.
-clientesRoutes.post("/:id/relatorios", exigirPapel("master"), async (c) => {
+// (o PDF). Master ou analista.
+clientesRoutes.post("/:id/relatorios", async (c) => {
   const clienteId = Number(c.req.param("id"));
   const usuario = c.get("usuario");
 
@@ -412,7 +412,8 @@ clientesRoutes.get("/:id/relatorios/:relatorioId/arquivo", async (c) => {
   });
 });
 
-clientesRoutes.delete("/:id/relatorios/:relatorioId", exigirPapel("master"), async (c) => {
+// Master ou analista.
+clientesRoutes.delete("/:id/relatorios/:relatorioId", async (c) => {
   const clienteId = Number(c.req.param("id"));
   const relatorioId = Number(c.req.param("relatorioId"));
 

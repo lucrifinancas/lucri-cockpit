@@ -142,7 +142,7 @@ GET    /api/clientes/:id/relatorios                    (master ou analista)
            "tamanho_bytes": 48213, "criado_em": "...",
            "enviado_por_email": "..." }, ...]
 
-POST   /api/clientes/:id/relatorios                    (só master)
+POST   /api/clientes/:id/relatorios                    (master ou analista)
 Body:  multipart/form-data — campo referencia (texto) + arquivo (o PDF).
        Limite 20 MB, só aceita PDF de verdade.
 201 →  { "id": 1, "referencia": "...", "nome_arquivo": "...",
@@ -152,7 +152,7 @@ Body:  multipart/form-data — campo referencia (texto) + arquivo (o PDF).
 GET    /api/clientes/:id/relatorios/:relatorioId/arquivo   (master ou analista)
 → binário do PDF (Content-Type: application/pdf, Content-Disposition: inline)
 
-DELETE /api/clientes/:id/relatorios/:relatorioId       (só master)
+DELETE /api/clientes/:id/relatorios/:relatorioId       (master ou analista)
 200 →  { "ok": true }
 404 →  { "erro": "Relatório não encontrado." }
 ```
@@ -177,11 +177,10 @@ fetch(`${BASE_URL}/api/clientes/${clienteId}/relatorios`, {
 ou uma aba própria "Relatórios") com:
 - Lista dos relatórios do cliente (período de referência, data de envio,
   quem enviou, tamanho) — link/botão pra abrir o PDF
-  (`/relatorios/:id/arquivo`) e, se master, botão de apagar
-- Formulário de upload (mês/ano de referência + seletor de arquivo) — só
-  visível pro master
-- Essa seção não entra no portal do cliente final, só na visão
-  master/analista
+  (`/relatorios/:id/arquivo`) e botão de apagar
+- Formulário de upload (mês/ano de referência + seletor de arquivo)
+- Toda a seção (ver, enviar, apagar) é visível pra master e analista —
+  essa seção não entra no portal do cliente final
 
 ---
 

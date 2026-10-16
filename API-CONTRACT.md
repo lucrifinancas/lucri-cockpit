@@ -868,8 +868,8 @@ Lista os relatórios do cliente, mais recentes primeiro (ordenado por
 
 ### `POST /api/clientes/:id/relatorios`
 
-Envia um PDF novo. **Só master.** Corpo `multipart/form-data` (não JSON),
-com os campos:
+Envia um PDF novo. Master ou analista. Corpo `multipart/form-data` (não
+JSON), com os campos:
 
 - `referencia` (texto, obrigatório) — período de referência do relatório,
   formato livre (sugestão: `"2025-01"` pra mensal, `"2025"` pra anual)
@@ -902,4 +902,4 @@ navegador em vez de forçar download; o front pode trocar isso num
 
 ### `DELETE /api/clientes/:id/relatorios/:relatorioId`
 
-Apaga o relatório (registro no D1 + arquivo no KV). **Só master.**
+Apaga o relatório (registro no D1 + arquivo no KV). Master ou analista.
