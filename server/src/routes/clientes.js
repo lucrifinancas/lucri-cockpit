@@ -337,8 +337,10 @@ clientesRoutes.delete("/:id/convites/:conviteId", exigirPapel("master"), async (
 });
 
 // Relatórios antigos (PDF) do cliente — seção interna da equipe Lucri, não
-// aparece no portal do cliente final. Metadados no D1, arquivo no R2 (ver
-// db/relatorios.js e o binding RELATORIOS_BUCKET no wrangler.toml).
+// aparece no portal do cliente final. Metadados no D1, arquivo no Workers
+// KV (ver db/relatorios.js e o binding RELATORIOS_KV no wrangler.toml —
+// KV em vez de R2 de propósito, pra não precisar ativar uma assinatura com
+// cartão cadastrado só pra isso; o nível gratuito do KV já basta).
 clientesRoutes.get("/:id/relatorios", async (c) => {
   const clienteId = Number(c.req.param("id"));
   return c.json(await listarRelatorios(c.env.DB, clienteId));
@@ -374,14 +376,12 @@ clientesRoutes.post("/:id/relatorios", exigirPapel("master"), async (c) => {
     return c.json({ erro: "Só são aceitos arquivos PDF." }, 400);
   }
 
-  const r2Key = `clientes/${clienteId}/${crypto.randomUUID()}.pdf`;
-  await c.env.RELATORIOS_BUCKET.put(r2Key, bytes, {
-    httpMetadata: { contentType: "application/pdf" },
-  });
+  const chaveKv = `relatorio:${clienteId}:${crypto.randomUUID()}`;
+  await c.env.RELATORIOS_KV.put(chaveKv, bytes);
 
   const relatorio = await criarRelatorio(c.env.DB, clienteId, {
     referencia,
-    r2Key,
+    chaveKv,
     nomeArquivo: arquivo.name,
     tamanhoBytes: arquivo.size,
     enviadoPor: usuario.sub,
@@ -400,13 +400,13 @@ clientesRoutes.get("/:id/relatorios/:relatorioId/arquivo", async (c) => {
     return c.json({ erro: "Relatório não encontrado." }, 404);
   }
 
-  const objeto = await c.env.RELATORIOS_BUCKET.get(relatorio.r2_key);
-  if (!objeto) {
+  const arquivo = await c.env.RELATORIOS_KV.get(relatorio.chave_kv, { type: "arrayBuffer" });
+  if (!arquivo) {
     return c.json({ erro: "Arquivo não encontrado no armazenamento." }, 404);
   }
 
   const nomeArquivoSeguro = relatorio.nome_arquivo.replace(/"/g, "");
-  return c.body(objeto.body, 200, {
+  return c.body(arquivo, 200, {
     "Content-Type": "application/pdf",
     "Content-Disposition": `inline; filename="${nomeArquivoSeguro}"`,
   });
@@ -421,6 +421,6 @@ clientesRoutes.delete("/:id/relatorios/:relatorioId", exigirPapel("master"), asy
     return c.json({ erro: "Relatório não encontrado." }, 404);
   }
 
-  await c.env.RELATORIOS_BUCKET.delete(apagado.r2_key);
+  await c.env.RELATORIOS_KV.delete(apagado.chave_kv);
   return c.json({ ok: true });
 });

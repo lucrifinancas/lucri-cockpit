@@ -23,9 +23,10 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
   `RELATORIO-SEGURANCA-2026-09-24.md`.
 - [x] **Relatórios antigos em PDF (16/10)** — seção interna (master/
   analista, não aparece no portal do cliente) pra guardar e consultar PDFs
-  antigos por cliente. Metadados no D1, arquivo no R2
-  (`RELATORIOS_BUCKET`). Ver `API-CONTRACT.md`. Falta criar o bucket R2
-  em produção e o front: tela de listagem/upload.
+  antigos por cliente. Metadados no D1, arquivo no Workers KV
+  (`RELATORIOS_KV`) — KV em vez de R2 pra não exigir ativar assinatura
+  com cartão. Ver `API-CONTRACT.md`. Falta só o front: tela de
+  listagem/upload.
 - [x] Auth completo (login, sessão, trocar senha, papéis master/analista/cliente)
 - [x] Login com Google (12/08) — alternativa sem senha, só autentica e-mail
   já cadastrado. Falta só o botão no front — ver `API-CONTRACT.md`.

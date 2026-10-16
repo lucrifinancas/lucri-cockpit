@@ -1,5 +1,5 @@
 // Metadados dos relatórios antigos (PDF) de cada cliente — o arquivo em si
-// mora no R2 (ver routes/relatorios.js), aqui só o que descreve ele.
+// mora no Workers KV (ver routes/clientes.js), aqui só o que descreve ele.
 
 export async function listarRelatorios(db, clienteId) {
   const { results } = await db
@@ -28,17 +28,17 @@ export async function criarRelatorio(db, clienteId, dados) {
   return db
     .prepare(
       `INSERT INTO relatorios_cliente
-         (cliente_id, referencia, r2_key, nome_arquivo, tamanho_bytes, enviado_por)
+         (cliente_id, referencia, chave_kv, nome_arquivo, tamanho_bytes, enviado_por)
        VALUES (?, ?, ?, ?, ?, ?)
        RETURNING id, referencia, nome_arquivo, tamanho_bytes, criado_em`
     )
-    .bind(clienteId, dados.referencia, dados.r2Key, dados.nomeArquivo, dados.tamanhoBytes, dados.enviadoPor)
+    .bind(clienteId, dados.referencia, dados.chaveKv, dados.nomeArquivo, dados.tamanhoBytes, dados.enviadoPor)
     .first();
 }
 
 export async function apagarRelatorio(db, clienteId, relatorioId) {
   const resultado = await db
-    .prepare("DELETE FROM relatorios_cliente WHERE id = ? AND cliente_id = ? RETURNING r2_key")
+    .prepare("DELETE FROM relatorios_cliente WHERE id = ? AND cliente_id = ? RETURNING chave_kv")
     .bind(relatorioId, clienteId)
     .first();
   return resultado ?? null;

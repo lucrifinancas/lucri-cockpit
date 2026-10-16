@@ -844,7 +844,9 @@ Seção interna da equipe Lucri (master/analista) pra guardar e consultar
 relatórios antigos em PDF de cada cliente — apresentações pro cliente
 sobre um período específico. **Não aparece no portal do cliente final**.
 Metadados ficam no D1 (tabela `relatorios_cliente`), o arquivo em si fica
-num bucket R2 (`RELATORIOS_BUCKET`).
+num namespace do Workers KV (`RELATORIOS_KV`) — KV em vez de R2 de
+propósito, pra não exigir ativar uma assinatura com cartão cadastrado só
+pra isso.
 
 ### `GET /api/clientes/:id/relatorios`
 
@@ -900,4 +902,4 @@ navegador em vez de forçar download; o front pode trocar isso num
 
 ### `DELETE /api/clientes/:id/relatorios/:relatorioId`
 
-Apaga o relatório (registro no D1 + arquivo no R2). **Só master.**
+Apaga o relatório (registro no D1 + arquivo no KV). **Só master.**
