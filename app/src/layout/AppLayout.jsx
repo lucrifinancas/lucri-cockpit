@@ -34,7 +34,13 @@ const NAV_ITEMS = [
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
-  const { clients, activeClientId, activeClient, canSwitchClient, setSelectedClientId } = useActiveClient();
+  const {
+    clients,
+    activeClientId,
+    activeClient,
+    canSwitchClient,
+    setSelectedClientId,
+  } = useActiveClient();
   const profile = useLocalProfile(user?.email);
 
   return (
@@ -46,13 +52,15 @@ export default function AppLayout() {
           <span className="topnav-version">Beta 1.5</span>
         </div>
 
-        <nav className="topnav-nav">
+        <nav className="topnav-nav" aria-label="Navegação principal">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => "topnav-link" + (isActive ? " active" : "")}
+              className={({ isActive }) =>
+                "topnav-link" + (isActive ? " active" : "")
+              }
             >
               <item.icon size={18} weight="light" />
               {item.label}
@@ -61,8 +69,38 @@ export default function AppLayout() {
         </nav>
 
         <div className="topnav-actions">
-          {/* Contexto (empresa + período) num bloco só, separado da navegação e do usuário. */}
-          <div className="topnav-contexto">
+          <div
+            className="topnav-user"
+            title={`${profile.name} · ${ROLE_LABELS[user?.papel] ?? user?.papel ?? ""}`}
+          >
+            <ClientAvatar
+              client={{ name: profile.name, logoUrl: profile.avatarUrl }}
+              size={32}
+            />
+            <div className="topnav-user-text">
+              <strong>{profile.name}</strong>
+              <span>{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
+            </div>
+          </div>
+
+          <NavLink
+            to="/ajustes"
+            className={({ isActive }) =>
+              "topnav-iconbtn" + (isActive ? " active" : "")
+            }
+            title="Ajustes"
+          >
+            <GearSix size={18} weight="light" />
+          </NavLink>
+          <button className="topnav-iconbtn" onClick={logout} title="Sair">
+            <SignOut size={18} weight="light" />
+          </button>
+        </div>
+      </header>
+
+      <section className="app-context" aria-label="Empresa e período">
+        <div className="context-company">
+          <span className="context-label">Empresa</span>
           <div className="topnav-client">
             <ClientAvatar client={activeClient} size={28} />
             {canSwitchClient ? (
@@ -84,30 +122,12 @@ export default function AppLayout() {
               <strong>{activeClient?.name ?? "Sua empresa"}</strong>
             )}
           </div>
-
-          <PeriodSelector />
-          </div>
-
-          <div className="topnav-user" title={`${profile.name} · ${ROLE_LABELS[user?.papel] ?? user?.papel ?? ""}`}>
-            <ClientAvatar client={{ name: profile.name, logoUrl: profile.avatarUrl }} size={32} />
-            <div className="topnav-user-text">
-              <strong>{profile.name}</strong>
-              <span>{ROLE_LABELS[user?.papel] ?? user?.papel}</span>
-            </div>
-          </div>
-
-          <NavLink
-            to="/ajustes"
-            className={({ isActive }) => "topnav-iconbtn" + (isActive ? " active" : "")}
-            title="Ajustes"
-          >
-            <GearSix size={18} weight="light" />
-          </NavLink>
-          <button className="topnav-iconbtn" onClick={logout} title="Sair">
-            <SignOut size={18} weight="light" />
-          </button>
         </div>
-      </header>
+        <div className="context-period">
+          <span className="context-label">Período de análise</span>
+          <PeriodSelector />
+        </div>
+      </section>
 
       <main className="app-content">
         <Outlet />

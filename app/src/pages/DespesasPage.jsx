@@ -23,23 +23,44 @@ export default function DespesasPage() {
   const filtradas = filterLancamentos(despesas, busca);
   const rows = [...filtradas]
     .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))
-    .map((d) => ({ id: d.id, data: d.data_vencimento, descricao: d.descricao, categoria: d.categoria, contraparte: d.contraparte ?? "—", valor: d.valor }));
+    .map((d) => ({
+      id: d.id,
+      data: d.data_vencimento,
+      descricao: d.descricao,
+      categoria: d.categoria,
+      contraparte: d.contraparte ?? "—",
+      valor: d.valor,
+    }));
 
   return (
     <div className="page">
-      <h1 className="page-title">Despesas</h1>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">Despesas</h1>
+          <p className="page-description">
+            Uma visão dos gastos operacionais da empresa.
+          </p>
+        </div>
+      </header>
       <div className="stat-row">
-        <StatCard label="Total no período" value={sumValores(despesas)} tone="negative" />
-        <StatCard label="Nº de lançamentos" value={despesas.length} format="count" />
+        <StatCard
+          label="Total no período"
+          value={sumValores(despesas)}
+          tone="negative"
+        />
+        <StatCard
+          label="Nº de lançamentos"
+          value={despesas.length}
+          format="count"
+        />
       </div>
-      <input
-        className="table-search"
-        type="text"
-        placeholder="Buscar por descrição, contraparte ou categoria..."
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-      />
       <DataTable
+        title="Despesas"
+        search={{
+          value: busca,
+          onChange: (e) => setBusca(e.target.value),
+          placeholder: "Buscar descrição, contraparte ou categoria",
+        }}
         columns={COLUMNS}
         rows={rows}
         emptyMessage={busca ? "Nenhum resultado pra essa busca." : undefined}

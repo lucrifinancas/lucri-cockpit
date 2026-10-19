@@ -14,8 +14,16 @@ export default function BalancoPage() {
           totalizador: false,
           valor: balanco.ativo.total,
           subitens: [
-            { codigo: null, descricao: "Disponível (saldo em conta)", valor: balanco.ativo.disponivel },
-            { codigo: null, descricao: "Realizável (a receber em aberto)", valor: balanco.ativo.realizavel },
+            {
+              codigo: null,
+              descricao: "Disponível (saldo em conta)",
+              valor: balanco.ativo.disponivel,
+            },
+            {
+              codigo: null,
+              descricao: "Realizável (a receber em aberto)",
+              valor: balanco.ativo.realizavel,
+            },
           ],
         },
         {
@@ -24,20 +32,33 @@ export default function BalancoPage() {
           totalizador: false,
           valor: -balanco.passivo_circulante,
         },
-        { codigo: null, descricao: "Saldo", totalizador: true, valor: balanco.saldo },
+        {
+          codigo: null,
+          descricao: "Saldo",
+          totalizador: true,
+          valor: balanco.saldo,
+        },
       ]
     : [];
 
   return (
     <div className="page">
-      <h1 className="page-title">Balanço</h1>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">Balanço</h1>
+          <p className="page-description">
+            Consulte a posição financeira simplificada da empresa.
+          </p>
+        </div>
+      </header>
 
       <p className="pending-notice">
-        <strong>Atenção:</strong> este é um balanço <strong>simplificado</strong>,
-        não um balanço patrimonial contábil completo — mostra só o que a API
-        do Conta Azul expõe (saldo bancário e contas a pagar/receber em
-        aberto). Não tem Patrimônio Líquido, imobilizado nem capital social.
-        Pro balanço contábil de verdade, fale com sua contadora.
+        <strong>Atenção:</strong> este é um balanço{" "}
+        <strong>simplificado</strong>, não um balanço patrimonial contábil
+        completo — mostra só o que a API do Conta Azul expõe (saldo bancário e
+        contas a pagar/receber em aberto). Não tem Patrimônio Líquido,
+        imobilizado nem capital social. Pro balanço contábil de verdade, fale
+        com sua contadora.
       </p>
 
       {loading && <p className="section-empty">Carregando...</p>}

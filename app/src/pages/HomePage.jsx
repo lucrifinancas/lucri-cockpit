@@ -1,9 +1,26 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowCircleDown, ArrowCircleUp, CaretRight, ChartBar, ChartPieSlice, HandCoins, Percent, TrendDown, TrendUp, Wallet } from "@phosphor-icons/react";
+import {
+  ArrowCircleDown,
+  ArrowCircleUp,
+  CaretRight,
+  ChartBar,
+  ChartPieSlice,
+  HandCoins,
+  Percent,
+  TrendDown,
+  TrendUp,
+  Wallet,
+} from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { useHistoricoMensal } from "../hooks/useHistoricoMensal";
-import { sumValores, groupByCategoria, CATEGORY_PALETTE, DESPESA_PALETTE, computeDelta } from "../data/mockFinance";
+import {
+  sumValores,
+  groupByCategoria,
+  CATEGORY_PALETTE,
+  DESPESA_PALETTE,
+  computeDelta,
+} from "../data/mockFinance";
 import { useActiveClient } from "../context/ClientContext";
 import { useHomeCardPrefs } from "../hooks/useHomeCardPrefs";
 import StatCard from "../components/StatCard";
@@ -21,7 +38,10 @@ import { gerarInsights } from "../data/homeInsights";
 import "../styles/page.css";
 import "./HomePage.css";
 
-const fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const fmtBRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
 
 // Reconcilia a soma por categoria com o total oficial (`totais.pago.valor`
 // do Conta Azul). Às vezes o campo `pago` de um lançamento individual não
@@ -49,23 +69,54 @@ function topCategorias(porCategoria, n = 10, palette = CATEGORY_PALETTE) {
   const resto = porCategoria.slice(limite);
   const restoValor = sumValores(resto.map((d) => ({ valor: d.valor })));
   return [
-    ...top.map((d, i) => ({ categoria: d.categoria, valor: d.valor, color: palette[i % palette.length] })),
-    ...(resto.length ? [{ categoria: "Outros", valor: restoValor, color: "var(--text-secondary)" }] : []),
+    ...top.map((d, i) => ({
+      categoria: d.categoria,
+      valor: d.valor,
+      color: palette[i % palette.length],
+    })),
+    ...(resto.length
+      ? [
+          {
+            categoria: "Outros",
+            valor: restoValor,
+            color: "var(--text-secondary)",
+          },
+        ]
+      : []),
   ];
 }
 
 // Rótulo do período escolhido no topo, pros cabeçalhos dos cards.
-const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const MESES = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
 function rotuloPeriodo({ start, end }) {
   if (!start || !end) return "Todos os dados";
   const [ai, mi, di] = start.split("-").map(Number);
   const [af, mf, df] = end.split("-").map(Number);
   const ultimoDia = new Date(af, mf, 0).getDate();
-  if (ai === af && mi === mf && di === 1 && (df === ultimoDia || end >= new Date().toISOString().slice(0, 10))) {
+  if (
+    ai === af &&
+    mi === mf &&
+    di === 1 &&
+    (df === ultimoDia || end >= new Date().toISOString().slice(0, 10))
+  ) {
     const m = MESES[mi - 1];
     return `${m[0].toUpperCase()}${m.slice(1)} de ${ai}`;
   }
-  const br = (d, m, a) => `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${a}`;
+  const br = (d, m, a) =>
+    `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${a}`;
   return `${br(di, mi, ai)} – ${br(df, mf, af)}`;
 }
 
@@ -94,28 +145,55 @@ function buildAgeing(lancamentos) {
   const buckets = AGEING_BUCKETS.map((b) => ({ ...b, valor: 0 }));
   for (const l of lancamentos) {
     if (l.status !== "ATRASADO" || !l.valor_em_aberto) continue;
-    const diasAtraso = Math.max(0, Math.floor((hoje - new Date(l.data_vencimento)) / 86400000));
-    const bucket = buckets.find((b) => diasAtraso <= b.max) ?? buckets[buckets.length - 1];
+    const diasAtraso = Math.max(
+      0,
+      Math.floor((hoje - new Date(l.data_vencimento)) / 86400000),
+    );
+    const bucket =
+      buckets.find((b) => diasAtraso <= b.max) ?? buckets[buckets.length - 1];
     bucket.valor += l.valor_em_aberto;
   }
   return buckets
     .filter((b) => b.valor > 0)
-    .map((b, i) => ({ categoria: b.label, valor: b.valor, color: DESPESA_PALETTE[i] }));
+    .map((b, i) => ({
+      categoria: b.label,
+      valor: b.valor,
+      color: DESPESA_PALETTE[i],
+    }));
 }
 
 export default function HomePage() {
-  const { home, entradas, despesas, previousHome, previousEntradas, previousDespesas, loading, error, range } = useFinanceData();
+  const {
+    home,
+    entradas,
+    despesas,
+    previousHome,
+    previousEntradas,
+    previousDespesas,
+    loading,
+    error,
+    range,
+  } = useFinanceData();
   const historico = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
   // Hora em que estes dados chegaram do Conta Azul (pelo backend) — muda a
   // cada nova busca (troca de período/cliente), não a cada renderização.
-  const carregadoEm = useMemo(() => (home ? new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null), [home]);
+  const carregadoEm = useMemo(
+    () =>
+      home
+        ? new Date().toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : null,
+    [home],
+  );
 
   if (loading) {
     return (
       <div className="page">
-        <h1 className="page-title">Home Financeira</h1>
+        <h1 className="page-title">Visão geral</h1>
         <div className="skeleton-row">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="skeleton-card" />
@@ -131,14 +209,18 @@ export default function HomePage() {
     const precisaReconectar = nuncaConectou || desconectou;
     return (
       <div className="page">
-        <h1 className="page-title">Home Financeira</h1>
+        <h1 className="page-title">Visão geral</h1>
         <p className="pending-notice">
           {nuncaConectou && "Esse cliente ainda não conectou o Conta Azul."}
-          {desconectou && "A conexão desse cliente com o Conta Azul caiu — precisa reconectar."}
-          {!precisaReconectar && `Não deu pra carregar os dados: ${error ?? "erro desconhecido"}.`}
+          {desconectou &&
+            "A conexão desse cliente com o Conta Azul caiu — precisa reconectar."}
+          {!precisaReconectar &&
+            `Não deu pra carregar os dados: ${error ?? "erro desconhecido"}.`}
           {precisaReconectar && (
             <span className="pending-notice-actions">
-              <Link to="/ajustes" className="pending-notice-link">Conectar em Ajustes →</Link>
+              <Link to="/ajustes" className="pending-notice-link">
+                Conectar em Ajustes →
+              </Link>
             </span>
           )}
         </p>
@@ -161,28 +243,61 @@ export default function HomePage() {
   // "Contas vencidas" = só o que JÁ venceu e não foi recebido (decisão do
   // usuário, 14/10/2026 — antes somava todo o em aberto, inclusive a vencer).
   const contasVencidas = contasAReceber.vencido.valor;
-  const aReceberEmAberto = Math.max(contasAReceber.todos - contasAReceber.pago.valor, 0);
-  const inadimplenciaPct = contasAReceber.todos > 0 ? (contasVencidas / contasAReceber.todos) * 100 : 0;
+  const aReceberEmAberto = Math.max(
+    contasAReceber.todos - contasAReceber.pago.valor,
+    0,
+  );
+  const inadimplenciaPct =
+    contasAReceber.todos > 0
+      ? (contasVencidas / contasAReceber.todos) * 100
+      : 0;
 
   // Delta "vs. período anterior" — só quando o hook trouxe o período
   // anterior comparável (null no preset "Todos os dados"). Saldo (foto de
   // agora) e Inadimplência (já é %) ficam sem delta.
-  const prevEntradas = previousEntradas ? previousEntradas.totais.pago.valor : null;
+  const prevEntradas = previousEntradas
+    ? previousEntradas.totais.pago.valor
+    : null;
   const prevDespesas = previousEntradas ? sumValores(previousDespesas) : null;
-  const deltaEntradas = previousEntradas ? computeDelta(totalEntradas, prevEntradas) : null;
-  const deltaDespesas = previousEntradas ? computeDelta(totalDespesas, prevDespesas) : null;
-  const deltaRes = previousEntradas ? deltaResultado(resultado, prevEntradas - prevDespesas) : null;
-  const deltaVencidas = previousHome ? computeDelta(contasVencidas, previousHome.contas_a_receber.vencido.valor) : null;
+  const deltaEntradas = previousEntradas
+    ? computeDelta(totalEntradas, prevEntradas)
+    : null;
+  const deltaDespesas = previousEntradas
+    ? computeDelta(totalDespesas, prevDespesas)
+    : null;
+  const deltaRes = previousEntradas
+    ? deltaResultado(resultado, prevEntradas - prevDespesas)
+    : null;
+  const deltaVencidas = previousHome
+    ? computeDelta(contasVencidas, previousHome.contas_a_receber.vencido.valor)
+    : null;
   // Inadimplência já é %: variação em pontos percentuais (p.p.), não "% de %".
-  const prevInad = previousHome && previousHome.contas_a_receber.todos > 0 ? (previousHome.contas_a_receber.vencido.valor / previousHome.contas_a_receber.todos) * 100 : previousHome ? 0 : null;
-  const deltaInad = prevInad != null ? { pct: inadimplenciaPct - prevInad, direction: inadimplenciaPct - prevInad >= 0 ? "up" : "down", unit: "p.p." } : null;
+  const prevInad =
+    previousHome && previousHome.contas_a_receber.todos > 0
+      ? (previousHome.contas_a_receber.vencido.valor /
+          previousHome.contas_a_receber.todos) *
+        100
+      : previousHome
+        ? 0
+        : null;
+  const deltaInad =
+    prevInad != null
+      ? {
+          pct: inadimplenciaPct - prevInad,
+          direction: inadimplenciaPct - prevInad >= 0 ? "up" : "down",
+          unit: "p.p.",
+        }
+      : null;
 
   const ageingChart = buildAgeing(entradas?.lancamentos ?? []);
 
   // Saldo em conta: foto de agora (não depende do período selecionado),
   // soma de todas as contas bancárias ativas do cliente no Conta Azul.
   const saldoTotal = home.saldo_total ?? 0;
-  const saldoPorConta = (home.contas_bancarias ?? []).map((conta) => ({ label: conta.banco, value: conta.saldo }));
+  const saldoPorConta = (home.contas_bancarias ?? []).map((conta) => ({
+    label: conta.banco,
+    value: conta.saldo,
+  }));
 
   // Receitas por categoria: dado real (`categoria` do lançamento, ver
   // API-CONTRACT.md /entradas) — substitui a antiga divisão recorrente/
@@ -199,11 +314,16 @@ export default function HomePage() {
     subcategoria: l.categoria,
     categoria: l.mae_exibicao ?? l.categoria,
   }));
-  const receitasPorCategoria = reconciliarComTotal(groupByCategoria(receitasLanc), totalEntradas);
+  const receitasPorCategoria = reconciliarComTotal(
+    groupByCategoria(receitasLanc),
+    totalEntradas,
+  );
   const receitasChart = topCategorias(receitasPorCategoria);
   // Mesmo fator do reconciliarComTotal, pra soma das filhas bater com a mãe.
   const somaBrutaReceitas = sumValores(receitasLanc);
-  const fatorReceitas = somaBrutaReceitas ? totalEntradas / somaBrutaReceitas : 1;
+  const fatorReceitas = somaBrutaReceitas
+    ? totalEntradas / somaBrutaReceitas
+    : 1;
   const receitasPorMae = new Map();
   for (const l of receitasLanc) {
     const filhas = receitasPorMae.get(l.categoria) ?? new Map();
@@ -211,27 +331,39 @@ export default function HomePage() {
     filhas.set(nome, (filhas.get(nome) ?? 0) + l.valor * fatorReceitas);
     receitasPorMae.set(l.categoria, filhas);
   }
-  const totalReceitasSemMae = sumValores(receitasLanc.filter((l) => "mae" in l && !l.mae)) * fatorReceitas;
+  const totalReceitasSemMae =
+    sumValores(receitasLanc.filter((l) => "mae" in l && !l.mae)) *
+    fatorReceitas;
   const receitasTabela = receitasChart.map((d) => ({
     label: d.categoria,
     value: d.valor,
     color: d.color,
     children: [...(receitasPorMae.get(d.categoria) ?? [])]
       .map(([label, value]) => ({ label, value }))
-      .filter((filho, _, todos) => !(todos.length === 1 && filho.label === d.categoria))
+      .filter(
+        (filho, _, todos) =>
+          !(todos.length === 1 && filho.label === d.categoria),
+      )
       .sort((a, b) => b.value - a.value),
   }));
 
   // Despesas por categoria: dado real, filtrado pelas categorias marcadas
   // em Ajustes → Categorias de Despesa (ver API-CONTRACT.md /despesas).
   const despesasPorCategoria = groupByCategoria(despesas);
-  const despesasChart = topCategorias(despesasPorCategoria, 10, DESPESA_PALETTE);
+  const despesasChart = topCategorias(
+    despesasPorCategoria,
+    10,
+    DESPESA_PALETTE,
+  );
   // Cada linha é uma categoria-mãe; ao abrir, as despesas dela (subcategoria).
   // "Sem mãe" reúne as despesas ainda não classificadas em Ajustes.
   const despesasPorMae = new Map();
   for (const l of despesas) {
     const filhas = despesasPorMae.get(l.categoria) ?? new Map();
-    filhas.set(l.subcategoria ?? l.categoria, (filhas.get(l.subcategoria ?? l.categoria) ?? 0) + l.valor);
+    filhas.set(
+      l.subcategoria ?? l.categoria,
+      (filhas.get(l.subcategoria ?? l.categoria) ?? 0) + l.valor,
+    );
     despesasPorMae.set(l.categoria, filhas);
   }
   const totalSemMae = sumValores(despesas.filter((l) => !l.mae));
@@ -241,17 +373,32 @@ export default function HomePage() {
     color: d.color,
     children: [...(despesasPorMae.get(d.categoria) ?? [])]
       .map(([label, value]) => ({ label, value }))
-      .filter((filho, _, todos) => !(todos.length === 1 && filho.label === d.categoria)) // sem mãe: abrir só repetiria a linha
+      .filter(
+        (filho, _, todos) =>
+          !(todos.length === 1 && filho.label === d.categoria),
+      ) // sem mãe: abrir só repetiria a linha
       .sort((a, b) => b.value - a.value),
   }));
 
   // Home: resumos (top 5 + "Outros"); as tabelas completas ficam em "Mais detalhes".
   const receitasDonut = topCategorias(receitasPorCategoria, 4);
   const despesasDonut = topCategorias(despesasPorCategoria, 4, DESPESA_PALETTE);
-  const topGastos = despesasPorCategoria.slice(0, 5).map((d, i) => ({ ...d, color: DESPESA_PALETTE[i % DESPESA_PALETTE.length] }));
+  const topGastos = despesasPorCategoria
+    .slice(0, 5)
+    .map((d, i) => ({
+      ...d,
+      color: DESPESA_PALETTE[i % DESPESA_PALETTE.length],
+    }));
 
   const periodo = rotuloPeriodo(range);
-  const saude = calcularSaude({ receitas: totalEntradas, despesas: totalDespesas, saldo: saldoTotal, inadimplenciaPct, vencidas: contasVencidas, aReceberEmAberto });
+  const saude = calcularSaude({
+    receitas: totalEntradas,
+    despesas: totalDespesas,
+    saldo: saldoTotal,
+    inadimplenciaPct,
+    vencidas: contasVencidas,
+    aReceberEmAberto,
+  });
   const insights = gerarInsights({
     receitas: totalEntradas,
     despesas: totalDespesas,
@@ -264,9 +411,19 @@ export default function HomePage() {
 
   // Histórico mensal (Receitas x Despesas, Resultado, Vencidas): 1 fetch só
   // (useHistoricoMensal), reaproveitado nos 3 gráficos abaixo.
-  const monthlyHistory = historico.map((m) => ({ month: m.label, receitas: m.receitas, despesas: m.despesas }));
-  const resultadoHistorico = historico.map((m) => ({ month: m.label, resultado: m.resultado }));
-  const overdueHistory = historico.map((m) => ({ month: m.label, valor: m.vencidas }));
+  const monthlyHistory = historico.map((m) => ({
+    month: m.label,
+    receitas: m.receitas,
+    despesas: m.despesas,
+  }));
+  const resultadoHistorico = historico.map((m) => ({
+    month: m.label,
+    resultado: m.resultado,
+  }));
+  const overdueHistory = historico.map((m) => ({
+    month: m.label,
+    valor: m.vencidas,
+  }));
   const temHistorico = historico.some((m) => m.receitas || m.despesas);
   const temVencidasHist = historico.some((m) => m.vencidas);
 
@@ -274,8 +431,10 @@ export default function HomePage() {
     <div className="page home">
       <header className="home-head">
         <div>
-          <h1 className="page-title">Home Financeira</h1>
-          <p className="home-sub">Visão consolidada do caixa, desempenho e saúde financeira da empresa.</p>
+          <h1 className="page-title">Visão geral</h1>
+          <p className="home-sub">
+            Seu caixa, os resultados do período e o que merece atenção.
+          </p>
         </div>
         {/* Só afirma o que é verdade: se a Home carregou, a conexão funcionou. */}
         <p className="home-status">
@@ -284,10 +443,19 @@ export default function HomePage() {
         </p>
       </header>
 
+      <p className="section-eyebrow">Seus indicadores</p>
       {/* 1. O que está acontecendo agora? */}
       <div className="home-kpis">
         {isVisible("saldoConta") && (
-          <StatCard label="Saldo em conta" value={saldoTotal} icon={Wallet} breakdown={saldoPorConta} tone={saldoTotal < 0 ? "negative" : "neutral"} hideDot context="Saldo de hoje, todas as contas" />
+          <StatCard
+            label="Saldo em conta"
+            value={saldoTotal}
+            icon={Wallet}
+            breakdown={saldoPorConta}
+            tone={saldoTotal < 0 ? "negative" : "neutral"}
+            hideDot
+            context="Saldo de hoje, todas as contas"
+          />
         )}
         {isVisible("resultado") && (
           <StatCard
@@ -301,10 +469,36 @@ export default function HomePage() {
             context="Receitas − despesas"
           />
         )}
-        {isVisible("entradas") && <StatCard label="Receitas" value={totalEntradas} icon={ArrowCircleDown} delta={deltaEntradas} context="Recebido no período" />}
-        {isVisible("despesas") && <StatCard label="Despesas" value={totalDespesas} icon={ArrowCircleUp} delta={deltaDespesas} invertDeltaColor context="Pago no período" />}
+        {isVisible("entradas") && (
+          <StatCard
+            label="Receitas"
+            value={totalEntradas}
+            icon={ArrowCircleDown}
+            delta={deltaEntradas}
+            context="Recebido no período"
+          />
+        )}
+        {isVisible("despesas") && (
+          <StatCard
+            label="Despesas"
+            value={totalDespesas}
+            icon={ArrowCircleUp}
+            delta={deltaDespesas}
+            invertDeltaColor
+            context="Pago no período"
+          />
+        )}
         {isVisible("contasVencidas") && (
-          <StatCard label="Contas vencidas" value={contasVencidas} icon={HandCoins} delta={deltaVencidas} invertDeltaColor tone={contasVencidas > 0 ? "negative" : "neutral"} hideDot context="A receber, já vencido" />
+          <StatCard
+            label="Contas vencidas"
+            value={contasVencidas}
+            icon={HandCoins}
+            delta={deltaVencidas}
+            invertDeltaColor
+            tone={contasVencidas > 0 ? "negative" : "neutral"}
+            hideDot
+            context="A receber, já vencido"
+          />
         )}
         {isVisible("inadimplencia") && (
           <StatCard
@@ -319,6 +513,10 @@ export default function HomePage() {
             context="Vencido ÷ total a receber"
           />
         )}
+      </div>
+
+      <div className="home-attention home-cap-perto">
+        <InsightsCard items={insights} periodLabel={periodo} />
       </div>
 
       {/* 2. Está saudável? 3. O operacional está em dia? */}
@@ -339,17 +537,33 @@ export default function HomePage() {
         />
         <section className="home-card" aria-labelledby="home-pagar">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-pagar">Contas a pagar — andamento</h2>
+            <h2 className="section-title" id="home-pagar">
+              Contas a pagar — andamento
+            </h2>
             <span className="home-card-period">{periodo}</span>
           </header>
-          <ProgressBar pago={contasAPagar.pago.valor} vencido={contasAPagar.vencido.valor} total={contasAPagar.todos} color="var(--chart-caixa)" pagoLabel="Pago" />
+          <ProgressBar
+            pago={contasAPagar.pago.valor}
+            vencido={contasAPagar.vencido.valor}
+            total={contasAPagar.todos}
+            color="var(--chart-caixa)"
+            pagoLabel="Pago"
+          />
         </section>
         <section className="home-card" aria-labelledby="home-receber">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-receber">Contas a receber — andamento</h2>
+            <h2 className="section-title" id="home-receber">
+              Contas a receber — andamento
+            </h2>
             <span className="home-card-period">{periodo}</span>
           </header>
-          <ProgressBar pago={contasAReceber.pago.valor} vencido={contasAReceber.vencido.valor} total={contasAReceber.todos} color="var(--chart-receita)" pagoLabel="Recebido" />
+          <ProgressBar
+            pago={contasAReceber.pago.valor}
+            vencido={contasAReceber.vencido.valor}
+            total={contasAReceber.todos}
+            color="var(--chart-receita)"
+            pagoLabel="Recebido"
+          />
         </section>
       </div>
 
@@ -357,30 +571,54 @@ export default function HomePage() {
       <div className="home-par home-cap-longe">
         <section className="home-card" aria-labelledby="home-hist">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-hist">Receitas x Despesas — Histórico mensal</h2>
+            <h2 className="section-title" id="home-hist">
+              Receitas x Despesas — Histórico mensal
+            </h2>
             <span className="home-card-period">Últimos 12 meses</span>
           </header>
           {temHistorico ? (
             <ComparisonBarChart
               data={monthlyHistory}
               series={[
-                { dataKey: "receitas", name: "Receitas", color: "var(--chart-receita)" },
-                { dataKey: "despesas", name: "Despesas", color: "var(--chart-despesa)" },
+                {
+                  dataKey: "receitas",
+                  name: "Receitas",
+                  color: "var(--chart-receita)",
+                },
+                {
+                  dataKey: "despesas",
+                  name: "Despesas",
+                  color: "var(--chart-despesa)",
+                },
               ]}
             />
           ) : (
-            <EmptyMetricState icon={ChartBar} message="Ainda sem receitas ou despesas nos últimos 12 meses." />
+            <EmptyMetricState
+              icon={ChartBar}
+              message="Ainda sem receitas ou despesas nos últimos 12 meses."
+            />
           )}
         </section>
         <section className="home-card" aria-labelledby="home-res">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-res">Resultado histórico (lucro/prejuízo)</h2>
+            <h2 className="section-title" id="home-res">
+              Resultado histórico (lucro/prejuízo)
+            </h2>
             <span className="home-card-period">Últimos 12 meses</span>
           </header>
           {temHistorico ? (
-            <HistoryBarChart data={resultadoHistorico} dataKey="resultado" color="var(--chart-caixa)" label="Resultado" colorBySign />
+            <HistoryBarChart
+              data={resultadoHistorico}
+              dataKey="resultado"
+              color="var(--chart-caixa)"
+              label="Resultado"
+              colorBySign
+            />
           ) : (
-            <EmptyMetricState icon={ChartBar} message="Ainda sem resultado pra mostrar nos últimos 12 meses." />
+            <EmptyMetricState
+              icon={ChartBar}
+              message="Ainda sem resultado pra mostrar nos últimos 12 meses."
+            />
           )}
         </section>
       </div>
@@ -389,55 +627,93 @@ export default function HomePage() {
       <div className="home-par home-cap-longe">
         <section className="home-card" aria-labelledby="home-cat-rec">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-cat-rec">Principais receitas por categoria</h2>
+            <h2 className="section-title" id="home-cat-rec">
+              Principais receitas por categoria
+            </h2>
             <span className="home-card-period">{periodo}</span>
           </header>
           {receitasDonut.length ? (
-            <ProportionDonut data={receitasDonut.map((d) => ({ name: d.categoria, value: d.valor, color: d.color }))} />
+            <ProportionDonut
+              data={receitasDonut.map((d) => ({
+                name: d.categoria,
+                value: d.valor,
+                color: d.color,
+              }))}
+            />
           ) : (
-            <EmptyMetricState icon={ChartPieSlice} message="Nenhuma receita no período selecionado." />
+            <EmptyMetricState
+              icon={ChartPieSlice}
+              message="Nenhuma receita no período selecionado."
+            />
           )}
         </section>
         <section className="home-card" aria-labelledby="home-cat-desp">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-cat-desp">Principais despesas por categoria</h2>
+            <h2 className="section-title" id="home-cat-desp">
+              Principais despesas por categoria
+            </h2>
             <span className="home-card-period">{periodo}</span>
           </header>
           {despesasDonut.length ? (
-            <ProportionDonut data={despesasDonut.map((d) => ({ name: d.categoria, value: d.valor, color: d.color }))} />
+            <ProportionDonut
+              data={despesasDonut.map((d) => ({
+                name: d.categoria,
+                value: d.valor,
+                color: d.color,
+              }))}
+            />
           ) : (
             <EmptyMetricState
               icon={ChartPieSlice}
               message="Nenhuma despesa no período (ou nenhuma categoria de despesa marcada)."
-              action={<Link to="/ajustes" className="pending-notice-link">Ver categorias em Ajustes →</Link>}
+              action={
+                <Link to="/ajustes" className="pending-notice-link">
+                  Ver categorias em Ajustes →
+                </Link>
+              }
             />
           )}
         </section>
       </div>
 
-      {/* 6. O que merece atenção? */}
-      <div className="home-par home-cap-perto">
+      {/* Ranking complementar ao detalhamento por categoria. */}
+      <div className="home-cap-perto">
         <section className="home-card" aria-labelledby="home-top">
           <header className="home-card-head">
-            <h2 className="section-title" id="home-top">Top gastos do mês</h2>
+            <h2 className="section-title" id="home-top">
+              Top gastos do mês
+            </h2>
             <span className="home-card-period">{periodo}</span>
           </header>
           {topGastos.length ? (
-            <HorizontalBarChart data={topGastos} height={Math.max(180, topGastos.length * 40)} />
+            <HorizontalBarChart
+              data={topGastos}
+              height={Math.max(180, topGastos.length * 40)}
+            />
           ) : (
-            <EmptyMetricState icon={ChartBar} message="Nenhum gasto no período selecionado." />
+            <EmptyMetricState
+              icon={ChartBar}
+              message="Nenhum gasto no período selecionado."
+            />
           )}
         </section>
-        <InsightsCard items={insights} periodLabel={periodo} />
       </div>
 
       {/* Tudo que a Home tinha antes e não está nos blocos acima — nada se perde. */}
       <details className="home-detalhes home-cap-longe">
         <summary>
-          <CaretRight size={16} weight="bold" className="home-detalhes-caret" aria-hidden="true" />
+          <CaretRight
+            size={16}
+            weight="bold"
+            className="home-detalhes-caret"
+            aria-hidden="true"
+          />
           <span>
             <strong>Análises adicionais</strong>
-            <span className="home-detalhes-sub">Detalhamento de categorias · Contas vencidas por mês · Atraso (Ageing)</span>
+            <span className="home-detalhes-sub">
+              Detalhamento de categorias · Contas vencidas por mês · Atraso
+              (Ageing)
+            </span>
           </span>
         </summary>
         <div className="home-detalhes-corpo">
@@ -446,13 +722,19 @@ export default function HomePage() {
               <h2 className="section-title">Receitas por categoria</h2>
               {totalReceitasSemMae > 0 && (
                 <p className="pending-notice">
-                  {fmtBRL.format(totalReceitasSemMae)} em receitas ainda sem mãe.
+                  {fmtBRL.format(totalReceitasSemMae)} em receitas ainda sem
+                  mãe.
                   <span className="pending-notice-actions">
-                    <Link to="/ajustes" className="pending-notice-link">Classificar em Ajustes →</Link>
+                    <Link to="/ajustes" className="pending-notice-link">
+                      Classificar em Ajustes →
+                    </Link>
                   </span>
                 </p>
               )}
-              <EntradasSummaryTable rows={receitasTabela} total={totalEntradas} />
+              <EntradasSummaryTable
+                rows={receitasTabela}
+                total={totalEntradas}
+              />
             </section>
             <section className="page-section">
               <h2 className="section-title">Despesas totais</h2>
@@ -460,29 +742,48 @@ export default function HomePage() {
                 <p className="pending-notice">
                   {fmtBRL.format(totalSemMae)} em despesas ainda sem mãe.
                   <span className="pending-notice-actions">
-                    <Link to="/ajustes" className="pending-notice-link">Classificar em Ajustes →</Link>
+                    <Link to="/ajustes" className="pending-notice-link">
+                      Classificar em Ajustes →
+                    </Link>
                   </span>
                 </p>
               )}
-              <EntradasSummaryTable rows={despesasTabela} total={totalDespesas} />
+              <EntradasSummaryTable
+                rows={despesasTabela}
+                total={totalDespesas}
+              />
             </section>
           </div>
 
           <section className="page-section">
             <h2 className="section-title">Contas a receber vencidas por mês</h2>
             {temVencidasHist ? (
-              <HistoryBarChart data={overdueHistory} dataKey="valor" color="var(--chart-despesa)" label="Vencidas" />
+              <HistoryBarChart
+                data={overdueHistory}
+                dataKey="valor"
+                color="var(--chart-despesa)"
+                label="Vencidas"
+              />
             ) : (
-              <p className="section-empty">Nenhuma conta a receber vencida nos últimos 12 meses.</p>
+              <p className="section-empty">
+                Nenhuma conta a receber vencida nos últimos 12 meses.
+              </p>
             )}
           </section>
 
           <section className="page-section">
-            <h2 className="section-title">Inadimplência por faixa de atraso (Ageing)</h2>
+            <h2 className="section-title">
+              Inadimplência por faixa de atraso (Ageing)
+            </h2>
             {ageingChart.length > 0 ? (
-              <HorizontalBarChart data={ageingChart} height={Math.max(160, ageingChart.length * 48)} />
+              <HorizontalBarChart
+                data={ageingChart}
+                height={Math.max(160, ageingChart.length * 48)}
+              />
             ) : (
-              <p className="section-empty">Nenhuma conta vencida no período selecionado.</p>
+              <p className="section-empty">
+                Nenhuma conta vencida no período selecionado.
+              </p>
             )}
           </section>
         </div>

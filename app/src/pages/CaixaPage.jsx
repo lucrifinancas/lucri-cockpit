@@ -38,11 +38,22 @@ export default function CaixaPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Caixa</h1>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">Caixa</h1>
+          <p className="page-description">
+            Entradas e saídas para acompanhar a movimentação do período.
+          </p>
+        </div>
+      </header>
       <div className="stat-row">
         <StatCard label="Entradas" value={totalEntradas} tone="positive" />
         <StatCard label="Saídas" value={totalSaidas} tone="negative" />
-        <StatCard label="Saldo" value={saldo} tone={saldo >= 0 ? "accent" : "negative"} />
+        <StatCard
+          label="Saldo"
+          value={saldo}
+          tone={saldo >= 0 ? "accent" : "negative"}
+        />
       </div>
       <DataTable columns={COLUMNS} rows={movimentacoes} />
     </div>

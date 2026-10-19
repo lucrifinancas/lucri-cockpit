@@ -8,7 +8,14 @@ export default function DrePage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">DRE</h1>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">DRE</h1>
+          <p className="page-description">
+            Consulte a composição do resultado da empresa.
+          </p>
+        </div>
+      </header>
 
       {loading && <p className="section-empty">Carregando...</p>}
       {error && <p className="section-empty">{error}</p>}

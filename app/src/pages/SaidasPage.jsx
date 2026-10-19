@@ -21,12 +21,25 @@ export default function SaidasPage() {
   const filtrados = filterLancamentos(lancamentos, busca);
   const rows = [...filtrados]
     .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))
-    .map((l) => ({ id: l.id, data: l.data_vencimento, descricao: l.descricao, contraparte: l.contraparte ?? "—", valor: l.valor_pago }));
+    .map((l) => ({
+      id: l.id,
+      data: l.data_vencimento,
+      descricao: l.descricao,
+      contraparte: l.contraparte ?? "—",
+      valor: l.valor_pago,
+    }));
   const total = saidas?.totais?.pago?.valor ?? 0;
 
   return (
     <div className="page">
-      <h1 className="page-title">Saídas</h1>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">Saídas</h1>
+          <p className="page-description">
+            Todas as saídas de caixa, organizadas em um só lugar.
+          </p>
+        </div>
+      </header>
       <p className="pending-notice">
         Visão bruta de tudo que sai do caixa (inclui transferência, investimento
         etc.) — diferente de <strong>Despesas</strong>, que é só o custo
@@ -34,16 +47,19 @@ export default function SaidasPage() {
       </p>
       <div className="stat-row">
         <StatCard label="Total no período" value={total} tone="negative" />
-        <StatCard label="Nº de lançamentos" value={lancamentos.length} format="count" />
+        <StatCard
+          label="Nº de lançamentos"
+          value={lancamentos.length}
+          format="count"
+        />
       </div>
-      <input
-        className="table-search"
-        type="text"
-        placeholder="Buscar por descrição, contraparte ou categoria..."
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-      />
       <DataTable
+        title="Saídas"
+        search={{
+          value: busca,
+          onChange: (e) => setBusca(e.target.value),
+          placeholder: "Buscar descrição, contraparte ou categoria",
+        }}
         columns={COLUMNS}
         rows={rows}
         emptyMessage={busca ? "Nenhum resultado pra essa busca." : undefined}

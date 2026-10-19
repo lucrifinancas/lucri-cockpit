@@ -16,9 +16,11 @@
   color: inherit;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
 }
 
 .cap-card:hover {
@@ -50,10 +52,16 @@
 }
 
 /* Texto em tinta escurecida (--*-text), nunca a cor pura — ver tokens.css. */
-.cap-card-value.tone-danger { color: var(--danger-text); }
-.cap-card-value.tone-ok { color: var(--lucri-mint-text); }
+.cap-card-value.tone-danger {
+  color: var(--danger-text);
+}
+.cap-card-value.tone-ok {
+  color: var(--lucri-mint-text);
+}
 .cap-card-value.tone-info,
-.cap-card-value.tone-neutral { color: var(--text-primary); }
+.cap-card-value.tone-neutral {
+  color: var(--text-primary);
+}
 
 .cap-table .num {
   text-align: right;
@@ -149,7 +157,7 @@
   padding: 16px 18px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
 }
 
 .cap-filtro {
@@ -177,7 +185,9 @@
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
 }
 
 .cap-campo:hover {
@@ -314,4 +324,61 @@
   font-size: 12px;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+}
+
+.cap-card {
+  min-width: 0;
+  padding: 18px;
+}
+.cap-filtros {
+  padding: 20px;
+}
+.cap-pager {
+  justify-content: flex-end;
+}
+@media (max-width: 640px) {
+  .cap-meses {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 6px;
+    scroll-snap-type: x proximity;
+  }
+  .cap-meses .cap-card {
+    flex: 0 0 170px;
+    scroll-snap-align: start;
+  }
+  .cap-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .cap-cards .cap-card:last-child {
+    grid-column: 1/-1;
+  }
+  .cap-card {
+    padding: 15px;
+  }
+  .cap-card-value {
+    font-size: 19px;
+  }
+  .cap-filtros {
+    padding: 16px;
+    gap: 14px;
+  }
+  .cap-filtro {
+    flex: 1 1 100%;
+  }
+  .cap-campo-select,
+  .cap-filtro .drp,
+  .cap-filtro .drp-trigger {
+    width: 100%;
+  }
+  .cap-table {
+    min-width: 720px;
+  }
+  .cap-pager {
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+  }
 }

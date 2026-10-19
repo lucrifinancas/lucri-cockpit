@@ -37,19 +37,29 @@ export default function EntradasPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Entradas</h1>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">Entradas</h1>
+          <p className="page-description">
+            Acompanhe os recebimentos e consulte os lançamentos do período.
+          </p>
+        </div>
+      </header>
       <div className="stat-row">
         <StatCard label="Total no período" value={total} tone="positive" />
-        <StatCard label="Nº de recebimentos" value={lancamentos.length} format="count" />
+        <StatCard
+          label="Nº de recebimentos"
+          value={lancamentos.length}
+          format="count"
+        />
       </div>
-      <input
-        className="table-search"
-        type="text"
-        placeholder="Buscar por descrição, contraparte ou categoria..."
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-      />
       <DataTable
+        title="Recebimentos"
+        search={{
+          value: busca,
+          onChange: (e) => setBusca(e.target.value),
+          placeholder: "Buscar descrição, contraparte ou categoria",
+        }}
         columns={COLUMNS}
         rows={rows}
         emptyMessage={busca ? "Nenhum resultado pra essa busca." : undefined}

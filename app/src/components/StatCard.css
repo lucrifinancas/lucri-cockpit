@@ -1,17 +1,17 @@
 .stat-card {
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  border-radius: 16px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 200px;
+  min-width: 0;
   position: relative;
 }
 
 .stat-card-highlight {
-  background: var(--bg-subtle);
+  background: color-mix(in srgb, var(--cta) 5%, var(--bg-panel));
 }
 
 .stat-card-hoverable {
@@ -67,7 +67,9 @@
 
 .stat-card-value {
   font-family: var(--font-title);
-  font-size: 28px;
+  font-size: clamp(24px, 2.2vw, 32px);
+  line-height: 1.25;
+  letter-spacing: -0.035em;
   font-weight: 700;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -88,7 +90,7 @@
 
 .stat-card-delta.delta-flat {
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .stat-card-delta.delta-up {

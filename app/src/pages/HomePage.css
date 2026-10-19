@@ -8,8 +8,12 @@
   gap: 0;
 }
 
-.home-cap-perto { margin-top: 16px; }
-.home-cap-longe { margin-top: 40px; }
+.home-cap-perto {
+  margin-top: 16px;
+}
+.home-cap-longe {
+  margin-top: 40px;
+}
 
 .home-head {
   display: flex;
@@ -52,7 +56,7 @@
 .home-card {
   background: var(--bg-panel);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -104,7 +108,7 @@
 /* ---------- 1. KPIs ---------- */
 .home-kpis {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -114,7 +118,7 @@
 }
 
 .home-kpis .stat-card-value {
-  font-size: 24px;
+  font-size: clamp(24px, 2.2vw, 30px);
 }
 
 /* ---------- 2–3. Saúde + andamento ---------- */
@@ -151,12 +155,20 @@
   transition: stroke-dashoffset 0.6s ease;
 }
 
-.home-saude-arco.tone-good { stroke: var(--lucri-mint); }
-.home-saude-arco.tone-warning { stroke: var(--alert); }
-.home-saude-arco.tone-bad { stroke: var(--danger); }
+.home-saude-arco.tone-good {
+  stroke: var(--lucri-mint);
+}
+.home-saude-arco.tone-warning {
+  stroke: var(--alert);
+}
+.home-saude-arco.tone-bad {
+  stroke: var(--danger);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .home-saude-arco { transition: none; }
+  .home-saude-arco {
+    transition: none;
+  }
 }
 
 .home-saude-nota {
@@ -282,10 +294,18 @@
   margin-top: 2px;
 }
 
-.home-insight-icon.tone-good { color: var(--lucri-mint-text); }
-.home-insight-icon.tone-warning { color: var(--alert); }
-.home-insight-icon.tone-bad { color: var(--danger); }
-.home-insight-icon.tone-info { color: var(--accent); }
+.home-insight-icon.tone-good {
+  color: var(--lucri-mint-text);
+}
+.home-insight-icon.tone-warning {
+  color: var(--alert);
+}
+.home-insight-icon.tone-bad {
+  color: var(--danger);
+}
+.home-insight-icon.tone-info {
+  color: var(--accent);
+}
 
 .home-insight-rotulo {
   display: block;
@@ -358,7 +378,7 @@
 /* ---------- mais detalhes ---------- */
 .home-detalhes {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   background: var(--bg-panel);
 }
 
@@ -369,7 +389,7 @@
   cursor: pointer;
   list-style: none;
   padding: 18px 20px;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
 }
 
 .home-detalhes summary::-webkit-details-marker {
@@ -416,22 +436,155 @@
 
 /* ---------- responsivo ---------- */
 @media (max-width: 1440px) {
-  .home-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .home-faixa-saude { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .home-faixa-saude .home-saude { grid-column: 1 / -1; }
+  .home-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .home-faixa-saude {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-faixa-saude .home-saude {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 1100px) {
-  .home-par { grid-template-columns: 1fr; }
+  .home-par {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
-  .home-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .home-faixa-saude { grid-template-columns: 1fr; }
-  .home-saude-corpo { flex-direction: column; align-items: stretch; }
-  .home-saude-anel { align-self: center; }
+  .home-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-faixa-saude {
+    grid-template-columns: 1fr;
+  }
+  .home-saude-corpo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .home-saude-anel {
+    align-self: center;
+  }
 }
 
 @media (max-width: 560px) {
-  .home-kpis { grid-template-columns: 1fr; }
+  .home-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+.home-head {
+  margin: 0 0 26px;
+}
+.home-head .page-title {
+  margin-bottom: 8px;
+}
+.home-status {
+  padding: 7px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+.home-kpis .stat-card {
+  min-height: 124px;
+  border-color: var(--border-subtle);
+}
+.home-kpis .stat-card-delta {
+  margin-top: auto;
+  line-height: 1.5;
+}
+.home-attention .home-card {
+  border-color: var(--border-subtle);
+}
+.home-attention .home-insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+}
+.home-attention .home-insight {
+  padding: 14px 0;
+}
+.home-attention .home-insight:nth-child(2) {
+  border-top: 0;
+  padding-top: 0;
+}
+.home-attention .home-insight:last-child {
+  padding-bottom: 0;
+}
+.home-card-head .section-title {
+  line-height: 1.4;
+}
+.home-faixa-saude {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.home-faixa-saude .home-saude {
+  grid-column: 1/-1;
+}
+.home-saude-headline {
+  font-size: 21px;
+}
+.home-cap-longe {
+  margin-top: 28px;
+}
+.home-cap-perto {
+  margin-top: 16px;
+}
+@media (max-width: 900px) {
+  .home-attention .home-insights {
+    grid-template-columns: 1fr;
+  }
+  .home-attention .home-insight:nth-child(2) {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 14px;
+  }
+  .home-faixa-saude {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-saude-corpo {
+    flex-direction: row;
+  }
+}
+@media (max-width: 560px) {
+  .home-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .home-kpis .stat-card {
+    padding: 16px 14px;
+    min-height: 136px;
+  }
+  .home-kpis .stat-card-value {
+    font-size: clamp(18px, 5.1vw, 23px);
+    overflow-wrap: anywhere;
+  }
+  .home-kpis .stat-card-label {
+    font-size: 12px;
+    align-items: flex-start;
+    line-height: 1.45;
+  }
+  .home-kpis .stat-card-delta {
+    font-size: 11px;
+  }
+  .home-card {
+    padding: 18px;
+  }
+  .home-status {
+    font-size: 11px;
+  }
+  .home-saude-corpo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .home-saude-headline {
+    font-size: 18px;
+  }
+  .home-detalhes summary {
+    padding: 16px;
+  }
+  .home-detalhes-corpo {
+    padding: 0 16px 16px;
+  }
 }
