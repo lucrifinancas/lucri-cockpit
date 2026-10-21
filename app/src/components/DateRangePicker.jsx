@@ -1,3 +1,5 @@
+import { todayISO } from "../data/period";
+import { moveCalendarDate, fullDateLabel } from "../data/calendar";
 import { useEffect, useRef, useState } from "react";
 import { CalendarBlank, CaretLeft, CaretRight, X } from "@phosphor-icons/react";
 import "./DateRangePicker.css";
@@ -25,26 +27,36 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
   const [base, setBase] = useState(() => mesBase(de || mesInicial));
   const ref = useRef(null);
 
+  const panelRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [focused, setFocused] = useState(de || mesInicial || todayISO());
+
   useEffect(() => {
-    if (!aberto) return;
-    const fora = (e) => ref.current && !ref.current.contains(e.target) && fechar();
-    const esc = (e) => e.key === "Escape" && fechar();
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", fora);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [aberto]);
+    if (aberto) {
+      if (!panelRef.current.open) panelRef.current.showModal();
+      panelRef.current.querySelector(`[data-date="${focused}"]`)?.focus();
+    }
+  }, [aberto, focused]);
+
+  function navegar(event, iso) {
+    const next = moveCalendarDate(iso, event.key, event.shiftKey);
+    if (!next) return;
+    event.preventDefault();
+    setFocused(next);
+    setBase(mesBase(next));
+  }
 
   function abrir() {
     setBase(mesBase(de || mesInicial));
+    setFocused(de || mesInicial || todayISO());
     setRascunho(null);
     setAberto(true);
   }
 
   function fechar() {
+    panelRef.current?.close();
     setAberto(false);
+    triggerRef.current?.focus();
     setRascunho(null);
     setHover(null);
   }
@@ -67,8 +79,7 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
     [ini, fim] = rascunho <= outro ? [rascunho, outro] : [outro, rascunho];
   }
 
-  const d = new Date();
-  const hoje = toIso(d.getFullYear(), d.getMonth(), d.getDate());
+  const hoje = todayISO();
   const meses = [base, new Date(base.getFullYear(), base.getMonth() + 1, 1)];
   const temValor = de || ate;
   const rotulo = temValor ? `${fmtCurto(de) || "…"} → ${fmtCurto(ate) || "…"}` : placeholder;
@@ -78,7 +89,9 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
       <button
         type="button"
         className={`drp-trigger ${temValor ? "is-set" : ""}`}
-        aria-label={ariaLabel}
+        ref={triggerRef}
+        aria-haspopup="dialog"
+        aria-label={`${ariaLabel ?? "Escolher período"}${temValor ? `: ${de || "sem início"} a ${ate || "sem fim"}` : ""}`}
         aria-expanded={aberto}
         onClick={() => (aberto ? fechar() : abrir())}
       >
@@ -92,7 +105,7 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
       )}
 
       {aberto && (
-        <div className="drp-panel" role="dialog" aria-label={ariaLabel}>
+        <dialog ref={panelRef} className="drp-panel" aria-label={ariaLabel ?? "Escolher período"} onCancel={(event) => { event.preventDefault(); fechar(); }} onClick={(event) => { if (event.target === event.currentTarget) { const box = event.currentTarget.getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) fechar(); } }}>
           <div className="drp-months">
             {meses.map((m, i) => {
               const y = m.getFullYear(), mo = m.getMonth();
@@ -101,11 +114,11 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
               return (
                 <div key={i}>
                   <div className="drp-head">
-                    <button type="button" className={`drp-nav ${i === 0 ? "" : "hidden"}`} aria-label="Mês anterior" onClick={() => setBase(new Date(y, mo - 1, 1))}>
+                    <button type="button" className={`drp-nav ${i === 0 ? "" : "hidden"}`} aria-label="Mês anterior" onClick={() => { const date = new Date(y, mo - 1, 1); setBase(date); setFocused(toIso(date.getFullYear(), date.getMonth(), 1)); }}>
                       <CaretLeft size={12} weight="bold" />
                     </button>
                     <div className="drp-title">{MESES[mo]} {y}</div>
-                    <button type="button" className={`drp-nav ${i === 1 ? "" : "hidden"}`} aria-label="Próximo mês" onClick={() => setBase(new Date(y, mo, 1))}>
+                    <button type="button" className={`drp-nav ${i === 1 ? "" : "hidden"}`} aria-label="Próximo mês" onClick={() => { setBase(new Date(y, mo, 1)); setFocused(toIso(y, mo, 1)); }}>
                       <CaretRight size={12} weight="bold" />
                     </button>
                   </div>
@@ -121,7 +134,7 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
                       if (iso === ini || iso === fim) cls.push("is-edge");
                       else if (ini && fim && iso > ini && iso < fim) cls.push("is-range");
                       return (
-                        <button key={iso} type="button" className={cls.join(" ")} onClick={() => escolher(iso)} onMouseEnter={() => rascunho && setHover(iso)}>
+                        <button key={iso} data-date={iso} tabIndex={focused === iso ? 0 : -1} aria-label={fullDateLabel(iso)} aria-current={iso === hoje ? "date" : undefined} aria-pressed={Boolean(ini && fim && iso >= ini && iso <= fim)} onFocus={() => setFocused(iso)} onKeyDown={(event) => navegar(event, iso)} type="button" className={cls.join(" ")} onClick={() => escolher(iso)} onMouseEnter={() => rascunho && setHover(iso)}>
                           {k + 1}
                         </button>
                       );
@@ -132,10 +145,10 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
             })}
           </div>
           <div className="drp-footer">
-            <span>{rascunho ? "Agora escolha a data final" : "Clique na data inicial"}</span>
+            <span role="status">{rascunho ? "Agora escolha a data final" : "Escolha a data inicial. Use as setas para navegar."}</span>
             <button type="button" className="drp-link" onClick={fechar}>Cancelar</button>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );
@@ -143,6 +156,5 @@ export default function DateRangePicker({ de, ate, onChange, mesInicial, placeho
 
 function mesBase(iso) {
   if (iso) return new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, 1);
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
+  return mesBase(todayISO());
 }

@@ -1,3 +1,4 @@
+import { todayISO } from "../data/period";
 import { useEffect, useRef, useState } from "react";
 import { CalendarBlank, CaretLeft, CaretRight } from "@phosphor-icons/react";
 import "./DateRangePicker.css";
@@ -13,20 +14,20 @@ export default function MonthPicker({ value, onChange, ariaLabel, tema = "claro"
   const [ano, setAno] = useState(() => anoDe(value));
   const ref = useRef(null);
 
+  const panelRef = useRef(null);
+  const triggerRef = useRef(null);
   useEffect(() => {
     if (!aberto) return;
-    const fora = (e) => ref.current && !ref.current.contains(e.target) && setAberto(false);
-    const esc = (e) => e.key === "Escape" && setAberto(false);
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", fora);
-      document.removeEventListener("keydown", esc);
-    };
+    panelRef.current.showModal();
+    (panelRef.current.querySelector('[aria-pressed="true"]') ?? panelRef.current.querySelector('.drp-mes'))?.focus();
   }, [aberto]);
+  function fechar() {
+    panelRef.current?.close();
+    setAberto(false);
+    triggerRef.current?.focus();
+  }
 
-  const d = new Date();
-  const atual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const atual = todayISO().slice(0, 7);
   const [vAno, vMes] = (value || "").split("-").map(Number);
   const rotulo = value ? `${MESES_LONGOS[vMes - 1]} de ${vAno}` : "Escolher mês";
 
@@ -35,7 +36,9 @@ export default function MonthPicker({ value, onChange, ariaLabel, tema = "claro"
       <button
         type="button"
         className={`drp-trigger ${value ? "is-set" : ""}`}
-        aria-label={ariaLabel}
+        ref={triggerRef}
+        aria-haspopup="dialog"
+        aria-label={`${ariaLabel ?? "Mês"}: ${rotulo}`}
         aria-expanded={aberto}
         onClick={() => {
           setAno(anoDe(value));
@@ -47,7 +50,7 @@ export default function MonthPicker({ value, onChange, ariaLabel, tema = "claro"
       </button>
 
       {aberto && (
-        <div className="drp-panel drp-panel-mes" role="dialog" aria-label={ariaLabel}>
+        <dialog ref={panelRef} className="drp-panel drp-panel-mes" aria-label={ariaLabel ?? "Escolher mês"} onCancel={(event) => { event.preventDefault(); fechar(); }}>
           <div className="drp-head">
             <button type="button" className="drp-nav" aria-label="Ano anterior" onClick={() => setAno(ano - 1)}>
               <CaretLeft size={12} weight="bold" />
@@ -72,7 +75,7 @@ export default function MonthPicker({ value, onChange, ariaLabel, tema = "claro"
                   aria-pressed={v === value}
                   onClick={() => {
                     onChange(v);
-                    setAberto(false);
+                    fechar();
                   }}
                 >
                   {nome}
@@ -80,12 +83,13 @@ export default function MonthPicker({ value, onChange, ariaLabel, tema = "claro"
               );
             })}
           </div>
-        </div>
+          <div className="drp-footer"><button type="button" className="drp-link" onClick={fechar}>Cancelar</button></div>
+        </dialog>
       )}
     </div>
   );
 }
 
 function anoDe(value) {
-  return value ? Number(value.slice(0, 4)) : new Date().getFullYear();
+  return value ? Number(value.slice(0, 4)) : Number(todayISO().slice(0, 4));
 }

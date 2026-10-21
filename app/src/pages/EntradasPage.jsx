@@ -1,3 +1,6 @@
+import { useSearchParams } from "react-router-dom";
+import { recebimentosVencidos } from "../data/recebimentos";
+import FinanceDataState from "../components/FinanceDataState";
 import { useState } from "react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { filterLancamentos } from "../data/mockFinance";
@@ -6,21 +9,28 @@ import DataTable from "../components/DataTable";
 import "../styles/page.css";
 
 const COLUMNS = [
-  { key: "data", label: "Data" },
+  { key: "data", label: "Vencimento" },
   { key: "descricao", label: "Descrição" },
   { key: "mae", label: "Categoria" },
   { key: "categoria", label: "Subcategoria" },
-  { key: "contraparte", label: "Contraparte" },
-  { key: "valor", label: "Valor" },
+  { key: "contraparte", label: "Cliente" },
+  { key: "valor", label: "Valor recebido" },
 ];
 
 // Regime de caixa (ver "⚠️ Regime de caixa" no topo do API-CONTRACT.md):
 // soma valor_pago, não valor (total do título, pago ou não).
 export default function EntradasPage() {
-  const { entradas } = useFinanceData();
+  const { entradas, loading, error, retry, awaitingClient } = useFinanceData();
   const [busca, setBusca] = useState("");
+  const [params, setParams] = useSearchParams();
+  const apenasVencidos = params.get("situacao") === "vencido";
+  if (loading || error || awaitingClient) {
+    return <FinanceDataState title="Entradas" loading={loading} error={error} retry={retry} awaitingClient={awaitingClient} />;
+  }
+
   const lancamentos = entradas?.lancamentos ?? [];
-  const filtrados = filterLancamentos(lancamentos, busca);
+  const selecionados = apenasVencidos ? recebimentosVencidos(lancamentos) : lancamentos;
+  const filtrados = filterLancamentos(selecionados, busca);
   const rows = [...filtrados]
     .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))
     .map((l) => ({
@@ -31,9 +41,9 @@ export default function EntradasPage() {
       mae: l.mae_exibicao ?? "—",
       categoria: l.categoria ?? "—",
       contraparte: l.contraparte ?? "—",
-      valor: l.valor_pago,
+      valor: apenasVencidos ? l.valor_em_aberto : l.valor_pago,
     }));
-  const total = entradas?.totais?.pago?.valor ?? 0;
+  const total = apenasVencidos ? selecionados.reduce((sum, item) => sum + item.valor_em_aberto, 0) : entradas?.totais?.pago?.valor ?? 0;
 
   return (
     <div className="page">
@@ -45,24 +55,36 @@ export default function EntradasPage() {
           </p>
         </div>
       </header>
+      <label>
+        Situação{" "}
+        <select value={apenasVencidos ? "vencido" : "todos"} onChange={(event) => {
+          const next = new URLSearchParams(params);
+          if (event.target.value === "vencido") next.set("situacao", "vencido");
+          else next.delete("situacao");
+          setParams(next);
+        }}>
+          <option value="todos">Todos os recebimentos</option>
+          <option value="vencido">Vencidos em aberto</option>
+        </select>
+      </label>
       <div className="stat-row">
-        <StatCard label="Total no período" value={total} tone="positive" />
+        <StatCard label={apenasVencidos ? "Vencido em aberto no período" : "Total recebido no período"} value={total} tone="positive" />
         <StatCard
-          label="Nº de recebimentos"
-          value={lancamentos.length}
+          label={apenasVencidos ? "Nº de títulos vencidos" : "Nº de recebimentos"}
+          value={selecionados.length}
           format="count"
         />
       </div>
       <DataTable
-        title="Recebimentos"
+        title={apenasVencidos ? "Títulos vencidos em aberto" : "Recebimentos"}
         search={{
           value: busca,
           onChange: (e) => setBusca(e.target.value),
           placeholder: "Buscar descrição, contraparte ou categoria",
         }}
-        columns={COLUMNS}
+        columns={apenasVencidos ? COLUMNS.map((col) => col.key === "valor" ? { ...col, label: "Valor em aberto" } : col) : COLUMNS}
         rows={rows}
-        emptyMessage={busca ? "Nenhum resultado pra essa busca." : undefined}
+        emptyMessage={busca ? "Nenhum resultado pra essa busca." : apenasVencidos ? "Nenhum recebimento vencido em aberto no período." : undefined}
       />
     </div>
   );

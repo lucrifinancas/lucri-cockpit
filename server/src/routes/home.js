@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { exigirPapel } from "../auth/guard.js";
+import { exigirLeituraCliente } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { resolverPeriodo } from "../utils/periodo.js";
 import {
@@ -11,7 +11,7 @@ import {
 
 export const homeRoutes = new Hono();
 
-homeRoutes.get("/:clienteId/home", exigirPapel("master", "analista"), async (c) => {
+homeRoutes.get("/:clienteId/home", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const { de, ate } = resolverPeriodo(c);
 

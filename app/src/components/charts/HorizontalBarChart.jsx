@@ -1,3 +1,4 @@
+import { categoryLabel } from "../../data/labels";
 import {
   Bar,
   BarChart,
@@ -37,7 +38,7 @@ function quebrar(texto) {
 }
 
 function NomeTick({ x, y, payload }) {
-  const linhas = quebrar(payload.value);
+  const linhas = quebrar(categoryLabel(payload.value));
   return (
     <text
       x={x - 8}
@@ -46,7 +47,7 @@ function NomeTick({ x, y, payload }) {
       fill="var(--text-secondary)"
       fontSize={12}
     >
-      <title>{payload.value}</title>
+      <title>{categoryLabel(payload.value)}</title>
       {linhas.map((l, i) => (
         <tspan
           key={i}
@@ -135,7 +136,7 @@ export default function HorizontalBarChart({
         {data.map((d, i) => (
           <li key={d[nameKey] ?? i}>
             <div>
-              <span>{d[nameKey]}</span>
+              <span>{categoryLabel(d[nameKey])}</span>
               <strong>{currencyFmt.format(d[dataKey])}</strong>
             </div>
             <span className="ranking-track" aria-hidden="true">

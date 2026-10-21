@@ -1,3 +1,4 @@
+import FinanceDataState from "../components/FinanceDataState";
 import { useState } from "react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { filterLancamentos } from "../data/mockFinance";
@@ -6,17 +7,21 @@ import DataTable from "../components/DataTable";
 import "../styles/page.css";
 
 const COLUMNS = [
-  { key: "data", label: "Data" },
+  { key: "data", label: "Vencimento" },
   { key: "descricao", label: "Descrição" },
-  { key: "contraparte", label: "Contraparte" },
+  { key: "contraparte", label: "Fornecedor" },
   { key: "valor", label: "Valor" },
 ];
 
 // Regime de caixa (ver "⚠️ Regime de caixa" no topo do API-CONTRACT.md):
 // soma valor_pago, não valor (total do título, pago ou não).
 export default function SaidasPage() {
-  const { saidas } = useFinanceData();
+  const { saidas, loading, error, retry, awaitingClient } = useFinanceData();
   const [busca, setBusca] = useState("");
+  if (loading || error || awaitingClient) {
+    return <FinanceDataState title="Saídas" loading={loading} error={error} retry={retry} awaitingClient={awaitingClient} />;
+  }
+
   const lancamentos = saidas?.lancamentos ?? [];
   const filtrados = filterLancamentos(lancamentos, busca);
   const rows = [...filtrados]

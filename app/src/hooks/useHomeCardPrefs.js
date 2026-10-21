@@ -15,46 +15,47 @@ const STORAGE_PREFIX = "lucri-dash.home-cards.";
 // preferência do card antigo, que mostrava outra conta.
 export const HOME_CARDS = [
   { id: "saldoConta", label: "Saldo em conta" },
-  { id: "resultado", label: "Resultado do mês" },
+  { id: "resultado", label: "Resultado do período" },
   { id: "entradas", label: "Receitas" },
   { id: "despesas", label: "Despesas" },
   { id: "contasVencidas", label: "Contas vencidas" },
-  { id: "inadimplencia", label: "Inadimplência do mês" },
+  { id: "inadimplencia", label: "Inadimplência do período" },
 ];
 
 function readOverrides(clientId) {
-  const raw = localStorage.getItem(STORAGE_PREFIX + clientId);
-  return raw ? JSON.parse(raw) : {};
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_PREFIX + clientId) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch { return {}; }
 }
 
 export function useHomeCardPrefs(clientId) {
-  const [overrides, setOverrides] = useState(() => readOverrides(clientId));
-
+  const [state, setState] = useState(() => ({ clientId, overrides: readOverrides(clientId) }));
+  const [error, setError] = useState(null);
+  const [saved, setSaved] = useState(false);
   useEffect(() => {
-    setOverrides(readOverrides(clientId));
+    setState({ clientId, overrides: readOverrides(clientId) });
+    setError(null);
+    setSaved(false);
   }, [clientId]);
-
-  function setOverride(cardId, visible) {
-    setOverrides((prev) => {
-      const next = { ...prev, [cardId]: visible };
+  const overrides = state.clientId === clientId ? state.overrides : readOverrides(clientId);
+  function persist(next) {
+    setError(null);
+    setSaved(false);
+    try {
       localStorage.setItem(STORAGE_PREFIX + clientId, JSON.stringify(next));
-      return next;
-    });
+      setState({ clientId, overrides: next });
+      setSaved(true);
+    } catch {
+      setError("Não foi possível salvar a preferência neste navegador. Verifique as permissões de armazenamento e tente novamente.");
+    }
   }
-
-  // Volta esse card pro padrão automático (remove o override manual).
+  function setOverride(cardId, visible) { persist({ ...overrides, [cardId]: visible }); }
   function clearOverride(cardId) {
-    setOverrides((prev) => {
-      const next = { ...prev };
-      delete next[cardId];
-      localStorage.setItem(STORAGE_PREFIX + clientId, JSON.stringify(next));
-      return next;
-    });
+    const next = { ...overrides };
+    delete next[cardId];
+    persist(next);
   }
-
-  function isVisible(cardId) {
-    return overrides[cardId] ?? true;
-  }
-
-  return { overrides, isVisible, setOverride, clearOverride };
+  function isVisible(cardId) { return overrides[cardId] ?? true; }
+  return { overrides, isVisible, setOverride, clearOverride, error, saved };
 }

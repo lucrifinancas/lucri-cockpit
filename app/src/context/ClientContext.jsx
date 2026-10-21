@@ -1,3 +1,4 @@
+import { useConfirmLeave } from "../hooks/usePendingChanges";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { isInternalRole } from "../auth/roles";
@@ -11,30 +12,32 @@ const ClientContext = createContext(null);
 
 export function ClientProvider({ children }) {
   const { user } = useAuth();
+  const confirmLeave = useConfirmLeave();
   const isEquipe = isInternalRole(user?.papel);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(isEquipe);
-  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedClientId, updateSelectedClientId] = useState(null);
+  const [clientsError, setClientsError] = useState(null);
 
   useEffect(() => {
-    if (!isEquipe) {
-      setClients([]);
-      return;
-    }
+    if (!user) return;
     let cancelled = false;
     setLoadingClients(true);
-    apiFetch("/api/clientes")
+    setClientsError(null);
+    setClients([]);
+    apiFetch(isEquipe ? "/api/clientes" : `/api/clientes/${user.cliente_id}`)
       .then((lista) => {
         if (cancelled) return;
-        const normalizados = lista.map((c) => ({ id: c.id, name: c.nome, logoUrl: null }));
+        const normalizados = (isEquipe ? lista : [lista]).map((c) => ({ id: c.id, name: c.nome, logoUrl: null }));
         setClients(normalizados);
-        setSelectedClientId((prev) => prev ?? normalizados[0]?.id ?? null);
+        updateSelectedClientId((prev) => normalizados.some((c) => c.id === prev) ? prev : normalizados[0]?.id ?? null);
       })
+      .catch((error) => !cancelled && setClientsError(error.message))
       .finally(() => !cancelled && setLoadingClients(false));
     return () => {
       cancelled = true;
     };
-  }, [isEquipe]);
+  }, [isEquipe, user]);
 
   const activeClientId = user?.papel === "cliente" ? user.cliente_id : selectedClientId;
   const activeClient = clients.find((c) => c.id === activeClientId) ?? null;
@@ -43,13 +46,22 @@ export function ClientProvider({ children }) {
     () => ({
       clients,
       loadingClients,
+      clientsError,
       activeClientId,
       activeClient,
       canSwitchClient: isEquipe,
-      setSelectedClientId,
-      addClient: (cliente) => setClients((prev) => [...prev, cliente]),
+      setSelectedClientId: (id) => {
+        if (id === activeClientId) return true;
+        if (!isEquipe || !clients.some((client) => client.id === id) || !confirmLeave()) return false;
+        updateSelectedClientId(id);
+        return true;
+      },
+      addClient: (cliente, select = false) => {
+        setClients((prev) => [...prev, cliente]);
+        if (select) updateSelectedClientId(cliente.id);
+      },
     }),
-    [clients, loadingClients, activeClientId, activeClient, isEquipe]
+    [clients, loadingClients, clientsError, activeClientId, activeClient, isEquipe, confirmLeave]
   );
 
   return <ClientContext.Provider value={value}>{children}</ClientContext.Provider>;

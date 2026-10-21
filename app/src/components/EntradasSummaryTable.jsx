@@ -1,3 +1,4 @@
+import { categoryLabel } from "../data/labels";
 import { Fragment, useState } from "react";
 import { CaretDown, CaretRight } from "@phosphor-icons/react";
 import "./EntradasSummaryTable.css";
@@ -39,17 +40,17 @@ export default function EntradasSummaryTable({ rows, total, totalLabel = "Total"
             const aberta = expansivel && abertas.has(row.label);
             const Caret = aberta ? CaretDown : CaretRight;
             return (
-              <Fragment key={row.label}>
+              <Fragment key={categoryLabel(row.label)}>
                 <tr
                   className={expansivel ? "row-expansivel" : undefined}
-                  onClick={expansivel ? () => toggle(row.label) : undefined}
-                  aria-expanded={expansivel ? aberta : undefined}
                 >
                   <td>
-                    <span className="row-label">
-                      {expansivel && <Caret size={14} weight="bold" className="row-caret" />}
-                      {row.label}
-                    </span>
+                    {expansivel ? (
+                      <button type="button" className="row-label row-toggle" aria-expanded={aberta} onClick={() => toggle(row.label)}>
+                        <Caret size={14} weight="bold" className="row-caret" aria-hidden="true" />
+                        {categoryLabel(row.label)}
+                      </button>
+                    ) : <span className="row-label">{categoryLabel(row.label)}</span>}
                   </td>
                   <td className="num">{fmt.format(row.value)}</td>
                   <td className="num">
@@ -63,8 +64,8 @@ export default function EntradasSummaryTable({ rows, total, totalLabel = "Total"
                 </tr>
                 {aberta &&
                   row.children.map((filho) => (
-                    <tr key={`${row.label}/${filho.label}`} className="row-filho">
-                      <td>{filho.label}</td>
+                    <tr key={`${categoryLabel(row.label)}/${categoryLabel(filho.label)}`} className="row-filho">
+                      <td>{categoryLabel(filho.label)}</td>
                       <td className="num">{fmt.format(filho.value)}</td>
                       <td className="num">{pct(filho.value, total).toFixed(1)}%</td>
                     </tr>

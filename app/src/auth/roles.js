@@ -4,7 +4,7 @@
 // empresário-cliente (só os próprios dados). Master e analista têm o mesmo
 // acesso de visualização; só master pode cadastrar cliente novo (onboarding).
 export const ROLE_LABELS = {
-  master: "Master",
+  master: "Administrador",
   analista: "Analista",
   cliente: "Cliente",
 };

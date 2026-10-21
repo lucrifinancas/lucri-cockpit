@@ -1,3 +1,4 @@
+import FinanceDataState from "../components/FinanceDataState";
 import { useState } from "react";
 import { useFinanceData } from "../hooks/useFinanceData";
 import { sumValores, filterLancamentos } from "../data/mockFinance";
@@ -6,10 +7,10 @@ import DataTable from "../components/DataTable";
 import "../styles/page.css";
 
 const COLUMNS = [
-  { key: "data", label: "Data" },
+  { key: "data", label: "Vencimento" },
   { key: "descricao", label: "Descrição" },
   { key: "categoria", label: "Categoria" },
-  { key: "contraparte", label: "Contraparte" },
+  { key: "contraparte", label: "Fornecedor" },
   { key: "valor", label: "Valor" },
 ];
 
@@ -18,8 +19,12 @@ const COLUMNS = [
 // GUIA-INTEGRACAO-DADOS-REAIS.md). `despesas` já vem filtrado pelas
 // categorias marcadas em Ajustes → Categorias de Despesa.
 export default function DespesasPage() {
-  const { despesas } = useFinanceData();
+  const { despesas, loading, error, retry, awaitingClient } = useFinanceData();
   const [busca, setBusca] = useState("");
+  if (loading || error || awaitingClient) {
+    return <FinanceDataState title="Despesas" loading={loading} error={error} retry={retry} awaitingClient={awaitingClient} />;
+  }
+
   const filtradas = filterLancamentos(despesas, busca);
   const rows = [...filtradas]
     .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))

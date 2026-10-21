@@ -1,3 +1,6 @@
+import { situacaoDe, correspondeSituacao, valorDaSituacao } from "../data/contasPagar";
+import { todayISO } from "../data/period";
+import FinanceDataState from "../components/FinanceDataState";
 import { useEffect, useState } from "react";
 import { CaretDown, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useFinanceData } from "../hooks/useFinanceData";
@@ -46,8 +49,10 @@ function MesesCards({ maes }) {
   const { activeClientId } = useActiveClient();
   const { preset, month, setMonth } = usePeriod();
   const [porMes, setPorMes] = useState(null);
+  const [error, setError] = useState(null);
+  const [attempt, setAttempt] = useState(0);
 
-  const hoje = new Date();
+  const hoje = new Date(`${todayISO()}T12:00:00`);
   const mesHoje = iso(hoje).slice(0, 7);
   const mesAtivo =
     preset === "mes-especifico" ? month : preset === "mes" ? mesHoje : null;
@@ -67,6 +72,7 @@ function MesesCards({ maes }) {
     if (!activeClientId) return;
     let cancelado = false;
     setPorMes(null);
+    setError(null);
     apiFetch(`/api/clientes/${activeClientId}/saidas?de=${de}&ate=${ate}`)
       .then((dados) => {
         if (cancelado) return;
@@ -81,14 +87,16 @@ function MesesCards({ maes }) {
         }
         setPorMes(soma);
       })
-      .catch(() => !cancelado && setPorMes(new Map()));
+      .catch((err) => !cancelado && setError(err.message));
     return () => {
       cancelado = true;
     };
-  }, [activeClientId, de, ate, maes]);
+  }, [activeClientId, de, ate, maes, attempt]);
+
+  if (error) return <div className="pending-notice" role="alert">Não foi possível carregar o resumo mensal. <button type="button" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button></div>;
 
   return (
-    <div className="cap-meses" role="tablist" aria-label="Escolher mês">
+    <div className="cap-meses" role="group" aria-label="Escolher mês">
       {meses.map((m) => {
         const { total = 0, pago = 0 } = porMes?.get(m.chave) ?? {};
         const pct =
@@ -97,8 +105,7 @@ function MesesCards({ maes }) {
           <button
             key={m.chave}
             type="button"
-            role="tab"
-            aria-selected={mesAtivo === m.chave}
+            aria-pressed={mesAtivo === m.chave}
             className={`cap-card cap-mes ${mesAtivo === m.chave ? "active" : ""}`}
             onClick={() => setMonth(m.chave)}
           >
@@ -132,13 +139,6 @@ const SITUACOES = {
 // Situação calculada aqui (não pelo status_traduzido do Conta Azul) pra
 // bater com os mesmos 4 baldes dos cards: pago = nada em aberto; senão,
 // decide pela data de vencimento vs. hoje.
-function situacaoDe(l, hoje) {
-  if (l.valor_em_aberto <= 0) return "pago";
-  if (l.data_vencimento < hoje) return "vencido";
-  if (l.data_vencimento === hoje) return "hoje";
-  return "avencer";
-}
-
 function fmtData(iso) {
   const [a, m, d] = (iso ?? "").split("-");
   return d ? `${d}/${m}/${a}` : "—";
@@ -150,26 +150,34 @@ function fmtData(iso) {
 // Sem coluna de data de pagamento: a API de listagem do Conta Azul não
 // devolve esse campo (ver DADOS-CONTA-AZUL-API.md, "Quitação de parcela").
 export default function ContasAPagarPage() {
-  const { saidas, loading } = useFinanceData();
+  const { activeClientId } = useActiveClient();
+  return <ContasAPagar key={activeClientId ?? "sem-empresa"} />;
+}
+
+function ContasAPagar() {
+  const { saidas, loading, error, retry, awaitingClient, range } = useFinanceData();
   const { activeClientId } = useActiveClient();
   const { user } = useAuth();
   // Mães que entram nesta página (Ajustes → Contas a pagar, só master
   // escolhe). null = carregando; vazio = nada escolhido, página fica vazia.
   const [maesPermitidas, setMaesPermitidas] = useState(null);
+  const [configError, setConfigError] = useState(null);
+  const [configAttempt, setConfigAttempt] = useState(0);
   useEffect(() => {
     if (!activeClientId) return;
     let cancelado = false;
     setMaesPermitidas(null);
+    setConfigError(null);
     apiFetch(`/api/clientes/${activeClientId}/contas-pagar-maes`)
       .then(
         (lista) =>
           !cancelado && setMaesPermitidas(new Set(lista.map((m) => m.nome))),
       )
-      .catch(() => !cancelado && setMaesPermitidas(new Set()));
+      .catch((err) => !cancelado && setConfigError(err.message));
     return () => {
       cancelado = true;
     };
-  }, [activeClientId]);
+  }, [activeClientId, configAttempt]);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [pagina, setPagina] = useState(1);
@@ -178,8 +186,7 @@ export default function ContasAPagarPage() {
   const [venceDe, setVenceDe] = useState("");
   const [venceAte, setVenceAte] = useState("");
 
-  const d = new Date();
-  const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const hoje = todayISO();
 
   const todos = (saidas?.lancamentos ?? [])
     .filter((l) => maesPermitidas?.has(l.mae))
@@ -227,7 +234,7 @@ export default function ContasAPagarPage() {
     },
     {
       id: "pago",
-      label: "Pagos",
+      label: "Total pago (inclui parciais)",
       valor: lancamentos.reduce((t, l) => t + l.valor_pago, 0),
       tone: "ok",
     },
@@ -240,7 +247,7 @@ export default function ContasAPagarPage() {
   ];
 
   const filtrados = lancamentos
-    .filter((l) => filtro === "todos" || l.situacao === filtro)
+    .filter((l) => correspondeSituacao(l, filtro))
     .sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento));
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const paginaAtual = Math.min(pagina, totalPaginas);
@@ -270,6 +277,10 @@ export default function ContasAPagarPage() {
     setPagina(1);
   }
 
+  if (loading || error || awaitingClient) return <FinanceDataState title="Contas a pagar" loading={loading} error={error} retry={retry} awaitingClient={awaitingClient} />;
+  if (configError) return <FinanceDataState title="Contas a pagar" error={configError} retry={() => setConfigAttempt((value) => value + 1)} />;
+  if (!maesPermitidas) return <FinanceDataState title="Contas a pagar" loading />;
+
   return (
     <div className="page">
       <header className="page-heading">
@@ -283,30 +294,31 @@ export default function ContasAPagarPage() {
 
       {maesPermitidas?.size === 0 && (
         <p className="pending-notice">
-          Nenhuma categoria mãe escolhida pra esta página.
+          Nenhuma categoria principal foi selecionada. Esta página cobre apenas as categorias configuradas.
           {user?.papel === "master" && (
             <span className="pending-notice-actions">
-              <Link to="/ajustes" className="pending-notice-link">
+              <Link to="/ajustes?secao=contas-pagar" className="pending-notice-link">
                 Escolher em Ajustes →
               </Link>
             </span>
           )}
+          {user?.papel !== "master" && <span> Solicite à equipe Lucri a seleção das categorias.</span>}
         </p>
       )}
+      {maesPermitidas.size > 0 && <p className="pending-notice">Contas das categorias selecionadas: {[...maesPermitidas].join(", ")}. Os totais não incluem outras categorias.</p>}
 
-      {maesPermitidas && <MesesCards maes={maesPermitidas} />}
+      {maesPermitidas.size > 0 && <MesesCards key={`${range.start}-${range.end}`} maes={maesPermitidas} />}
 
       <div
         className="cap-cards"
-        role="tablist"
+        role="group"
         aria-label="Filtrar por situação"
       >
         {cards.map((c) => (
           <button
             key={c.id}
             type="button"
-            role="tab"
-            aria-selected={filtro === c.id}
+            aria-pressed={filtro === c.id}
             className={`cap-card ${filtro === c.id ? "active" : ""}`}
             onClick={() => escolherFiltro(c.id)}
           >
@@ -408,6 +420,7 @@ export default function ContasAPagarPage() {
         )}
       </div>
 
+      <p role="status">{filtrados.length} título(s) · {filtro === "pago" ? "Total pago filtrado" : filtro === "todos" ? "Total filtrado" : "Em aberto filtrado"}: {fmt.format(filtrados.reduce((sum, item) => sum + valorDaSituacao(item, filtro), 0))}</p>
       <div className="data-table-wrap">
         <table className="data-table cap-table">
           <thead>
@@ -415,6 +428,7 @@ export default function ContasAPagarPage() {
               <th>Vencimento</th>
               <th>Resumo do lançamento</th>
               <th className="num">Total</th>
+              <th className="num">Pago</th>
               <th className="num">A pagar</th>
               <th>Situação</th>
             </tr>
@@ -422,7 +436,7 @@ export default function ContasAPagarPage() {
           <tbody>
             {visiveis.length === 0 && (
               <tr>
-                <td colSpan={5} className="data-table-empty">
+                <td colSpan={6} className="data-table-empty">
                   {loading
                     ? "Carregando..."
                     : busca
@@ -448,12 +462,13 @@ export default function ContasAPagarPage() {
                   </div>
                 </td>
                 <td className="num">{fmt.format(l.valor)}</td>
+                <td className="num">{fmt.format(l.valor_pago)}</td>
                 <td className="num">{fmt.format(l.valor_em_aberto)}</td>
                 <td>
                   <span
                     className={`cap-badge tone-${SITUACOES[l.situacao].tone}`}
                   >
-                    {SITUACOES[l.situacao].label}
+                    {SITUACOES[l.situacao].label}{l.valor_pago > 0 && l.valor_em_aberto > 0 ? " · Parcialmente pago" : ""}
                   </span>
                 </td>
               </tr>

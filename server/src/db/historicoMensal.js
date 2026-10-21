@@ -21,7 +21,7 @@ export async function upsertHistoricoMes(
 }
 
 // Últimos `meses` já pré-computados pro cliente, em ordem cronológica
-// (mais antigo primeiro) — mês sem linha ainda vira zero, não falta.
+// (mais antigo primeiro). Ausência de cálculo é explícita no contrato.
 export async function listarHistoricoMensal(db, clienteId, mesesChaves) {
   const { results } = await db
     .prepare(
@@ -32,7 +32,9 @@ export async function listarHistoricoMensal(db, clienteId, mesesChaves) {
     .all();
   const porMes = new Map(results.map((r) => [r.mes, r]));
   return mesesChaves.map(
-    (mes) => porMes.get(mes) ?? { mes, receitas: 0, despesas: 0, vencidas: 0 }
+    (mes) => porMes.has(mes)
+      ? { ...porMes.get(mes), disponivel: true }
+      : { mes, receitas: 0, despesas: 0, vencidas: 0, disponivel: false }
   );
 }
 

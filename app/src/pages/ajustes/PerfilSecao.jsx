@@ -1,3 +1,4 @@
+import { usePendingChanges } from "../../hooks/usePendingChanges";
 import { useRef, useState } from "react";
 import { Camera, IdentificationCard, Lock } from "@phosphor-icons/react";
 import { useAuth } from "../../auth/AuthContext";
@@ -12,6 +13,9 @@ export default function PerfilSecao({ icone }) {
   const profile = useLocalProfile(user?.email);
   const [nome, setNome] = useState(profile.name);
   const [salvo, setSalvo] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
+  const [profileError, setProfileError] = useState(null);
+  const [readingPhoto, setReadingPhoto] = useState(false);
   const avatarRef = useRef(null);
 
   const [atual, setAtual] = useState("");
@@ -22,20 +26,39 @@ export default function PerfilSecao({ icone }) {
   const [trocando, setTrocando] = useState(false);
   const papel = ROLE_LABELS[user?.papel] ?? user?.papel;
 
+  const dirty = nome.trim() !== profile.name || avatarUrl !== profile.avatarUrl;
+  usePendingChanges(dirty || Boolean(atual || nova || confirma), trocando || readingPhoto);
+
   function trocarFoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setProfileError(null);
+    setSalvo(false);
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      setProfileError("Escolha uma imagem de até 2 MB.");
+      e.target.value = "";
+      return;
+    }
+    setReadingPhoto(true);
     const reader = new FileReader();
-    reader.onload = () => profile.save({ name: nome, avatarUrl: reader.result });
+    reader.onload = () => { setAvatarUrl(reader.result); setReadingPhoto(false); };
+    reader.onerror = () => { setProfileError("Não foi possível ler a imagem. Tente novamente."); setReadingPhoto(false); };
     reader.readAsDataURL(file);
+    e.target.value = "";
   }
 
   function salvarPerfil(e) {
     e.preventDefault();
     if (!nome.trim()) return;
-    profile.save({ name: nome.trim() });
-    setSalvo(true);
-    setTimeout(() => setSalvo(false), 2000);
+    setProfileError(null);
+    setSalvo(false);
+    try {
+      profile.save({ name: nome.trim(), avatarUrl });
+      setNome(nome.trim());
+      setSalvo(true);
+    } catch {
+      setProfileError("Não foi possível salvar neste navegador. Verifique o espaço disponível ou as permissões de armazenamento e tente novamente.");
+    }
   }
 
   async function trocarSenha(e) {
@@ -62,24 +85,25 @@ export default function PerfilSecao({ icone }) {
 
   return (
     <>
-      <SecaoHeader icone={icone} titulo="Meu perfil" descricao="Seu nome e foto aparecem na barra de cima do Cockpit." />
+      <SecaoHeader icone={icone} titulo="Meu perfil" descricao="Seu nome de exibição e foto aparecem na barra de cima do Cockpit e ficam salvos somente neste navegador." />
 
       <section className="aj-card">
         <div className="aj-perfil-topo">
-          <ClientAvatar client={{ name: nome || profile.name, logoUrl: profile.avatarUrl }} size={64} />
+          <ClientAvatar client={{ name: nome || profile.name, logoUrl: avatarUrl }} size={64} />
           <div className="aj-perfil-id">
             <strong>{profile.name}</strong>
             <span className="aj-badge">{papel}</span>
           </div>
-          <button type="button" className="aj-btn-util" onClick={() => avatarRef.current?.click()}><Camera size={15} aria-hidden="true" /> Alterar foto</button>
+          <button type="button" className="aj-btn-util" disabled={readingPhoto} onClick={() => avatarRef.current?.click()}><Camera size={15} aria-hidden="true" /> Alterar foto</button>
           <input ref={avatarRef} type="file" accept="image/*" hidden onChange={trocarFoto} />
         </div>
 
         <h3 className="aj-card-titulo"><IdentificationCard size={18} aria-hidden="true" /> Dados pessoais</h3>
+        <p className="aj-hint">Nome e foto são preferências deste navegador. Clique em Salvar neste navegador para aplicar os dois. A troca de senha é feita na sua conta.</p>
         <form className="aj-form" onSubmit={salvarPerfil}>
           <label className="aj-campo">
             Nome
-            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" />
+            <input value={nome} onChange={(e) => { setNome(e.target.value); setSalvo(false); }} placeholder="Seu nome" />
           </label>
           <label className="aj-campo">
             E-mail
@@ -90,14 +114,17 @@ export default function PerfilSecao({ icone }) {
             <input value={papel ?? ""} readOnly aria-readonly="true" />
           </label>
           <div className="aj-form-acoes">
-            <button type="submit" className="aj-btn-primario">{salvo ? "Salvo!" : "Salvar alterações"}</button>
+            <button type="submit" className="aj-btn-primario" disabled={!dirty || !nome.trim() || readingPhoto}>Salvar neste navegador</button>
           </div>
         </form>
+        {salvo && <p className="aj-hint aj-ok" role="status">Nome e foto salvos neste navegador.</p>}
+        {dirty && <p className="aj-hint">Há alterações de perfil não salvas.</p>}
+        {profileError && <p className="aj-hint aj-erro" role="alert">{profileError}</p>}
       </section>
 
       <section className="aj-card">
         <h3 className="aj-card-titulo"><Lock size={18} aria-hidden="true" /> Segurança</h3>
-        <p className="aj-hint">Troque a senha de entrada no Cockpit. Mínimo de 8 caracteres.</p>
+        <p className="aj-hint">Troque a senha de entrada no Cockpit. Mínimo de 8 caracteres. Essa alteração vale para a conta e encerra as sessões anteriores.</p>
         <form className="aj-form" onSubmit={trocarSenha}>
           <label className="aj-campo">
             Senha atual

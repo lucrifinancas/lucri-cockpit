@@ -85,3 +85,6 @@
 .entradas-summary-table .row-filho td:first-child {
   padding-left: 22px;
 }
+
+.entradas-summary-table .row-toggle { border: 0; background: transparent; color: inherit; font: inherit; text-align: left; min-height: 44px; padding: 4px 0; cursor: pointer; }
+.entradas-summary-table .row-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

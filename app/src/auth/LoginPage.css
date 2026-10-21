@@ -296,7 +296,7 @@
   gap: 6px;
 }
 
-.login-showcase-dots span {
+.login-showcase-dots button {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -307,7 +307,7 @@
     background 0.2s ease;
 }
 
-.login-showcase-dots span.active {
+.login-showcase-dots button.active {
   width: 20px;
   border-radius: var(--radius-pill);
   background: var(--lucri-mint);
@@ -348,3 +348,6 @@
     font-size: 25px;
   }
 }
+
+.login-showcase-dots button { border: 0; padding: 0; }
+.login-showcase-dots button:focus-visible { outline: 2px solid var(--lucri-sky); outline-offset: 4px; }

@@ -1,36 +1,28 @@
 import { useEffect, useState } from "react";
+import { PROFILE_PREFIX, readProfile, writeProfile } from "../data/localProfile";
 
-// Nome de exibição e avatar são só cosméticos — o backend real não tem
-// campos pra isso (`user` = { email, papel, cliente_id }, ver
-// API-CONTRACT.md). Guarda por e-mail, local ao navegador; não sincroniza
-// entre dispositivos.
-const STORAGE_PREFIX = "lucri-dash.profile.";
-
-function emailPrefix(email) {
-  return email?.split("@")[0] ?? "";
-}
-
-function read(email) {
-  const raw = email && localStorage.getItem(STORAGE_PREFIX + email);
-  return raw ? JSON.parse(raw) : {};
-}
-
+// Preferência cosmética local ao navegador, separada da conta no servidor.
+const EVENT = "lucri-profile-saved";
 export function useLocalProfile(email) {
-  const [profile, setProfile] = useState(() => read(email));
-
+  const [state, setState] = useState(() => ({ email, profile: readProfile(localStorage, email) }));
   useEffect(() => {
-    setProfile(read(email));
+    const refresh = () => setState({ email, profile: readProfile(localStorage, email) });
+    refresh();
+    const changed = (event) => {
+      if (event.type === EVENT ? event.detail === email : event.key === PROFILE_PREFIX + email || event.key === null) refresh();
+    };
+    window.addEventListener(EVENT, changed);
+    window.addEventListener("storage", changed);
+    return () => {
+      window.removeEventListener(EVENT, changed);
+      window.removeEventListener("storage", changed);
+    };
   }, [email]);
-
-  function save({ name, avatarUrl }) {
-    const next = { name, avatarUrl: avatarUrl ?? profile.avatarUrl ?? null };
-    if (email) localStorage.setItem(STORAGE_PREFIX + email, JSON.stringify(next));
-    setProfile(next);
+  function save(patch) {
+    const next = writeProfile(localStorage, email, patch);
+    setState({ email, profile: next });
+    window.dispatchEvent(new CustomEvent(EVENT, { detail: email }));
   }
-
-  return {
-    name: profile.name || emailPrefix(email),
-    avatarUrl: profile.avatarUrl ?? null,
-    save,
-  };
+  const profile = state.email === email ? state.profile : readProfile(localStorage, email);
+  return { name: profile.name || email?.split("@")[0] || "", avatarUrl: profile.avatarUrl ?? null, save };
 }

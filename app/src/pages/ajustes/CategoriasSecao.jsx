@@ -1,3 +1,4 @@
+import { useConfirmLeave, usePendingChanges } from "../../hooks/usePendingChanges";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CaretDown, CheckCircle, ListBullets, Plus, Tag, Warning, X } from "@phosphor-icons/react";
 import { apiFetch } from "../../api/client";
@@ -5,7 +6,7 @@ import { useActiveClient } from "../../context/ClientContext";
 import { ClienteAlvo, SecaoHeader } from "./comum";
 import { rotuloSalvar } from "./util";
 
-// Categorias = mapeamento "categoria do Conta Azul → categoria master Lucri".
+// Categorias = mapeamento "categoria do Conta Azul → categoria principal Lucri".
 // A master é escolhida categoria por categoria (não pelo agrupamento do Conta
 // Azul, que mistura coisas sem relação). Sem master = "Sem mãe" na Home.
 // Despesas e receitas têm listas de master próprias (ver API-CONTRACT.md:
@@ -47,6 +48,7 @@ function Mapeamento({ clienteId, tipo }) {
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState(null);
+  const [operando, setOperando] = useState(false);
 
   useEffect(() => {
     if (!clienteId) return;
@@ -79,6 +81,8 @@ function Mapeamento({ clienteId, tipo }) {
   const semMae = contagem.get(SEM) ?? 0;
   const alteradas = categorias.filter((c) => (original.get(c.id) ?? null) !== c.mae_id).length;
 
+  usePendingChanges(alteradas > 0 || novaMae.trim().length > 0, salvando || operando);
+
   const termo = busca.trim().toLowerCase();
   const visiveis = categorias.filter(
     (c) => (filtro === TODAS || (filtro === SEM ? c.mae_id == null : c.mae_id === filtro)) && (!termo || c.nome.toLowerCase().includes(termo)),
@@ -94,19 +98,23 @@ function Mapeamento({ clienteId, tipo }) {
     const nome = novaMae.trim();
     if (!nome) return;
     setErro(null);
+    setOperando(true);
     try {
       const criada = await apiFetch(`/api/clientes/${clienteId}/${config.rotaMaes}`, { method: "POST", body: JSON.stringify({ nome }) });
       setMaes((prev) => [...prev, criada].sort(porNome));
       setNovaMae("");
     } catch (err) {
       setErro(err.message);
+    } finally {
+      setOperando(false);
     }
   }
 
   async function removerMae(mae) {
     const qtd = contagem.get(mae.id) ?? 0;
-    if (!window.confirm(`Remover a categoria master "${mae.nome}"?${qtd ? ` ${qtd} categoria(s) voltam pra "Sem categoria".` : ""}`)) return;
+    if (!window.confirm(`Remover a categoria principal "${mae.nome}"?${qtd ? ` ${qtd} categoria(s) voltam pra "Sem categoria".` : ""}`)) return;
     setErro(null);
+    setOperando(true);
     try {
       await apiFetch(`/api/clientes/${clienteId}/${config.rotaMaes}/${mae.id}`, { method: "DELETE" });
       setMaes((prev) => prev.filter((m) => m.id !== mae.id));
@@ -115,6 +123,8 @@ function Mapeamento({ clienteId, tipo }) {
       if (filtro === mae.id) setFiltro(TODAS);
     } catch (err) {
       setErro(err.message);
+    } finally {
+      setOperando(false);
     }
   }
 
@@ -150,7 +160,7 @@ function Mapeamento({ clienteId, tipo }) {
           <Warning size={20} weight="fill" aria-hidden="true" />
           <p>
             <strong>{semMae} categoria{semMae > 1 ? "s" : ""} de {config.item} precisa{semMae > 1 ? "m" : ""} ser classificada{semMae > 1 ? "s" : ""}.</strong>{" "}
-            Enquanto isso, o valor delas aparece como "Sem mãe" na Home.
+            Enquanto isso, o valor delas aparece como "Não classificado" na visão geral.
           </p>
           {filtro !== SEM && (
             <button type="button" className="aj-btn-util" onClick={() => setFiltro(SEM)}>Resolver agora →</button>
@@ -159,8 +169,8 @@ function Mapeamento({ clienteId, tipo }) {
       )}
 
       <div className="aj-mapa">
-        <aside className="aj-mapa-lado" aria-label="Categorias master">
-          <h3 className="aj-mapa-titulo">Categorias master</h3>
+        <aside className="aj-mapa-lado" aria-label="Categorias principais">
+          <h3 className="aj-mapa-titulo">Categorias principais</h3>
           <ul>
             <li>
               <button type="button" className={filtro === TODAS ? "ativo" : ""} onClick={() => setFiltro(TODAS)}>
@@ -177,15 +187,15 @@ function Mapeamento({ clienteId, tipo }) {
                 <button type="button" className={filtro === m.id ? "ativo" : ""} onClick={() => setFiltro(m.id)}>
                   <span><Tag size={14} aria-hidden="true" /> {m.nome}</span><em>{contagem.get(m.id) ?? 0}</em>
                 </button>
-                <button type="button" className="aj-btn-icone" onClick={() => removerMae(m)} aria-label={`Remover ${m.nome}`} title="Remover categoria master">
+                <button type="button" className="aj-btn-icone" disabled={salvando || operando} onClick={() => removerMae(m)} aria-label={`Remover ${m.nome}`} title="Remover categoria principal">
                   <X size={12} weight="bold" />
                 </button>
               </li>
             ))}
           </ul>
           <form className="aj-mapa-nova" onSubmit={adicionarMae}>
-            <input value={novaMae} onChange={(e) => setNovaMae(e.target.value)} placeholder={`Nova (ex: ${config.exemploMae})`} aria-label="Nome da nova categoria master" />
-            <button type="submit" className="aj-btn-icone" disabled={!novaMae.trim()} aria-label="Adicionar categoria master" title="Adicionar">
+            <input value={novaMae} onChange={(e) => setNovaMae(e.target.value)} placeholder={`Nova (ex: ${config.exemploMae})`} aria-label="Nome da nova categoria principal" />
+            <button type="submit" className="aj-btn-icone" disabled={salvando || operando || !novaMae.trim()} aria-label="Adicionar categoria principal" title="Adicionar">
               <Plus size={14} weight="bold" />
             </button>
           </form>
@@ -196,7 +206,7 @@ function Mapeamento({ clienteId, tipo }) {
           <div className="aj-mapa-cab" aria-hidden="true">
             <span>Categoria no Conta Azul</span>
             <span />
-            <span>Categoria master Lucri</span>
+            <span>Categoria principal Lucri</span>
           </div>
           {visiveis.length === 0 && <p className="aj-hint">{filtro === SEM && !termo ? "Tudo classificado." : "Nada encontrado."}</p>}
           <ul className="aj-mapa-linhas">
@@ -207,7 +217,7 @@ function Mapeamento({ clienteId, tipo }) {
                   <span className="aj-mapa-ca">{c.nome}</span>
                   <ArrowRight size={14} aria-hidden="true" className="aj-mapa-seta" />
                   <span className={`aj-select aj-select-cheio ${c.mae_id == null ? "vazio" : ""}`}>
-                    <select aria-label={`Categoria master de ${c.nome}`} value={c.mae_id ?? ""} onChange={(e) => definirMae(c.id, e.target.value)}>
+                    <select aria-label={`Categoria principal de ${c.nome}`} value={c.mae_id ?? ""} disabled={salvando || operando} onChange={(e) => definirMae(c.id, e.target.value)}>
                       <option value="">— Sem categoria —</option>
                       {maes.map((m) => (
                         <option key={m.id} value={m.id}>{m.nome}</option>
@@ -223,11 +233,11 @@ function Mapeamento({ clienteId, tipo }) {
       </div>
 
       <div className="aj-barra-salvar">
-        <span className="aj-hint">
-          {alteradas > 0 ? `${alteradas} alteração${alteradas > 1 ? "ões" : ""} não salva${alteradas > 1 ? "s" : ""}.` : "Tudo salvo."}
+        <span className="aj-hint" role="status">
+          {alteradas > 0 ? `${alteradas} ${alteradas > 1 ? "alterações não salvas" : "alteração não salva"}.` : novaMae.trim() ? "Nome de nova categoria ainda não adicionado." : "Mapeamento salvo para esta empresa."}
         </span>
-        {erro && <span className="aj-hint aj-erro">{erro}</span>}
-        <button type="button" className="aj-btn-primario" onClick={salvar} disabled={salvando || alteradas === 0}>{rotuloSalvar(salvando, salvo)}</button>
+        {erro && <span className="aj-hint aj-erro" role="alert">{erro}</span>}
+        <button type="button" className="aj-btn-primario" onClick={salvar} disabled={salvando || operando || alteradas === 0}>{rotuloSalvar(salvando, salvo)}</button>
       </div>
     </>
   );
@@ -236,19 +246,21 @@ function Mapeamento({ clienteId, tipo }) {
 // Cockpit → Categorias: abas Despesas | Receitas.
 export default function CategoriasSecao({ icone }) {
   const { activeClientId } = useActiveClient();
+  const confirmLeave = useConfirmLeave();
   const [tipo, setTipo] = useState("despesa");
   return (
     <>
-      <SecaoHeader icone={icone} titulo="Categorias" descricao="Ligue cada categoria do Conta Azul a uma categoria master da Lucri. É assim que a Home agrupa receitas e despesas.">
+      <SecaoHeader icone={icone} titulo="Categorias" descricao="Ligue cada categoria do Conta Azul a uma categoria principal da Lucri. É assim que a visão geral agrupa receitas e despesas.">
         <ClienteAlvo />
       </SecaoHeader>
       <div className="aj-abas" role="tablist" aria-label="Tipo de categoria">
         {Object.entries(TIPOS).map(([id, t]) => (
-          <button key={id} type="button" role="tab" aria-selected={tipo === id} className={tipo === id ? "ativo" : ""} onClick={() => setTipo(id)}>
+          <button key={id} type="button" role="tab" aria-selected={tipo === id} className={tipo === id ? "ativo" : ""} onClick={() => { if (id !== tipo && confirmLeave()) setTipo(id); }}>
             {t.rotulo}
           </button>
         ))}
       </div>
+      <p className="aj-hint">O mapeamento é salvo na empresa e compartilhado com a equipe. Criar ou remover uma categoria principal aplica a alteração imediatamente; as associações são aplicadas ao clicar em Salvar alterações.</p>
       <section className="aj-card">
         <Mapeamento key={`${activeClientId}-${tipo}`} clienteId={activeClientId} tipo={tipo} />
       </section>

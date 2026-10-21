@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { exigirPapel } from "../auth/guard.js";
+import { exigirPapel, exigirLeituraCliente } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
 import { criarUsuarioCliente, buscarUsuarioPorEmail, listarUsuariosDoCliente } from "../db/usuarios.js";
 import { criarHashSenha } from "../auth/senha.js";
@@ -19,14 +19,20 @@ import { buscarCategorias } from "../contaazul/api.js";
 
 export const clientesRoutes = new Hono();
 
-clientesRoutes.use("*", exigirPapel("master", "analista"));
 
-clientesRoutes.get("/", async (c) => {
+clientesRoutes.get("/", exigirPapel("master", "analista"), async (c) => {
   const clientes = await listarClientes(c.env.DB);
   return c.json(clientes);
 });
 
-clientesRoutes.post("/", async (c) => {
+// Identidade da empresa: somente ID e nome, sem dados de integração.
+clientesRoutes.get("/:id", exigirLeituraCliente("id"), async (c) => {
+  const cliente = await buscarClientePorId(c.env.DB, Number(c.req.param("id")));
+  if (!cliente) return c.json({ erro: "Cliente não encontrado." }, 404);
+  return c.json({ id: cliente.id, nome: cliente.nome });
+});
+
+clientesRoutes.post("/", exigirPapel("master"), async (c) => {
   const { nome } = await c.req.json();
   if (!nome) {
     return c.json({ erro: "Nome é obrigatório." }, 400);
@@ -69,7 +75,7 @@ clientesRoutes.post("/:id/login", exigirPapel("master"), async (c) => {
 // Azul) por padrão, ou o override do master quando existir (`overridden`
 // avisa o front que esse valor foi escolhido manualmente, não é o
 // automático — ver utils/despesas.js pra mesma regra usada no cálculo real).
-clientesRoutes.get("/:id/categorias", async (c) => {
+clientesRoutes.get("/:id/categorias", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("id"));
 
   const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
@@ -147,7 +153,7 @@ clientesRoutes.put("/:id/categorias/receitas", exigirPapel("master"), async (c) 
 // categoria-pai com o nome já cadastrado (se houver) e uma amostra das
 // categorias filhas, pra o master conseguir identificar qual é qual
 // olhando a tela do próprio Conta Azul.
-clientesRoutes.get("/:id/categorias-pai", async (c) => {
+clientesRoutes.get("/:id/categorias-pai", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("id"));
 
   const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
@@ -191,7 +197,7 @@ clientesRoutes.put("/:id/categorias-pai", exigirPapel("master"), async (c) => {
 
 // Lista de categorias-mãe do cliente (nomes cadastrados pra escolher em cada
 // grupo do Conta Azul). Cada cliente tem as suas.
-clientesRoutes.get("/:id/maes", async (c) => {
+clientesRoutes.get("/:id/maes", exigirLeituraCliente("id"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   return c.json(await listarMaes(c.env.DB, clienteId));
 });
@@ -228,7 +234,7 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
 
 // Quais mães de despesa entram na página Contas a pagar. Leitura pra equipe
 // (a página filtra por elas), escrita só master (Ajustes).
-clientesRoutes.get("/:id/contas-pagar-maes", async (c) => {
+clientesRoutes.get("/:id/contas-pagar-maes", exigirLeituraCliente("id"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   return c.json(await listarMaesContasPagar(c.env.DB, clienteId));
 });
@@ -251,7 +257,7 @@ clientesRoutes.put("/:id/contas-pagar-maes", exigirPapel("master"), async (c) =>
 });
 
 // Mães das receitas — mesma coisa que /maes, lista própria.
-clientesRoutes.get("/:id/maes-receita", async (c) => {
+clientesRoutes.get("/:id/maes-receita", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   return c.json(await listarMaesReceita(c.env.DB, clienteId));
 });
@@ -296,7 +302,7 @@ clientesRoutes.get("/:id/usuarios", exigirPapel("master"), async (c) => {
   return c.json(await listarUsuariosDoCliente(c.env.DB, id));
 });
 
-clientesRoutes.get("/:id/convites", async (c) => {
+clientesRoutes.get("/:id/convites", exigirPapel("master", "analista"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   return c.json(await listarConvites(c.env.DB, clienteId));
 });

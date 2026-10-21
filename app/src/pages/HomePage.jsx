@@ -1,4 +1,8 @@
+import { categoryLabel } from "../data/labels";
+import HistoryState from "../components/home/HistoryState";
+import { todayISO, previousRange, formatRange } from "../data/period";
 import { useMemo } from "react";
+import { useAuth } from "../auth/AuthContext";
 import { Link } from "react-router-dom";
 import {
   ArrowCircleDown,
@@ -110,10 +114,10 @@ function rotuloPeriodo({ start, end }) {
     ai === af &&
     mi === mf &&
     di === 1 &&
-    (df === ultimoDia || end >= new Date().toISOString().slice(0, 10))
+    (df === ultimoDia || end >= todayISO())
   ) {
     const m = MESES[mi - 1];
-    return `${m[0].toUpperCase()}${m.slice(1)} de ${ai}`;
+    return `${m[0].toUpperCase()}${m.slice(1)} de ${ai}${end === todayISO() && df !== ultimoDia ? " · Até agora" : ""}`;
   }
   const br = (d, m, a) =>
     `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${a}`;
@@ -163,6 +167,7 @@ function buildAgeing(lancamentos) {
 }
 
 export default function HomePage() {
+  const { user } = useAuth();
   const {
     home,
     entradas,
@@ -172,9 +177,12 @@ export default function HomePage() {
     previousDespesas,
     loading,
     error,
+    retry,
     range,
   } = useFinanceData();
-  const historico = useHistoricoMensal();
+  const comparisonRange = previousRange(range);
+  const comparisonLabel = comparisonRange ? formatRange(comparisonRange) : undefined;
+  const { data: historico, loading: historyLoading, error: historyError, retry: retryHistory } = useHistoricoMensal();
   const { activeClientId } = useActiveClient();
   const { isVisible } = useHomeCardPrefs(activeClientId);
   // Hora em que estes dados chegaram do Conta Azul (pelo backend) — muda a
@@ -216,14 +224,18 @@ export default function HomePage() {
             "A conexão desse cliente com o Conta Azul caiu — precisa reconectar."}
           {!precisaReconectar &&
             `Não deu pra carregar os dados: ${error ?? "erro desconhecido"}.`}
-          {precisaReconectar && (
+          {precisaReconectar && user?.papel === "master" && (
             <span className="pending-notice-actions">
-              <Link to="/ajustes" className="pending-notice-link">
+              <Link to="/ajustes?secao=integracoes" className="pending-notice-link">
                 Conectar em Ajustes →
               </Link>
             </span>
           )}
+          {precisaReconectar && user?.papel !== "master" && (
+            <span className="pending-notice-actions">Solicite à equipe Lucri a conexão com o Conta Azul.</span>
+          )}
         </p>
+        {!precisaReconectar && <button type="button" onClick={retry}>Tentar novamente</button>}
       </div>
     );
   }
@@ -407,25 +419,29 @@ export default function HomePage() {
     inadimplenciaPct,
     despesasPorCategoria,
     semMae: totalSemMae + totalReceitasSemMae,
+    papel: user?.papel,
   });
 
   // Histórico mensal (Receitas x Despesas, Resultado, Vencidas): 1 fetch só
   // (useHistoricoMensal), reaproveitado nos 3 gráficos abaixo.
   const monthlyHistory = historico.map((m) => ({
-    month: m.label,
-    receitas: m.receitas,
-    despesas: m.despesas,
+    month: `${m.label}/${m.mes.slice(0, 4)}`,
+    receitas: m.disponivel === false ? null : m.receitas,
+    despesas: m.disponivel === false ? null : m.despesas,
   }));
   const resultadoHistorico = historico.map((m) => ({
-    month: m.label,
-    resultado: m.resultado,
+    month: `${m.label}/${m.mes.slice(0, 4)}`,
+    resultado: m.disponivel === false ? null : m.resultado,
   }));
   const overdueHistory = historico.map((m) => ({
-    month: m.label,
-    valor: m.vencidas,
+    month: `${m.label}/${m.mes.slice(0, 4)}`,
+    valor: m.disponivel === false ? null : m.vencidas,
   }));
-  const temHistorico = historico.some((m) => m.receitas || m.despesas);
-  const temVencidasHist = historico.some((m) => m.vencidas);
+  const disponiveis = historico.filter((m) => m.disponivel !== false);
+  const historyPending = historico.length > 0 && disponiveis.length === 0;
+  const incompleteHistory = disponiveis.length > 0 && disponiveis.length < historico.length;
+  const temHistorico = disponiveis.some((m) => m.receitas || m.despesas);
+  const temVencidasHist = disponiveis.some((m) => m.vencidas);
 
   return (
     <div className="page home">
@@ -439,7 +455,7 @@ export default function HomePage() {
         {/* Só afirma o que é verdade: se a Home carregou, a conexão funcionou. */}
         <p className="home-status">
           <span className="home-status-dot" aria-hidden="true" />
-          Conta Azul conectada · dados de {carregadoEm}
+          Conta Azul conectada · consultado às {carregadoEm}
         </p>
       </header>
 
@@ -459,9 +475,10 @@ export default function HomePage() {
         )}
         {isVisible("resultado") && (
           <StatCard
-            label="Resultado do mês"
+            label="Resultado do período"
             value={resultado}
             icon={resultado < 0 ? TrendDown : TrendUp}
+            comparisonLabel={comparisonLabel}
             delta={deltaRes}
             tone={resultado < 0 ? "negative" : "positive"}
             highlight
@@ -474,6 +491,7 @@ export default function HomePage() {
             label="Receitas"
             value={totalEntradas}
             icon={ArrowCircleDown}
+            comparisonLabel={comparisonLabel}
             delta={deltaEntradas}
             context="Recebido no período"
           />
@@ -483,6 +501,7 @@ export default function HomePage() {
             label="Despesas"
             value={totalDespesas}
             icon={ArrowCircleUp}
+            comparisonLabel={comparisonLabel}
             delta={deltaDespesas}
             invertDeltaColor
             context="Pago no período"
@@ -493,6 +512,7 @@ export default function HomePage() {
             label="Contas vencidas"
             value={contasVencidas}
             icon={HandCoins}
+            comparisonLabel={comparisonLabel}
             delta={deltaVencidas}
             invertDeltaColor
             tone={contasVencidas > 0 ? "negative" : "neutral"}
@@ -502,11 +522,12 @@ export default function HomePage() {
         )}
         {isVisible("inadimplencia") && (
           <StatCard
-            label="Inadimplência do mês"
+            label="Inadimplência do período"
             value={`${inadimplenciaPct.toFixed(1).replace(".", ",")}%`}
             format="count"
             tone={inadimplenciaPct > 0 ? "negative" : "neutral"}
             icon={Percent}
+            comparisonLabel={comparisonLabel}
             delta={deltaInad}
             invertDeltaColor
             hideDot
@@ -528,12 +549,7 @@ export default function HomePage() {
           headline={saude.headline}
           summary={saude.summary}
           periodLabel={periodo}
-          metrics={[
-            { label: "Receitas", value: totalEntradas },
-            { label: "Despesas", value: totalDespesas },
-            { label: "Resultado", value: resultado },
-            { label: "Saldo em conta", value: saldoTotal },
-          ]}
+          partes={saude.partes}
         />
         <section className="home-card" aria-labelledby="home-pagar">
           <header className="home-card-head">
@@ -574,9 +590,10 @@ export default function HomePage() {
             <h2 className="section-title" id="home-hist">
               Receitas x Despesas — Histórico mensal
             </h2>
-            <span className="home-card-period">Últimos 12 meses</span>
+            <span className="home-card-period">Últimos 12 meses · não acompanha filtro</span>
           </header>
-          {temHistorico ? (
+          <HistoryState loading={historyLoading} error={historyError} pending={historyPending} partial={incompleteHistory} retry={retryHistory}>
+            {temHistorico ? (
             <ComparisonBarChart
               data={monthlyHistory}
               series={[
@@ -595,18 +612,20 @@ export default function HomePage() {
           ) : (
             <EmptyMetricState
               icon={ChartBar}
-              message="Ainda sem receitas ou despesas nos últimos 12 meses."
+              message="Sem receitas ou despesas nos meses disponíveis."
             />
           )}
+          </HistoryState>
         </section>
         <section className="home-card" aria-labelledby="home-res">
           <header className="home-card-head">
             <h2 className="section-title" id="home-res">
               Resultado histórico (lucro/prejuízo)
             </h2>
-            <span className="home-card-period">Últimos 12 meses</span>
+            <span className="home-card-period">Últimos 12 meses · não acompanha filtro</span>
           </header>
-          {temHistorico ? (
+          <HistoryState loading={historyLoading} error={historyError} pending={historyPending} partial={incompleteHistory} retry={retryHistory}>
+            {temHistorico ? (
             <HistoryBarChart
               data={resultadoHistorico}
               dataKey="resultado"
@@ -617,9 +636,10 @@ export default function HomePage() {
           ) : (
             <EmptyMetricState
               icon={ChartBar}
-              message="Ainda sem resultado pra mostrar nos últimos 12 meses."
+              message="Sem movimentação nos meses disponíveis para calcular o resultado."
             />
           )}
+          </HistoryState>
         </section>
       </div>
 
@@ -635,7 +655,7 @@ export default function HomePage() {
           {receitasDonut.length ? (
             <ProportionDonut
               data={receitasDonut.map((d) => ({
-                name: d.categoria,
+                name: categoryLabel(d.categoria),
                 value: d.valor,
                 color: d.color,
               }))}
@@ -657,7 +677,7 @@ export default function HomePage() {
           {despesasDonut.length ? (
             <ProportionDonut
               data={despesasDonut.map((d) => ({
-                name: d.categoria,
+                name: categoryLabel(d.categoria),
                 value: d.valor,
                 color: d.color,
               }))}
@@ -666,11 +686,11 @@ export default function HomePage() {
             <EmptyMetricState
               icon={ChartPieSlice}
               message="Nenhuma despesa no período (ou nenhuma categoria de despesa marcada)."
-              action={
-                <Link to="/ajustes" className="pending-notice-link">
+              action={user?.papel === "master" ? (
+                <Link to="/ajustes?secao=categorias" className="pending-notice-link">
                   Ver categorias em Ajustes →
                 </Link>
-              }
+              ) : <span>Solicite à equipe Lucri a revisão das categorias.</span>}
             />
           )}
         </section>
@@ -681,7 +701,7 @@ export default function HomePage() {
         <section className="home-card" aria-labelledby="home-top">
           <header className="home-card-head">
             <h2 className="section-title" id="home-top">
-              Top gastos do mês
+              Top gastos do período
             </h2>
             <span className="home-card-period">{periodo}</span>
           </header>
@@ -711,8 +731,7 @@ export default function HomePage() {
           <span>
             <strong>Análises adicionais</strong>
             <span className="home-detalhes-sub">
-              Detalhamento de categorias · Contas vencidas por mês · Atraso
-              (Ageing)
+              Detalhamento de categorias · Contas vencidas por mês · Faixas de atraso
             </span>
           </span>
         </summary>
@@ -722,12 +741,11 @@ export default function HomePage() {
               <h2 className="section-title">Receitas por categoria</h2>
               {totalReceitasSemMae > 0 && (
                 <p className="pending-notice">
-                  {fmtBRL.format(totalReceitasSemMae)} em receitas ainda sem
-                  mãe.
+                  {fmtBRL.format(totalReceitasSemMae)} em receitas ainda sem categoria principal.
                   <span className="pending-notice-actions">
-                    <Link to="/ajustes" className="pending-notice-link">
+                    {user?.papel === "master" ? <Link to="/ajustes?secao=categorias" className="pending-notice-link">
                       Classificar em Ajustes →
-                    </Link>
+                    </Link> : "Solicite a classificação à equipe Lucri."}
                   </span>
                 </p>
               )}
@@ -740,11 +758,11 @@ export default function HomePage() {
               <h2 className="section-title">Despesas totais</h2>
               {totalSemMae > 0 && (
                 <p className="pending-notice">
-                  {fmtBRL.format(totalSemMae)} em despesas ainda sem mãe.
+                  {fmtBRL.format(totalSemMae)} em despesas ainda sem categoria principal.
                   <span className="pending-notice-actions">
-                    <Link to="/ajustes" className="pending-notice-link">
+                    {user?.papel === "master" ? <Link to="/ajustes?secao=categorias" className="pending-notice-link">
                       Classificar em Ajustes →
-                    </Link>
+                    </Link> : "Solicite a classificação à equipe Lucri."}
                   </span>
                 </p>
               )}
@@ -757,6 +775,7 @@ export default function HomePage() {
 
           <section className="page-section">
             <h2 className="section-title">Contas a receber vencidas por mês</h2>
+            <HistoryState loading={historyLoading} error={historyError} pending={historyPending} partial={incompleteHistory} retry={retryHistory}>
             {temVencidasHist ? (
               <HistoryBarChart
                 data={overdueHistory}
@@ -766,14 +785,15 @@ export default function HomePage() {
               />
             ) : (
               <p className="section-empty">
-                Nenhuma conta a receber vencida nos últimos 12 meses.
+                Nenhuma conta a receber vencida nos meses disponíveis.
               </p>
             )}
+          </HistoryState>
           </section>
 
           <section className="page-section">
             <h2 className="section-title">
-              Inadimplência por faixa de atraso (Ageing)
+              Inadimplência por faixa de atraso
             </h2>
             {ageingChart.length > 0 ? (
               <HorizontalBarChart

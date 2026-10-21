@@ -1,15 +1,17 @@
+import { usePendingChanges } from "../../hooks/usePendingChanges";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../api/client";
 import { useActiveClient } from "../../context/ClientContext";
 import { ClienteAlvo, SecaoHeader } from "./comum";
 import { rotuloSalvar } from "./util";
 
-// Cockpit → Contas a pagar: quais categorias master de despesa entram na
+// Cockpit → Contas a pagar: quais categorias principais de despesa entram na
 // página Contas a pagar (pedido do usuário, 07/10). Nenhuma = página vazia.
 export default function ContasPagarSecao({ icone }) {
   const { activeClientId } = useActiveClient();
   const [maes, setMaes] = useState([]);
   const [marcadas, setMarcadas] = useState(new Set());
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
@@ -21,11 +23,14 @@ export default function ContasPagarSecao({ icone }) {
     setLoading(true);
     setErro(null);
     Promise.all([apiFetch(`/api/clientes/${activeClientId}/maes`), apiFetch(`/api/clientes/${activeClientId}/contas-pagar-maes`)])
-      .then(([todas, escolhidas]) => { if (!cancelado) { setMaes(todas); setMarcadas(new Set(escolhidas.map((m) => m.id))); } })
+      .then(([todas, escolhidas]) => { if (!cancelado) { setMaes(todas); setMarcadas(new Set(escolhidas.map((m) => m.id))); setOriginal(new Set(escolhidas.map((m) => m.id))); } })
       .catch((e) => !cancelado && setErro(e.message))
       .finally(() => !cancelado && setLoading(false));
     return () => { cancelado = true; };
   }, [activeClientId]);
+
+  const dirty = original !== null && (original.size !== marcadas.size || [...marcadas].some((id) => !original.has(id)));
+  usePendingChanges(dirty, salvando);
 
   function alternar(id) {
     setMarcadas((prev) => {
@@ -40,6 +45,7 @@ export default function ContasPagarSecao({ icone }) {
     setErro(null);
     try {
       await apiFetch(`/api/clientes/${activeClientId}/contas-pagar-maes`, { method: "PUT", body: JSON.stringify({ mae_ids: [...marcadas] }) });
+      setOriginal(new Set(marcadas));
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);
     } catch (e) {
@@ -56,15 +62,15 @@ export default function ContasPagarSecao({ icone }) {
       </SecaoHeader>
       <section className="aj-card">
         {loading && <p className="aj-hint">Carregando...</p>}
-        {erro && <p className="aj-hint aj-erro">{erro}</p>}
-        {!loading && maes.length === 0 && !erro && <p className="aj-hint">Cadastre as categorias master em Categorias → Despesas primeiro.</p>}
+        {erro && <p className="aj-hint aj-erro" role="alert">{erro}</p>}
+        {!loading && maes.length === 0 && !erro && <p className="aj-hint">Cadastre as categorias principais em Categorias → Despesas primeiro.</p>}
         {!loading && maes.length > 0 && (
           <>
             <ul className="aj-checklist aj-checklist-colunas">
               {maes.map((m) => (
                 <li key={m.id}>
                   <label>
-                    <input type="checkbox" checked={marcadas.has(m.id)} onChange={() => alternar(m.id)} />
+                    <input type="checkbox" disabled={salvando} checked={marcadas.has(m.id)} onChange={() => alternar(m.id)} />
                     {m.nome}
                   </label>
                 </li>
@@ -74,8 +80,10 @@ export default function ContasPagarSecao({ icone }) {
               Categorias não marcadas continuam em Despesas, só não aparecem em Contas a pagar.{" "}
               {marcadas.size === 0 ? <strong className="aj-erro">Nenhuma marcada: a página vai ficar vazia.</strong> : `${marcadas.size} de ${maes.length} marcadas.`}
             </p>
+            <p className="aj-hint" role="status">{dirty ? "Há alterações não salvas." : "Seleção salva para esta empresa."}</p>
+            <p className="aj-hint">Ao salvar, esta seleção é aplicada à empresa e compartilhada com a equipe.</p>
             <div className="aj-form-acoes">
-              <button type="button" className="aj-btn-primario" onClick={salvar} disabled={salvando}>{rotuloSalvar(salvando, salvo)}</button>
+              <button type="button" className="aj-btn-primario" onClick={salvar} disabled={salvando || !dirty}>{rotuloSalvar(salvando, salvo)}</button>
             </div>
           </>
         )}

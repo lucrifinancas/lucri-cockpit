@@ -1,3 +1,4 @@
+import OnboardingChecklist from "./OnboardingChecklist";
 import { useState } from "react";
 import { Link as LinkIcone, Plus, UserPlus, Users } from "@phosphor-icons/react";
 import { apiFetch } from "../../api/client";
@@ -9,13 +10,14 @@ import { conectarContaAzul, useClientesResumo } from "./useClientesResumo";
 
 // Clientes → Clientes: lista com status de cada empresa + cadastro de novo.
 export default function ClientesSecao({ irPara, icone }) {
-  const { addClient, setSelectedClientId } = useActiveClient();
+  const { addClient, setSelectedClientId, activeClientId } = useActiveClient();
   const { lista, loading, erro, recarregar } = useClientesResumo();
   const [abrirNovo, setAbrirNovo] = useState(false);
   const [nome, setNome] = useState("");
   const [criando, setCriando] = useState(false);
   const [erroNovo, setErroNovo] = useState(null);
   const [conectando, setConectando] = useState(null);
+  const [connectionError, setConnectionError] = useState(null);
 
   async function criar(e) {
     e.preventDefault();
@@ -24,7 +26,7 @@ export default function ClientesSecao({ irPara, icone }) {
     setErroNovo(null);
     try {
       const novo = await apiFetch("/api/clientes", { method: "POST", body: JSON.stringify({ nome: nome.trim() }) });
-      addClient({ id: novo.id, name: novo.nome, logoUrl: null });
+      addClient({ id: novo.id, name: novo.nome, logoUrl: null }, true);
       setNome("");
       setAbrirNovo(false);
       recarregar();
@@ -36,13 +38,13 @@ export default function ClientesSecao({ irPara, icone }) {
   }
 
   function configurar(id) {
-    setSelectedClientId(id);
-    irPara("acessos");
+    if (setSelectedClientId(id)) irPara("acessos");
   }
 
   async function conectar(id) {
     setConectando(id);
-    try { await conectarContaAzul(id); } catch { setConectando(null); }
+    setConnectionError(null);
+    try { await conectarContaAzul(id); } catch (error) { setConnectionError({ id, message: error.message }); setConectando(null); }
   }
 
   return (
@@ -69,9 +71,12 @@ export default function ClientesSecao({ irPara, icone }) {
         </section>
       )}
 
+      {!loading && !erro && lista.find((client) => client.id === activeClientId) && (
+        <OnboardingChecklist key={activeClientId} client={lista.find((client) => client.id === activeClientId)} irPara={irPara} />
+      )}
       <section className="aj-card aj-card-tabela">
         {loading && <p className="aj-hint">Carregando clientes...</p>}
-        {erro && <p className="aj-hint aj-erro">{erro}</p>}
+        {erro && <p className="aj-hint aj-erro" role="alert">{erro} <button type="button" className="aj-btn-util" onClick={recarregar}>Tentar novamente</button></p>}
         {!loading && !erro && (
           <table className="aj-tabela">
             <thead>
@@ -106,7 +111,9 @@ export default function ClientesSecao({ irPara, icone }) {
                         <LinkIcone size={15} aria-hidden="true" /> {conectando === c.id ? "Abrindo..." : "Conectar Conta Azul"}
                       </button>
                     )}
+                    <button type="button" className="aj-btn-util" onClick={() => setSelectedClientId(c.id)}>Ver configuração</button>
                     <button type="button" className="aj-btn-util" onClick={() => configurar(c.id)}><UserPlus size={15} aria-hidden="true" /> Acessos</button>
+                    {connectionError?.id === c.id && <p className="aj-hint aj-erro" role="alert">Não foi possível abrir a conexão: {connectionError.message}. Tente novamente.</p>}
                   </td>
                 </tr>
               ))}

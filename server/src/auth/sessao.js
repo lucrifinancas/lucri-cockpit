@@ -65,7 +65,7 @@ export async function lerSessaoValida(c, segredo, db) {
   const usuario = await buscarUsuarioPorId(db, sessao.sub);
   if (!usuario || usuario.sessao_versao !== sessao.versao) return null;
 
-  return sessao;
+  return { ...sessao, papel: usuario.papel, cliente_id: usuario.cliente_id ?? null };
 }
 
 export function encerrarSessao(c) {

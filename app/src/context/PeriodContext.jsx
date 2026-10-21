@@ -1,3 +1,4 @@
+import { todayISO, resolveRange } from "../data/period";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 // Seletor de período — versão funcional simplificada do padrão já usado no
@@ -18,41 +19,8 @@ export const PRESETS = [
   { id: "custom", label: "Personalizado" },
 ];
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function currentMonthValue() {
-  return new Date().toISOString().slice(0, 7);
-}
-
-function daysAgoISO(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
-// "YYYY-MM" -> {start: primeiro dia, end: último dia} do mês.
-function monthRange(monthValue) {
-  const [year, month] = monthValue.split("-").map(Number);
-  const start = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-  const end = new Date(year, month, 0).toISOString().slice(0, 10);
-  return { start, end };
-}
-
-function resolveRange(preset, custom, month) {
-  if (preset === "todos") return { start: null, end: null };
-  if (preset === "7d") return { start: daysAgoISO(7), end: todayISO() };
-  if (preset === "14d") return { start: daysAgoISO(14), end: todayISO() };
-  if (preset === "30d") return { start: daysAgoISO(30), end: todayISO() };
-  if (preset === "mes") {
-    const d = new Date();
-    const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-    return { start, end: todayISO() };
-  }
-  if (preset === "mes-especifico") return monthRange(month || currentMonthValue());
-  if (preset === "custom") return custom;
-  return { start: null, end: null };
+  return todayISO().slice(0, 7);
 }
 
 const PeriodContext = createContext(null);

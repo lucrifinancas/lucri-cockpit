@@ -15,6 +15,7 @@ export default function AcessosSecao({ icone }) {
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     if (!activeClientId) return;
@@ -33,9 +34,11 @@ export default function AcessosSecao({ icone }) {
     if (!email.trim()) return;
     setEnviando(true);
     setErro(null);
+    setSuccess(null);
     try {
       const novo = await apiFetch(`/api/clientes/${activeClientId}/convites`, { method: "POST", body: JSON.stringify({ email: email.trim() }) });
       setConvites((prev) => [...prev, novo]);
+      setSuccess(`Acesso autorizado para ${novo.email}. Compartilhe o endereço do Cockpit e oriente a pessoa a entrar com Google usando esse e-mail. Nenhum e-mail foi enviado por este fluxo.`);
       setEmail("");
     } catch (err) {
       setErro(err.message);
@@ -65,7 +68,7 @@ export default function AcessosSecao({ icone }) {
       <section className="aj-card">
         <h3 className="aj-card-titulo"><Users size={18} aria-hidden="true" /> Usuários com acesso</h3>
         {loading && <p className="aj-hint">Carregando...</p>}
-        {!loading && usuarios.length === 0 && <p className="aj-hint">Ninguém dessa empresa tem acesso ainda. Envie um convite abaixo.</p>}
+        {!loading && !erro && usuarios.length === 0 && <p className="aj-hint">Ninguém dessa empresa tem acesso ainda. Autorize um e-mail abaixo.</p>}
         <ul className="aj-lista">
           {usuarios.map((u) => (
             <li key={u.id} className="aj-pessoa">
@@ -81,21 +84,22 @@ export default function AcessosSecao({ icone }) {
       </section>
 
       <section className="aj-card">
-        <h3 className="aj-card-titulo"><UserPlus size={18} aria-hidden="true" /> Convidar usuário</h3>
-        <p className="aj-hint">A pessoa entra com o Google usando este e-mail e a conta é criada na hora, com perfil Cliente — sem precisar de senha.</p>
+        <h3 className="aj-card-titulo"><UserPlus size={18} aria-hidden="true" /> Autorizar acesso</h3>
+        <p className="aj-hint">O e-mail fica autorizado a entrar com Google, com perfil Cliente. Compartilhe o endereço do Cockpit com a pessoa: este fluxo não envia e-mail.</p>
         <form className="aj-form aj-form-linha" onSubmit={convidar}>
           <label className="aj-campo aj-campo-largo">
             E-mail
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@empresa.com" />
           </label>
           <div className="aj-form-acoes">
-            <button type="submit" className="aj-btn-primario" disabled={enviando || !email.trim()}><PaperPlaneTilt size={15} aria-hidden="true" /> {enviando ? "Enviando..." : "Enviar convite"}</button>
+            <button type="submit" className="aj-btn-primario" disabled={enviando || !email.trim()}><PaperPlaneTilt size={15} aria-hidden="true" /> {enviando ? "Autorizando..." : "Autorizar e-mail"}</button>
           </div>
         </form>
         {erro && <p className="aj-hint aj-erro" role="alert">{erro}</p>}
+        {success && <p className="aj-hint" role="status">{success}</p>}
         {convites.length > 0 && (
           <>
-            <h4 className="aj-subtitulo">Convites pendentes</h4>
+            <h4 className="aj-subtitulo">E-mails autorizados · aguardando primeiro acesso</h4>
             <ul className="aj-lista">
               {convites.map((c) => (
                 <li key={c.id} className="aj-pessoa">

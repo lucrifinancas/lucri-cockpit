@@ -10,10 +10,10 @@ const ICONE_CARD = { saldoConta: Wallet, resultado: TrendUp, entradas: ArrowCirc
 
 export default function HomeSecao({ icone }) {
   const { activeClientId } = useActiveClient();
-  const { isVisible, setOverride } = useHomeCardPrefs(activeClientId);
+  const { isVisible, setOverride, error, saved } = useHomeCardPrefs(activeClientId);
   return (
     <>
-      <SecaoHeader icone={icone} titulo="Personalizar Home" descricao="Escolha os indicadores que aparecem no topo da Home.">
+      <SecaoHeader icone={icone} titulo="Personalizar visão geral" descricao="Escolha os indicadores que aparecem no topo da visão geral.">
         <ClienteAlvo />
       </SecaoHeader>
       <section className="aj-card">
@@ -31,7 +31,9 @@ export default function HomeSecao({ icone }) {
             );
           })}
         </ul>
-        <p className="aj-hint">Salva na hora, neste navegador.</p>
+        {error && <p className="aj-hint aj-erro" role="alert">{error}</p>}
+        {saved && !error && <p className="aj-hint aj-ok" role="status">Preferência salva neste navegador.</p>}
+        <p className="aj-hint">As preferências são salvas automaticamente neste navegador, por empresa.</p>
       </section>
     </>
   );

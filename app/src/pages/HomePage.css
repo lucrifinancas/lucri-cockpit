@@ -588,3 +588,22 @@
     padding: 0 16px 16px;
   }
 }
+
+.home-saude-calculo {
+  margin-top: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.home-saude-calculo summary {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.home-saude-calculo p { margin: 12px 0; }
+.home-saude-calculo li { margin-top: 16px; }
+.home-saude-calculo strong { color: var(--text-primary); }
+.home-saude-calculo summary:focus-visible {
+  outline: 2px solid var(--cta);
+  outline-offset: 4px;
+}

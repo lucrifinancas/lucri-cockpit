@@ -71,21 +71,7 @@ export function filterByPeriod(items, { start, end }) {
 // pra comparar "período atual vs. período anterior". Exportada porque quem
 // busca dado real (useFinanceData) precisa desse range pra fazer o 2º
 // fetch da API com `de`/`ate` do período anterior.
-export function previousRange({ start, end }) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const durationDays = Math.round((endDate - startDate) / 86400000) + 1;
-
-  const prevEnd = new Date(startDate);
-  prevEnd.setDate(prevEnd.getDate() - 1);
-  const prevStart = new Date(prevEnd);
-  prevStart.setDate(prevStart.getDate() - (durationDays - 1));
-
-  return {
-    start: prevStart.toISOString().slice(0, 10),
-    end: prevEnd.toISOString().slice(0, 10),
-  };
-}
+export { previousRange } from "./period.js";
 
 // Variação % entre um valor do período atual e o mesmo valor no período
 // anterior (ver `previousRange`). Sem baseline comparável (período anterior

@@ -1,10 +1,16 @@
 .period-selector {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .period-selector .select-wrap select {
   height: 36px;
   box-sizing: border-box;
+}
+
+.period-range {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }

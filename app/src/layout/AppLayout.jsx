@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useConfirmLeave } from "../hooks/usePendingChanges";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   House,
   ArrowCircleDown,
@@ -22,7 +23,7 @@ import ClientAvatar from "../components/ClientAvatar";
 import "./AppLayout.css";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Home", end: true, icon: House },
+  { to: "/", label: "Visão geral", end: true, icon: House },
   { to: "/entradas", label: "Entradas", icon: ArrowCircleDown },
   { to: "/saidas", label: "Saídas", icon: ArrowCircleUp },
   { to: "/contas-a-pagar", label: "Contas a pagar", icon: Invoice },
@@ -33,9 +34,13 @@ const NAV_ITEMS = [
 ];
 
 export default function AppLayout() {
+  const { pathname } = useLocation();
+  const confirmLeave = useConfirmLeave();
   const { user, logout } = useAuth();
   const {
     clients,
+    loadingClients,
+    clientsError,
     activeClientId,
     activeClient,
     canSwitchClient,
@@ -59,13 +64,23 @@ export default function AppLayout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                "topnav-link" + (isActive ? " active" : "")
+                "topnav-link" + (!["/", "/entradas", "/contas-a-pagar"].includes(item.to) ? " topnav-secondary" : "") + (isActive ? " active" : "")
               }
             >
               <item.icon size={18} weight="light" />
-              {item.label}
+              <span className={["/", "/contas-a-pagar"].includes(item.to) ? "topnav-label-full" : undefined}>{item.label}</span>
+              {item.to === "/" && <span className="topnav-label-short">Visão geral</span>}
+              {item.to === "/contas-a-pagar" && <span className="topnav-label-short">A pagar</span>}
             </NavLink>
           ))}
+          <details className="topnav-more">
+            <summary>Mais</summary>
+            <div className="topnav-more-list">
+              {NAV_ITEMS.filter((item) => !["/", "/entradas", "/contas-a-pagar"].includes(item.to)).map((item) => (
+                <NavLink key={item.to} to={item.to} onClick={(event) => event.currentTarget.closest("details").removeAttribute("open")}>{item.label}</NavLink>
+              ))}
+            </div>
+          </details>
         </nav>
 
         <div className="topnav-actions">
@@ -88,11 +103,12 @@ export default function AppLayout() {
             className={({ isActive }) =>
               "topnav-iconbtn" + (isActive ? " active" : "")
             }
+            aria-label="Ajustes"
             title="Ajustes"
           >
             <GearSix size={18} weight="light" />
           </NavLink>
-          <button className="topnav-iconbtn" onClick={logout} title="Sair">
+          <button className="topnav-iconbtn" onClick={() => { if (confirmLeave()) logout(); }} aria-label="Sair" title="Sair">
             <SignOut size={18} weight="light" />
           </button>
         </div>
@@ -119,13 +135,14 @@ export default function AppLayout() {
                 <CaretDown size={14} weight="bold" className="select-caret" />
               </div>
             ) : (
-              <strong>{activeClient?.name ?? "Sua empresa"}</strong>
+              <strong>{activeClient?.name ?? (loadingClients ? "Carregando empresa…" : "Empresa indisponível")}</strong>
             )}
           </div>
         </div>
+        {clientsError && <span role="alert">Não foi possível identificar a empresa. Atualize a página para tentar novamente.</span>}
         <div className="context-period">
           <span className="context-label">Período de análise</span>
-          <PeriodSelector />
+          {pathname === "/balanco" ? <span>Posição atual</span> : <PeriodSelector />}
         </div>
       </section>
 

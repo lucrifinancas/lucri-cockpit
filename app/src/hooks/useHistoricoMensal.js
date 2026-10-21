@@ -1,31 +1,30 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
 import { useActiveClient } from "../context/ClientContext";
+import { emptyHistory, historyForRequest, parseHistory } from "../data/history";
 
-// Últimos N meses de receitas, despesas, resultado (lucro/prejuízo) e
-// contas a receber vencidas — dado real (ver GET /historico-mensal),
-// independente do seletor de período. Um hook só (não um por gráfico) pra
-// não disparar a mesma chamada 3x na Home.
+// Uma consulta compartilhada pelos três gráficos; independe do filtro global.
 export function useHistoricoMensal(meses = 12) {
   const { activeClientId } = useActiveClient();
-  const [data, setData] = useState([]);
+  const [state, setState] = useState(emptyHistory);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
+  const key = JSON.stringify([activeClientId, meses, attempt]);
 
   useEffect(() => {
     if (!activeClientId) return;
     let cancelled = false;
-
+    setState({ ...emptyHistory, key });
     apiFetch(`/api/clientes/${activeClientId}/historico-mensal?meses=${meses}`)
-      .then((resp) => {
-        if (!cancelled) setData(resp.meses);
+      .then(parseHistory)
+      .then((data) => {
+        if (!cancelled) setState({ key, data, loading: false, error: null });
       })
-      .catch(() => {
-        if (!cancelled) setData([]);
+      .catch((error) => {
+        if (!cancelled) setState({ key, data: [], loading: false, error: error.message });
       });
+    return () => { cancelled = true; };
+  }, [activeClientId, meses, key]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [activeClientId, meses]);
-
-  return data;
+  return { ...historyForRequest(state, key), retry };
 }

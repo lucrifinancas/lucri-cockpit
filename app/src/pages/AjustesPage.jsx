@@ -63,7 +63,7 @@ const SECOES = {
     pode: (p) => p.master,
   },
   home: {
-    label: "Home",
+    label: "Visão geral",
     Icone: House,
     Componente: HomeSecao,
     pode: (p) => p.equipe && p.cliente,
@@ -167,7 +167,7 @@ export default function AjustesPage() {
                 : "Não foi possível conectar a Conta Azul. Tente de novo."}
             </p>
           )}
-          <Componente irPara={irPara} icone={SECOES[secao].Icone} />
+          <Componente key={["contas-pagar", "acessos"].includes(secao) ? `${secao}-${activeClientId}` : secao} irPara={irPara} icone={SECOES[secao].Icone} />
         </div>
       </div>
     </div>

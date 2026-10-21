@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { exigirPapel } from "../auth/guard.js";
+import { exigirLeituraCliente } from "../auth/guard.js";
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { resolverPeriodo } from "../utils/periodo.js";
 import {
@@ -20,7 +20,7 @@ import { listarHistoricoMensal, somarAbertoNaJanela } from "../db/historicoMensa
 
 export const financeiroRoutes = new Hono();
 
-financeiroRoutes.get("/:clienteId/entradas", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/entradas", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const { de, ate } = resolverPeriodo(c);
 
@@ -48,7 +48,7 @@ financeiroRoutes.get("/:clienteId/entradas", exigirPapel("master", "analista"), 
   });
 });
 
-financeiroRoutes.get("/:clienteId/saidas", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/saidas", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const { de, ate } = resolverPeriodo(c);
 
@@ -76,7 +76,7 @@ financeiroRoutes.get("/:clienteId/saidas", exigirPapel("master", "analista"), as
   });
 });
 
-financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/despesas", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const { de, ate } = resolverPeriodo(c);
 
@@ -116,7 +116,7 @@ financeiroRoutes.get("/:clienteId/despesas", exigirPapel("master", "analista"), 
   });
 });
 
-financeiroRoutes.get("/:clienteId/caixa", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/caixa", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const { de, ate } = resolverPeriodo(c);
 
@@ -145,7 +145,7 @@ financeiroRoutes.get("/:clienteId/caixa", exigirPapel("master", "analista"), asy
 // configurada no Conta Azul pra esse cliente — não é uma regra nossa,
 // é a árvore contábil de verdade, com cada categoria já encaixada no
 // lugar certo (ver DECISOES-E-ESCOPO.md e API-CONTRACT.md).
-financeiroRoutes.get("/:clienteId/dre", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/dre", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const { de, ate } = resolverPeriodo(c);
 
@@ -196,7 +196,7 @@ financeiroRoutes.get("/:clienteId/dre", exigirPapel("master", "analista"), async
 // mesmo achado do histórico) — a "foto" agora atualiza em até ~1 dia em vez
 // de tempo real, igual o histórico. Só o disponível (saldo bancário) segue
 // ao vivo — são poucas contas, barato de buscar toda vez.
-financeiroRoutes.get("/:clienteId/balanco", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/balanco", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
 
   const accessToken = await obterAccessTokenValido(c.env.DB, c.env, clienteId);
@@ -241,7 +241,7 @@ const MESES = [
 // lançamento (ver CHECKLIST-V1.0.md, achado de 23/09). Só os últimos 12
 // meses têm cron rodando; pedir mais que isso devolve zero nos meses mais
 // antigos em vez de calcular na hora.
-financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "analista"), async (c) => {
+financeiroRoutes.get("/:clienteId/historico-mensal", exigirLeituraCliente(), async (c) => {
   const clienteId = Number(c.req.param("clienteId"));
   const meses = Math.min(Math.max(Number(c.req.query("meses")) || 12, 1), 24);
 
@@ -252,6 +252,7 @@ financeiroRoutes.get("/:clienteId/historico-mensal", exigirPapel("master", "anal
     const [, mesNum] = h.mes.split("-").map(Number);
     return {
       mes: h.mes,
+      disponivel: h.disponivel,
       label: MESES[mesNum - 1],
       receitas: h.receitas,
       despesas: h.despesas,

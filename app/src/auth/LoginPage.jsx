@@ -6,8 +6,6 @@ import logo from "../assets/lucri-logo.png";
 import logoLockup from "../assets/lucri-cockpit-lockup-transparent.png";
 import "./LoginPage.css";
 
-const SLIDE_INTERVAL_MS = 5000;
-
 // Mensagens pro parâmetro `?google=<código>` que o callback do backend
 // devolve em caso de erro (ver API-CONTRACT.md). Sem entrada = erro
 // genérico.
@@ -17,63 +15,19 @@ const ERROS_GOOGLE = {
   erro: "Não deu pra entrar com o Google agora. Tenta de novo.",
 };
 
-// 4 slides do painel de destaque do login — 1 por "motivo pra confiar na
-// Lucri" (financeiro, Instagram, vencimentos, relatório automático). Mesmo
-// par de cards (back/front) em todos, só muda o conteúdo.
-const SLIDES = [
-  {
-    cardBack: { label: "Saldo em conta", value: "R$ 37.244,12", dot: true, barPct: 68, barColor: "var(--lucri-mint)" },
-    cardFront: {
-      label: "Entradas do mês",
-      value: "R$ 70.670,87",
-      rows: [
-        { label: "Recorrentes", value: "84%" },
-        { label: "Pontuais", value: "6%" },
-      ],
-    },
-    headline: "Clareza financeira pra decidir sem achismo",
-    text: "A Lucri centraliza receitas, despesas e caixa dos seus clientes em um só painel — visão completa pra tomar decisão com segurança.",
+// Prévia estática com dados ilustrativos e funções já disponíveis.
+const PREVIA = {
+  cardBack: { label: "Saldo em conta", value: "R$ 37.244,12", dot: true, barPct: 68, barColor: "var(--lucri-mint)" },
+  cardFront: {
+    label: "Receitas do período", value: "R$ 70.670,87",
+    rows: [
+      { label: "Despesas", value: "R$ 47.809,53" },
+      { label: "Resultado", value: "R$ 22.861,34" },
+    ],
   },
-  {
-    cardBack: { label: "Instagram", value: "@lucrifinancas", dot: true, barPct: 100, barColor: "var(--lucri-sky)" },
-    cardFront: {
-      label: "Novo conteúdo toda semana",
-      value: "12,4K seguidores",
-      rows: [
-        { label: "Posts por semana", value: "3" },
-        { label: "Dicas de gestão", value: "✓" },
-      ],
-    },
-    headline: "Segue a Lucri no Instagram",
-    text: "Dicas de gestão financeira, bastidores e novidades do produto toda semana — @lucrifinancas.",
-  },
-  {
-    cardBack: { label: "Contas a vencer", value: "R$ 2.690,01", dot: true, barPct: 42, barColor: "var(--chart-despesa)" },
-    cardFront: {
-      label: "Status dos vencimentos",
-      value: "92% em dia",
-      rows: [
-        { label: "Em dia", value: "92%" },
-        { label: "Atrasado", value: "8%" },
-      ],
-    },
-    headline: "Nunca mais perca um vencimento",
-    text: "Contas a pagar e a receber organizadas por status, com alerta antes do prazo — direto do Conta Azul.",
-  },
-  {
-    cardBack: { label: "Resultado do mês", value: "R$ 22.861,34", dot: true, barPct: 75, barColor: "var(--lucri-mint)" },
-    cardFront: {
-      label: "DRE automático",
-      value: "Pronto a cada mês",
-      rows: [
-        { label: "Receita", value: "R$ 70.670,87" },
-        { label: "Despesa", value: "R$ 32.265,41" },
-      ],
-    },
-    headline: "Relatório pronto, sem trabalho manual",
-    text: "DRE e Balanço gerados automaticamente a partir dos dados do Conta Azul — sem planilha, sem retrabalho.",
-  },
-];
+  headline: "Clareza para acompanhar suas finanças",
+  text: "Consulte receitas, despesas e caixa da sua empresa com os dados do Conta Azul.",
+};
 
 export default function LoginPage() {
   const { login, esqueciSenha } = useAuth();
@@ -84,14 +38,7 @@ export default function LoginPage() {
   const [erro, setErro] = useState(null);
   const [loading, setLoading] = useState(false);
   const [esqueciEnviado, setEsqueciEnviado] = useState(false);
-  const [slideIndex, setSlideIndex] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setSlideIndex((i) => (i + 1) % SLIDES.length);
-    }, SLIDE_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, []);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // Volta do callback do Google com erro (?google=<código>) — mostra a
   // mensagem e limpa a URL pra não reaparecer num F5.
@@ -110,7 +57,7 @@ export default function LoginPage() {
     window.location.href = `${BASE_URL}/api/auth/google/iniciar`;
   }
 
-  const slide = SLIDES[slideIndex];
+  const slide = PREVIA;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -151,9 +98,9 @@ export default function LoginPage() {
         {modo === "login" ? (
           <form className="login-form-pane" onSubmit={handleSubmit}>
             <img src={logo} alt="Lucri" className="login-logo" />
-            <h1>Entrar no dashboard</h1>
+            <h1>Entrar no Cockpit</h1>
 
-            {erro && <p className="login-error">{erro}</p>}
+            {erro && <p className="login-error" role="alert">{erro}</p>}
 
             <label className="login-field">
               E-mail
@@ -170,7 +117,7 @@ export default function LoginPage() {
             <label className="login-field">
               Senha
               <input
-                type="password"
+                type={mostrarSenha ? "text" : "password"}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="Sua senha"
@@ -179,13 +126,15 @@ export default function LoginPage() {
               />
             </label>
 
+            <button type="button" className="login-link" aria-pressed={mostrarSenha} onClick={() => setMostrarSenha((value) => !value)}>{mostrarSenha ? "Ocultar senha" : "Mostrar senha"}</button>
+
             <button type="submit" className="login-submit" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </button>
 
             <div className="login-divider">ou</div>
 
-            <button type="button" className="login-google" onClick={handleGoogleLogin}>
+            <button type="button" className="login-google" disabled={loading} onClick={handleGoogleLogin}>
               <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
                 <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.5 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
                 <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.5 6 29.6 4 24 4c-7.4 0-13.8 4.1-17.1 10.1z"/>
@@ -204,7 +153,7 @@ export default function LoginPage() {
             <img src={logo} alt="Lucri" className="login-logo" />
             <h1>Esqueci minha senha</h1>
 
-            {erro && <p className="login-error">{erro}</p>}
+            {erro && <p className="login-error" role="alert">{erro}</p>}
 
             {esqueciEnviado ? (
               <p className="login-hint">
@@ -272,15 +221,7 @@ export default function LoginPage() {
           <h2>{slide.headline}</h2>
           <p>{slide.text}</p>
 
-          <div className="login-showcase-dots">
-            {SLIDES.map((s, i) => (
-              <span
-                key={s.headline}
-                className={i === slideIndex ? "active" : ""}
-                onClick={() => setSlideIndex(i)}
-              />
-            ))}
-          </div>
+          <p className="login-showcase-note">Prévia com valores ilustrativos.</p>
         </div>
       </div>
     </div>

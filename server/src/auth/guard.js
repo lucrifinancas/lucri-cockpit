@@ -13,6 +13,23 @@ export function exigirPapel(...papeisPermitidos) {
       return c.json({ erro: "Sem permissão para esta ação." }, 403);
     }
     c.set("usuario", sessao); // deixa disponível pras próximas etapas da rota
-    await next();
+    return await next();
+  };
+}
+
+// Leitura financeira: equipe consulta qualquer empresa; cliente só a própria.
+export function exigirLeituraCliente(parametro = "clienteId") {
+  return async (c, next) => {
+    return exigirPapel("master", "analista", "cliente")(c, async () => {
+      const clienteId = Number(c.req.param(parametro));
+      if (!Number.isSafeInteger(clienteId) || clienteId <= 0) {
+        return c.json({ erro: "Cliente inválido." }, 400);
+      }
+      const usuario = c.get("usuario");
+      if (usuario.papel === "cliente" && usuario.cliente_id !== clienteId) {
+        return c.json({ erro: "Sem permissão para esta empresa." }, 403);
+      }
+      return next();
+    });
   };
 }

@@ -56,7 +56,7 @@ const pct0 = (v) => `${Math.round(v)}%`;
 // `headline` = a conclusão em 1 frase curta; `summary` = o porquê.
 function diagnosticar({ receitas, despesas, resultado, saldo, inadimplenciaPct, vencidas }) {
   if (!receitas && !despesas) return { headline: "Sem movimento no período.", summary: "Nenhuma receita ou despesa registrada no período selecionado." };
-  const headline = resultado < 0 ? "Sua empresa fechou o período no vermelho." : "Sua empresa fechou o período no azul.";
+  const headline = resultado < 0 ? "O resultado do período está negativo." : resultado > 0 ? "O resultado do período está positivo." : "Receitas e despesas estão equilibradas no período.";
   const partes = [];
   if (receitas > 0 && despesas > 0) {
     partes.push(resultado < 0
@@ -64,6 +64,7 @@ function diagnosticar({ receitas, despesas, resultado, saldo, inadimplenciaPct, 
       : `As receitas ficaram ${pct1((receitas / despesas - 1) * 100)} acima das despesas`);
   } else if (!receitas) partes.push("Não houve receita no período");
   if (despesas > 0) partes.push(`o saldo disponível cobre ${pct0(Math.max(0, (saldo / despesas) * 100))} das despesas`);
+  if (receitas > 0 && !despesas) partes.push("Há receitas e nenhuma despesa registrada no período");
   let summary = partes.join(", enquanto ") + ".";
   if (inadimplenciaPct > 0) summary += ` A inadimplência está em ${pct1(inadimplenciaPct)}.`;
   else if (vencidas <= 0) summary += " A inadimplência permanece zerada.";
@@ -72,6 +73,14 @@ function diagnosticar({ receitas, despesas, resultado, saldo, inadimplenciaPct, 
 
 // Entrada: números já calculados pela Home (mesmas definições dos KPIs).
 export function calcularSaude({ receitas, despesas, saldo, inadimplenciaPct, vencidas, aReceberEmAberto }) {
+  const valores = [receitas, despesas, saldo, inadimplenciaPct, vencidas, aReceberEmAberto];
+  if (!valores.every(Number.isFinite) || (receitas === 0 && despesas === 0)) {
+    return {
+      score: null, status: "Sem dados suficientes", tone: "neutral", partes: null,
+      headline: "Sem dados suficientes para calcular a saúde financeira.",
+      summary: "A nota requer valores válidos para todos os fatores e ao menos uma receita ou despesa no período. O saldo atual, sozinho, não permite avaliar o desempenho.",
+    };
+  }
   const resultado = receitas - despesas;
   const partes = {
     resultado: notaResultado(resultado, receitas),
@@ -83,3 +92,11 @@ export function calcularSaude({ receitas, despesas, saldo, inadimplenciaPct, ven
   const faixa = FAIXAS.find((f) => score >= f.min);
   return { score, status: faixa.status, tone: faixa.tone, partes, ...diagnosticar({ receitas, despesas, resultado, saldo, inadimplenciaPct, vencidas }) };
 }
+
+// Explicação da fórmula vigente, exibida junto das notas por fator.
+export const FATORES = [
+  { id: "resultado", label: "Resultado do período", regra: "Receitas menos despesas. Resultado zero ou positivo: 100. Se negativo e sem receita: 0. Nos demais casos: 100 − (prejuízo ÷ receitas × 200), com mínimo de 0." },
+  { id: "cobertura", label: "Cobertura pelo saldo de hoje", regra: "Saldo atual ÷ despesas do período: pelo menos 100% → 100; pelo menos 50% → 75; pelo menos 25% → 50; acima de 0% → 25; zero ou negativo → 0. Sem despesas: saldo positivo → 100; caso contrário → 0." },
+  { id: "inadimplencia", label: "Inadimplência do período", regra: "Vencido ÷ total a receber: zero → 100; até 5% → 80; até 10% → 60; até 20% → 30; acima de 20% → 0. Sem títulos, considera zero." },
+  { id: "vencidas", label: "Vencido entre valores em aberto", regra: "Vencido ÷ total ainda em aberto: zero → 100; até 10% → 70; até 25% → 40; acima de 25% → 0. Vencido positivo sem base em aberto → 0." },
+];

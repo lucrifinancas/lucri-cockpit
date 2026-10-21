@@ -14,6 +14,17 @@ automaticamente) — o front não precisa se preocupar com isso, os
 
 ## Autenticação geral
 
+Ajuste local de permissões (21/10/2026): Home, Entradas, Saídas, Despesas,
+Caixa, DRE, Balanço e Histórico mensal permitem leitura para `master`,
+`analista` e `cliente`. Para `cliente`, o ID solicitado deve ser o
+`cliente_id` atual do usuário no banco; outra empresa retorna `403` antes
+de consultar dados financeiros. A leitura de `maes` e `contas-pagar-maes`
+segue a mesma regra. IDs inválidos retornam `400`. Papel e vínculo são
+conferidos no banco em cada sessão válida. Listagem de clientes e demais
+configurações continuam restritas à equipe; cadastro de empresa e escritas
+de configuração são exclusivos de `master`.
+
+
 - Sessão via cookie (`lucri_sessao`), setado automaticamente no login.
 - Todo fetch do front precisa incluir `credentials: "include"` pra o cookie
   ser enviado/recebido (domínios diferentes entre front e back).
@@ -836,3 +847,20 @@ atraso nem título futuro já lançado).
   pagar ainda não pagas dentro da janela.
 - `saldo` = `ativo.total - passivo_circulante`. **Não existe Patrimônio
   Líquido** nesse endpoint — esse dado não existe na API do Conta Azul.
+
+## Identidade da empresa — GET /api/clientes/:id
+
+Retorna `{ id, nome }`, sem tokens ou metadados de integração. Exige sessão:
+master/analista podem consultar qualquer empresa; cliente apenas a vinculada
+atualmente no banco. Retorna 401 sem sessão, 403 para outra empresa, 400 para
+ID inválido e 404 se não encontrada. Usado no cabeçalho do cliente final.
+
+### Disponibilidade do histórico mensal (ajuste local em 21/10/2026)
+
+Cada item de `GET /api/clientes/:id/historico-mensal` inclui `disponivel`:
+`true` para mês com cálculo persistido, inclusive valores legitimamente zero;
+`false` para mês ainda não calculado. Os campos numéricos de um mês não
+disponível são placeholders de compatibilidade e não devem ser exibidos como
+movimentação zero. O frontend mostra estado pendente ou histórico parcial,
+permite nova consulta e não mantém dados da empresa anterior durante a troca.
+O histórico cobre sua própria janela de meses e não acompanha o filtro global.

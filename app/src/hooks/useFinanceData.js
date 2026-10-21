@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
 import { useActiveClient } from "../context/ClientContext";
 import { usePeriod } from "../context/PeriodContext";
@@ -28,23 +28,21 @@ const emptyState = { home: null, entradas: null, saidas: null, despesas: [], pre
 export function useFinanceData() {
   const { activeClientId } = useActiveClient();
   const { range } = usePeriod();
+  const { start, end } = range;
   const [state, setState] = useState(emptyState);
+
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
+  const requestKey = JSON.stringify([activeClientId, start, end, attempt]);
 
   useEffect(() => {
     if (!activeClientId) return;
     let cancelled = false;
-    setState((prev) => ({
-      ...prev,
-      loading: true,
-      error: null,
-      previousHome: null,
-      previousEntradas: null,
-      previousSaidas: null,
-      previousDespesas: [],
-    }));
+    setState({ ...emptyState, requestKey });
 
-    const qs = buildQuery(range);
-    const prevRange = range.start && range.end ? previousRange(range) : null;
+    const requestedRange = { start, end };
+    const qs = buildQuery(requestedRange);
+    const prevRange = start && end ? previousRange(requestedRange) : null;
     const prevQs = prevRange ? buildQuery(prevRange) : null;
 
     // 1) Dados do período atual: é o que a tela precisa pra aparecer, então
@@ -78,13 +76,15 @@ export function useFinanceData() {
         });
       })
       .catch((err) => {
-        if (!cancelled) setState({ ...emptyState, loading: false, error: err.message });
+        if (!cancelled) setState({ ...emptyState, loading: false, error: err.message, requestKey });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [activeClientId, range.start, range.end]);
+  }, [activeClientId, start, end, requestKey]);
 
-  return { ...state, range };
+  // Invalida os dados já no render da troca, antes de o efeito iniciar.
+  const current = state.requestKey === requestKey ? state : emptyState;
+  return { ...current, range, retry, awaitingClient: !activeClientId };
 }
