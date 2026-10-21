@@ -20,8 +20,13 @@ já foram resolvidos — ver "✅ Pronto" abaixo.
   senha, rate limit em login/esqueci-senha, Hono atualizado (0
   vulnerabilidades), CORS de dev restrito à produção, autorização Conta
   Azul expira em 10 min, tokens de reset com hash. Ver
-  `RELATORIO-SEGURANCA-2026-09-24.md`. Falta aplicar a migration 0009 em
-  produção.
+  `RELATORIO-SEGURANCA-2026-09-24.md`.
+- [x] **Relatórios antigos em PDF (16/10)** — seção interna (master/
+  analista, não aparece no portal do cliente) pra guardar e consultar PDFs
+  antigos por cliente. Metadados no D1, arquivo no Workers KV
+  (`RELATORIOS_KV`) — KV em vez de R2 pra não exigir ativar assinatura
+  com cartão. Ver `API-CONTRACT.md`. Falta só o front: tela de
+  listagem/upload.
 - [x] Auth completo (login, sessão, trocar senha, papéis master/analista/cliente)
 - [x] Login com Google (12/08) — alternativa sem senha, só autentica e-mail
   já cadastrado. Falta só o botão no front — ver `API-CONTRACT.md`.

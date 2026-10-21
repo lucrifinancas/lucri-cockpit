@@ -87,3 +87,17 @@ test('identidade não expõe outra empresa e exige sessão', async () => {
   assert.equal((await request('/8')).response.status, 403);
   assert.equal((await request('/7', { session: false })).response.status, 401);
 });
+
+for (const [method, path] of [['GET', '/7/relatorios'], ['POST', '/7/relatorios'], ['GET', '/7/relatorios/1/arquivo'], ['DELETE', '/7/relatorios/1']]) {
+  test(`relatórios internos exigem equipe: ${method} ${path}`, async () => {
+    const { response, queries } = await request(path, { method });
+    assert.equal(response.status, 403);
+    assert.equal(queries.length, 1);
+    assert.equal((await request(path, { method, session: false })).response.status, 401);
+  });
+}
+for (const papel of ['master', 'analista']) {
+  test(`${papel} mantém acesso à listagem de PDFs`, async () => {
+    assert.equal((await request('/7/relatorios', { papel })).response.status, 200);
+  });
+}

@@ -37,11 +37,12 @@ de configuração são exclusivos de `master`.
   "sessão expirou, faça login de novo", não como bug.
 - Todo POST/PUT/PATCH/DELETE agora exige o cabeçalho `Origin` batendo com
   o front oficial (ou localhost/rede local em desenvolvimento) e, se tiver
-  corpo, `Content-Type: application/json` de verdade — retorna `403`/`415`
-  caso contrário. Isso é transparente pro front normal (`fetch` sempre
-  manda `Origin` sozinho), mas **testes manuais via Postman/Insomnia
-  precisam adicionar o header `Origin` manualmente** pra chamadas de
-  escrita, ou vão receber 403.
+  corpo, `Content-Type: application/json` ou `multipart/form-data` de
+  verdade (o segundo só pro upload de relatórios) — retorna `403`/`415`
+  caso contrário. Isso é transparente pro front normal (`fetch`/
+  `FormData` sempre mandam `Origin` sozinhos), mas **testes manuais via
+  Postman/Insomnia precisam adicionar o header `Origin` manualmente** pra
+  chamadas de escrita, ou vão receber 403.
 - Login (`/login`) e recuperação (`/esqueci-senha`) têm limite de
   tentativas por e-mail (10 tentativas/15 min e 3 pedidos/15 min,
   respectivamente) — passado isso, `/login` retorna `429`, e
@@ -864,3 +865,69 @@ disponível são placeholders de compatibilidade e não devem ser exibidos como
 movimentação zero. O frontend mostra estado pendente ou histórico parcial,
 permite nova consulta e não mantém dados da empresa anterior durante a troca.
 O histórico cobre sua própria janela de meses e não acompanha o filtro global.
+
+## Relatórios antigos (PDF) — `/api/clientes/:id/relatorios` (16/10)
+
+Seção interna da equipe Lucri (master/analista) pra guardar e consultar
+relatórios antigos em PDF de cada cliente — apresentações pro cliente
+sobre um período específico. **Não aparece no portal do cliente final**.
+Metadados ficam no D1 (tabela `relatorios_cliente`), o arquivo em si fica
+num namespace do Workers KV (`RELATORIOS_KV`) — KV em vez de R2 de
+propósito, pra não exigir ativar uma assinatura com cartão cadastrado só
+pra isso.
+
+### `GET /api/clientes/:id/relatorios`
+
+Lista os relatórios do cliente, mais recentes primeiro (ordenado por
+`referencia` e depois por data de envio). Master ou analista.
+
+```json
+[
+  {
+    "id": 1,
+    "referencia": "2025-01",
+    "nome_arquivo": "dre-jan-2025.pdf",
+    "tamanho_bytes": 48213,
+    "criado_em": "2026-10-16 18:02:12",
+    "enviado_por_email": "equipe@lucrifinancas.com.br"
+  }
+]
+```
+
+### `POST /api/clientes/:id/relatorios`
+
+Envia um PDF novo. Master ou analista. Corpo `multipart/form-data` (não
+JSON), com os campos:
+
+- `referencia` (texto, obrigatório) — período de referência do relatório,
+  formato livre (sugestão: `"2025-01"` pra mensal, `"2025"` pra anual)
+- `arquivo` (arquivo, obrigatório) — o PDF em si
+
+Limite de 20 MB por arquivo. O backend confere os primeiros bytes do
+arquivo (assinatura `%PDF-`) — um arquivo que não é PDF de verdade, mesmo
+com extensão `.pdf`, é rejeitado com `400`.
+
+```json
+// 201 Created
+{
+  "id": 1,
+  "referencia": "2025-01",
+  "nome_arquivo": "dre-jan-2025.pdf",
+  "tamanho_bytes": 48213,
+  "criado_em": "2026-10-16 18:02:12"
+}
+```
+
+Erros: `400` (campo faltando, arquivo maior que 20 MB, ou não é PDF de
+verdade), `404` (cliente não encontrado).
+
+### `GET /api/clientes/:id/relatorios/:relatorioId/arquivo`
+
+Baixa/abre o PDF em si — devolve o binário direto, com
+`Content-Type: application/pdf` e `Content-Disposition: inline` (abre no
+navegador em vez de forçar download; o front pode trocar isso num
+`<a download>` se quiser forçar). Master ou analista.
+
+### `DELETE /api/clientes/:id/relatorios/:relatorioId`
+
+Apaga o relatório (registro no D1 + arquivo no KV). Master ou analista.
