@@ -17,9 +17,9 @@ export function gerarInsights({ receitas, despesas, saldo, vencidas, inadimplenc
   }
 
   if (despesas > 0 && receitas > 0 && despesas > receitas) {
-    itens.push({ id: "despesas-acima", tone: "bad", rotulo: "Crítico", text: `Despesas estão ${pct((despesas / receitas - 1) * 100)} acima das receitas no período (${fmtBRL.format(despesas)} em despesas).`, link: { to: "/despesas", label: "Investigar despesas" } });
+    itens.push({ id: "despesas-acima", tone: "bad", rotulo: "Crítico", text: `Despesas estão ${pct((despesas / receitas - 1) * 100)} acima das receitas no período (${fmtBRL.format(despesas)} em despesas).`, link: { to: "/saidas?visao=despesas", label: "Investigar despesas" } });
   } else if (despesas > 0 && !receitas) {
-    itens.push({ id: "sem-receitas", tone: "bad", rotulo: "Crítico", text: `Nenhuma receita no período, com ${fmtBRL.format(despesas)} em despesas.`, link: { to: "/despesas", label: "Investigar despesas" } });
+    itens.push({ id: "sem-receitas", tone: "bad", rotulo: "Crítico", text: `Nenhuma receita no período, com ${fmtBRL.format(despesas)} em despesas.`, link: { to: "/saidas?visao=despesas", label: "Investigar despesas" } });
   }
 
   if (despesas > 0 && saldo / despesas < 0.2) {
@@ -28,7 +28,7 @@ export function gerarInsights({ receitas, despesas, saldo, vencidas, inadimplenc
 
   const maior = despesasPorCategoria[0];
   if (maior && despesas > 0 && maior.valor / despesas > 0.35) {
-    itens.push({ id: "concentracao", tone: "info", rotulo: "Concentração", text: `A categoria ${categoryLabel(maior.categoria)} concentra ${pct((maior.valor / despesas) * 100)} das despesas (${fmtBRL.format(maior.valor)}).`, link: { to: "/despesas", label: "Investigar despesas" } });
+    itens.push({ id: "concentracao", tone: "info", rotulo: "Concentração", text: `A categoria ${categoryLabel(maior.categoria)} concentra ${pct((maior.valor / despesas) * 100)} das despesas (${fmtBRL.format(maior.valor)}).`, link: { to: "/saidas?visao=despesas", label: "Investigar despesas" } });
   }
 
   if (semMae > 0) {

@@ -58,7 +58,7 @@ export function useFinanceData() {
         // Regime de caixa (ver "⚠️ Regime de caixa" no API-CONTRACT.md):
         // `valor` vira `valor_pago`, pra sumValores/groupByCategoria (que
         // somam `.valor`) já saírem certos sem reescrever esses utilitários.
-        const despesasLancamentos = (despesas?.lancamentos ?? []).map((l) => ({ ...l, valor: l.valor_pago }));
+        const despesasLancamentos = (despesas?.lancamentos ?? []).map((l) => ({ ...l, valor_titulo: l.valor, valor: l.valor_pago }));
         setState((prev) => ({ ...prev, home, entradas, saidas, despesas: despesasLancamentos, loading: false, error: null }));
 
         // 2) Período anterior, em segundo plano: os deltas entram quando
@@ -71,7 +71,7 @@ export function useFinanceData() {
           apiFetch(`/api/clientes/${activeClientId}/despesas${prevQs}`).catch(() => null),
         ]).then(([previousHome, previousEntradas, previousSaidas, previousDespesasResp]) => {
           if (cancelled) return;
-          const previousDespesas = (previousDespesasResp?.lancamentos ?? []).map((l) => ({ ...l, valor: l.valor_pago }));
+          const previousDespesas = (previousDespesasResp?.lancamentos ?? []).map((l) => ({ ...l, valor_titulo: l.valor, valor: l.valor_pago }));
           setState((prev) => ({ ...prev, previousHome, previousEntradas, previousSaidas, previousDespesas }));
         });
       })

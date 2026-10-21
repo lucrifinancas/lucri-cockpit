@@ -1,75 +1,8 @@
-import FinanceDataState from "../components/FinanceDataState";
-import { useState } from "react";
-import { useFinanceData } from "../hooks/useFinanceData";
-import { sumValores, filterLancamentos } from "../data/mockFinance";
-import StatCard from "../components/StatCard";
-import DataTable from "../components/DataTable";
-import "../styles/page.css";
+import { Navigate, useLocation } from "react-router-dom";
+import { legacyExpensesLocation } from "../data/saidasView";
 
-const COLUMNS = [
-  { key: "data", label: "Vencimento" },
-  { key: "descricao", label: "Descrição" },
-  { key: "categoria", label: "Categoria" },
-  { key: "contraparte", label: "Fornecedor" },
-  { key: "valor", label: "Valor" },
-];
-
-// A categorização "fixa/variável" que essa página tinha antes nunca existiu
-// de verdade — o Conta Azul não classifica assim, só por `categoria` (ver
-// GUIA-INTEGRACAO-DADOS-REAIS.md). `despesas` já vem filtrado pelas
-// categorias marcadas em Ajustes → Categorias de Despesa.
+// Preserva favoritos e links antigos, abrindo a visão de despesas em Saídas.
 export default function DespesasPage() {
-  const { despesas, loading, error, retry, awaitingClient } = useFinanceData();
-  const [busca, setBusca] = useState("");
-  if (loading || error || awaitingClient) {
-    return <FinanceDataState title="Despesas" loading={loading} error={error} retry={retry} awaitingClient={awaitingClient} />;
-  }
-
-  const filtradas = filterLancamentos(despesas, busca);
-  const rows = [...filtradas]
-    .sort((a, b) => b.data_vencimento.localeCompare(a.data_vencimento))
-    .map((d) => ({
-      id: d.id,
-      data: d.data_vencimento,
-      descricao: d.descricao,
-      categoria: d.categoria,
-      contraparte: d.contraparte ?? "—",
-      valor: d.valor,
-    }));
-
-  return (
-    <div className="page">
-      <header className="page-heading">
-        <div>
-          <h1 className="page-title">Despesas</h1>
-          <p className="page-description">
-            Uma visão dos gastos operacionais da empresa.
-          </p>
-        </div>
-      </header>
-      <div className="stat-row">
-        <StatCard
-          label="Total no período"
-          value={sumValores(despesas)}
-          tone="negative"
-        />
-        <StatCard
-          label="Nº de lançamentos"
-          value={despesas.length}
-          format="count"
-        />
-      </div>
-      <DataTable
-        title="Despesas"
-        search={{
-          value: busca,
-          onChange: (e) => setBusca(e.target.value),
-          placeholder: "Buscar descrição, contraparte ou categoria",
-        }}
-        columns={COLUMNS}
-        rows={rows}
-        emptyMessage={busca ? "Nenhum resultado pra essa busca." : undefined}
-      />
-    </div>
-  );
+  const { search } = useLocation();
+  return <Navigate to={legacyExpensesLocation(search)} replace />;
 }

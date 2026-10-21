@@ -173,3 +173,12 @@ Ver seção "Em aberto" do `DECISOES-E-ESCOPO.md`. Destaque para o front:
 
 Hospedagem decidida: GitHub + Cloudflare (Pages pro front, Workers + D1 pro
 backend) — ver `DECISOES-E-ESCOPO.md`.
+
+## Atualização de navegação — 21/10/2026
+
+Por decisão do usuário, Saídas e Despesas passam a compartilhar a aba **Saídas**,
+com as visões **Todas as saídas** e **Despesas operacionais**. A rota
+`/saidas?visao=despesas` abre a segunda visão; `/despesas` redireciona para ela,
+preservando os links antigos. Essa decisão substitui a exigência anterior de
+páginas distintas. Os endpoints e as regras de cálculo permanecem separados:
+resultado gerencial usa despesas classificadas; caixa usa todas as saídas.
