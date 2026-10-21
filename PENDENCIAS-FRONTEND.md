@@ -128,7 +128,7 @@ Home. Confirmado direto no código em 23/09. Nada a fazer aqui.
   contábil hierárquica que DRE vai usar, mas mais simples — só duas
   seções, Ativo e Passivo, sem os vários níveis de subtotal do DRE).
 
-## 6. Relatórios antigos em PDF (novo, 16/10)
+## 6. Relatórios antigos em PDF (frontend implementado em 21/10/2026)
 
 Seção interna (equipe Lucri — master/analista), sugerida pelo dev: uma
 tela pra ver e adicionar relatórios antigos (PDF) de cada cliente —
@@ -157,8 +157,9 @@ DELETE /api/clientes/:id/relatorios/:relatorioId       (master ou analista)
 404 →  { "erro": "Relatório não encontrado." }
 ```
 
-**Importante pro upload no front**: é `FormData`, não JSON — não usar o
-`apiFetch` padrão com `Content-Type: application/json`. Exemplo:
+**Importante pro upload no front**: é `FormData`, não JSON. O `apiFetch`
+agora reconhece FormData e deixa o navegador definir o Content-Type com
+boundary. Exemplo equivalente:
 
 ```js
 const formData = new FormData();
@@ -173,8 +174,8 @@ fetch(`${BASE_URL}/api/clientes/${clienteId}/relatorios`, {
 });
 ```
 
-**Falta no front**: uma seção/aba nova (provavelmente dentro de Ajustes,
-ou uma aba própria "Relatórios") com:
+**Implementado no front**: aba **Relatórios** (`/relatorios`) no menu superior
+e em **Mais** no celular, disponível para master/analista, com:
 - Lista dos relatórios do cliente (período de referência, data de envio,
   quem enviou, tamanho) — link/botão pra abrir o PDF
   (`/relatorios/:id/arquivo`) e botão de apagar

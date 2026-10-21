@@ -3,14 +3,16 @@
 // em todo fetch: front e back estão em domínios diferentes, e é o cookie de
 // sessão (`lucri_sessao`) que autentica.
 export const BASE_URL =
-  import.meta.env.VITE_API_URL ??
+  import.meta.env?.VITE_API_URL ??
   "https://lucri-cockpit-server.lucrifinancas-54e.workers.dev";
 
 export async function apiFetch(path, options = {}) {
+  const headers = new Headers(options.headers);
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const resp = await fetch(`${BASE_URL}${path}`, {
     ...options,
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers,
   });
   if (!resp.ok) {
     const erro = await resp.json().catch(() => ({}));

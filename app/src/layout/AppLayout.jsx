@@ -14,7 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import logoSymbol from "../assets/lucri-logo.png";
 import { useAuth } from "../auth/AuthContext";
-import { ROLE_LABELS } from "../auth/roles";
+import { ROLE_LABELS, isInternalRole } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
 import { useLocalProfile } from "../hooks/useLocalProfile";
 import PeriodSelector from "../components/PeriodSelector";
@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { to: "/caixa", label: "Caixa", icon: Vault },
   { to: "/balanco", label: "Balanço", icon: Scales },
   { to: "/dre", label: "DRE", icon: FileText },
+  { to: "/relatorios", label: "Relatórios", icon: FileText, internal: true },
 ];
 
 export default function AppLayout() {
@@ -45,6 +46,7 @@ export default function AppLayout() {
     setSelectedClientId,
   } = useActiveClient();
   const profile = useLocalProfile(user?.email);
+  const navItems = NAV_ITEMS.filter((item) => !item.internal || isInternalRole(user?.papel));
 
   return (
     <div className="app-shell">
@@ -56,7 +58,7 @@ export default function AppLayout() {
         </div>
 
         <nav className="topnav-nav" aria-label="Navegação principal">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -74,7 +76,7 @@ export default function AppLayout() {
           <details className="topnav-more">
             <summary>Mais</summary>
             <div className="topnav-more-list">
-              {NAV_ITEMS.filter((item) => !["/", "/entradas", "/contas-a-pagar"].includes(item.to)).map((item) => (
+              {navItems.filter((item) => !["/", "/entradas", "/contas-a-pagar"].includes(item.to)).map((item) => (
                 <NavLink key={item.to} to={item.to} onClick={(event) => event.currentTarget.closest("details").removeAttribute("open")}>{item.label}</NavLink>
               ))}
             </div>
@@ -140,7 +142,7 @@ export default function AppLayout() {
         {clientsError && <span role="alert">Não foi possível identificar a empresa. Atualize a página para tentar novamente.</span>}
         <div className="context-period">
           <span className="context-label">Período de análise</span>
-          {pathname === "/balanco" ? <span>Posição atual</span> : <PeriodSelector />}
+          {pathname === "/balanco" ? <span>Posição atual</span> : pathname === "/relatorios" ? <span>Todos os relatórios da empresa</span> : <PeriodSelector />}
         </div>
       </section>
 

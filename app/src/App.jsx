@@ -14,6 +14,7 @@ import DespesasPage from "./pages/DespesasPage";
 import CaixaPage from "./pages/CaixaPage";
 import BalancoPage from "./pages/BalancoPage";
 import DrePage from "./pages/DrePage";
+import RelatoriosPage from "./pages/RelatoriosPage";
 
 // Beta 1.2: as 8 abas do escopo todas roteadas. Home/Ajustes/Entradas/
 // Saídas/Despesas/Caixa com dado real; Balanço/DRE ainda são só o aviso
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="/caixa" element={<CaixaPage />} />
             <Route path="/balanco" element={<BalancoPage />} />
             <Route path="/dre" element={<DrePage />} />
+            <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/ajustes" element={<AjustesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
