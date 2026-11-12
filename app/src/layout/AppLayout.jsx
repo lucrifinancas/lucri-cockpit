@@ -6,7 +6,6 @@ import {
   ArrowCircleUp,
   Invoice,
   Vault,
-  Scales,
   FileText,
   GearSix,
   SignOut,
@@ -28,8 +27,6 @@ const NAV_ITEMS = [
   { to: "/saidas", label: "Saídas", icon: ArrowCircleUp },
   { to: "/contas-a-pagar", label: "Contas a pagar", icon: Invoice },
   { to: "/caixa", label: "Caixa", icon: Vault },
-  { to: "/balanco", label: "Balanço", icon: Scales },
-  { to: "/dre", label: "DRE", icon: FileText },
   { to: "/relatorios", label: "Relatórios", icon: FileText, internal: true },
 ];
 
