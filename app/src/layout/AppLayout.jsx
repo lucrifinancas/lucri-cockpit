@@ -53,7 +53,7 @@ export default function AppLayout() {
         <div className="topnav-brand">
           <img src={logoSymbol} alt="" className="topnav-logo" />
           <span className="topnav-name">Lucri Cockpit</span>
-          <span className="topnav-version">Beta 1.5</span>
+          <span className="topnav-version">Open Beta 1.0</span>
         </div>
 
         <nav className="topnav-nav" aria-label="Navegação principal">
