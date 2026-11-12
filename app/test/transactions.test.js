@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { transactionItems, filterTransactions, matchesTransaction, transactionTotal } from '../src/data/transactions.js';
+import { transactionItems, filterTransactions, matchesTransaction, transactionTotal, searchableTransactions } from '../src/data/transactions.js';
 
 const titles = [
   { id: 1, descricao: 'Venda paga', valor: 100, valor_pago: 100, valor_em_aberto: 0, data_vencimento: '2026-10-01', categoria: 'Serviços', contraparte: 'Ana' },
@@ -45,4 +45,26 @@ test('total desconhecido não é substituído pelo valor pago', () => {
 test('consulta vazia tem totais zero e filtro sem resultados não reaproveita valores', () => {
   assert.equal(transactionTotal([], 'todos'), 0);
   assert.deepEqual(filterTransactions(items, { search: 'inexistente' }), []);
+});
+
+test('busca ignora acentos e combina palavras entre descrição, categoria e pessoa', () => {
+  const list = transactionItems({ entradas: { lancamentos: [{ ...titles[0], descricao: 'Consultoria São Paulo', contraparte: 'José' }] } }, 'entrada');
+  assert.equal(filterTransactions(list, { search: '  JOSE   servicos sao ' }).length, 1);
+  assert.equal(filterTransactions(list, { search: 'jose inexistente' }).length, 0);
+  assert.equal(filterTransactions(list, { search: 'jose', counterpart: 'Ana' }).length, 0);
+});
+
+test('busca geral preserva IDs iguais entre entrada e saída e não duplica contas a pagar', () => {
+  const data = {
+    entradas: { lancamentos: [titles[0]] },
+    saidas: { lancamentos: [titles[1], { ...titles[0], descricao: 'Pagamento' }] },
+    contasAPagar: { lancamentos: [titles[1]] },
+  };
+  const list = searchableTransactions(data, '2026-10-21');
+  assert.equal(list.length, 3);
+  assert.equal(new Set(list.map((item) => item.searchKey)).size, 3);
+  assert.deepEqual(list.map((item) => item.kind), ['entrada', 'saida', 'saida']);
+  assert.equal(list.filter((item) => item.kind === 'saida' && matchesTransaction(item, 'pago')).length, 2);
+  assert.equal(list.find((item) => item.searchKey === 'saida:2').valor_em_aberto, 150);
+  assert.equal(data.entradas.lancamentos[0].kind, undefined);
 });

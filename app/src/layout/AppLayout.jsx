@@ -19,6 +19,7 @@ import { useActiveClient } from "../context/ClientContext";
 import { useLocalProfile } from "../hooks/useLocalProfile";
 import PeriodSelector from "../components/PeriodSelector";
 import ClientAvatar from "../components/ClientAvatar";
+import GlobalSearch from "../components/GlobalSearch";
 import "./AppLayout.css";
 
 const NAV_ITEMS = [
@@ -140,6 +141,7 @@ export default function AppLayout() {
           </div>
         </div>
         {clientsError && <span role="alert">Não foi possível identificar a empresa. Atualize a página para tentar novamente.</span>}
+        <GlobalSearch />
         <div className="context-period">
           <span className="context-label">Período de análise</span>
           {pathname === "/balanco" ? <span>Posição atual</span> : pathname === "/relatorios" ? <span>Todos os relatórios da empresa</span> : <PeriodSelector />}

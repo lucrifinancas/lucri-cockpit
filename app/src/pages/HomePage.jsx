@@ -34,10 +34,8 @@ import ComparisonBarChart from "../components/charts/ComparisonBarChart";
 import ProportionDonut from "../components/charts/ProportionDonut";
 import HorizontalBarChart from "../components/charts/HorizontalBarChart";
 import ProgressBar from "../components/charts/ProgressBar";
-import FinancialHealthCard from "../components/home/FinancialHealthCard";
 import InsightsCard from "../components/home/InsightsCard";
 import EmptyMetricState from "../components/home/EmptyMetricState";
-import { calcularSaude } from "../data/financialHealth";
 import { gerarInsights } from "../data/homeInsights";
 import "../styles/page.css";
 import "./HomePage.css";
@@ -255,10 +253,6 @@ export default function HomePage() {
   // "Contas vencidas" = só o que JÁ venceu e não foi recebido (decisão do
   // usuário, 14/10/2026 — antes somava todo o em aberto, inclusive a vencer).
   const contasVencidas = contasAReceber.vencido.valor;
-  const aReceberEmAberto = Math.max(
-    contasAReceber.todos - contasAReceber.pago.valor,
-    0,
-  );
   const inadimplenciaPct =
     contasAReceber.todos > 0
       ? (contasVencidas / contasAReceber.todos) * 100
@@ -403,14 +397,6 @@ export default function HomePage() {
     }));
 
   const periodo = rotuloPeriodo(range);
-  const saude = calcularSaude({
-    receitas: totalEntradas,
-    despesas: totalDespesas,
-    saldo: saldoTotal,
-    inadimplenciaPct,
-    vencidas: contasVencidas,
-    aReceberEmAberto,
-  });
   const insights = gerarInsights({
     receitas: totalEntradas,
     despesas: totalDespesas,
@@ -540,17 +526,8 @@ export default function HomePage() {
         <InsightsCard items={insights} periodLabel={periodo} />
       </div>
 
-      {/* 2. Está saudável? 3. O operacional está em dia? */}
-      <div className="home-faixa-saude home-cap-perto">
-        <FinancialHealthCard
-          score={saude.score}
-          status={saude.status}
-          tone={saude.tone}
-          headline={saude.headline}
-          summary={saude.summary}
-          periodLabel={periodo}
-          partes={saude.partes}
-        />
+      {/* Andamento dos pagamentos e recebimentos do período. */}
+      <div className="home-operational home-cap-perto">
         <section className="home-card" aria-labelledby="home-pagar">
           <header className="home-card-head">
             <h2 className="section-title" id="home-pagar">

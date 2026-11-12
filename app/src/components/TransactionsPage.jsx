@@ -21,7 +21,7 @@ export default function TransactionsPage({ kind }) {
   const { activeClientId } = useActiveClient();
   const title = kind === "entrada" ? "Entradas" : "Saídas";
   if (data.loading || data.error || data.awaitingClient) return <FinanceDataState title={title} {...data} />;
-  return <Workspace key={`${kind}-${activeClientId}-${data.range.start}-${data.range.end}`} data={data} kind={kind} title={title} />;
+  return <Workspace key={`${kind}-${activeClientId}`} data={data} kind={kind} title={title} />;
 }
 
 function Workspace({ data, kind, title }) {
@@ -29,15 +29,20 @@ function Workspace({ data, kind, title }) {
   const expensesOnly = kind === "saida" && params.get("visao") === "despesas";
   const requested = params.get("situacao");
   const filter = TRANSACTION_FILTERS.includes(requested) ? requested : "todos";
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [counterpart, setCounterpart] = useState("");
-  const [sort, setSort] = useState({ key: "data_vencimento", direction: "asc" });
+  const search = params.get("busca") ?? "";
+  const category = params.get("categoria") ?? "";
+  const counterpart = params.get("pessoa") ?? "";
+  const sortKey = params.get("ordem");
+  const sort = {
+    key: ["data_vencimento", "descricao", "valor_total", "valor_pago", "valor_em_aberto", "situacao"].includes(sortKey) ? sortKey : "data_vencimento",
+    direction: params.get("direcao") === "desc" ? "desc" : "asc",
+  };
   const [pagination, setPagination] = useState({ key: "", page: 1 });
-  const [pageSize, setPageSize] = useState(10);
+  const requestedSize = Number(params.get("porPagina"));
+  const pageSize = [10, 25, 50].includes(requestedSize) ? requestedSize : 10;
   const [selected, setSelected] = useState(null);
   const items = transactionItems(data, kind, expensesOnly);
-  const options = (field) => [...new Set(items.map((item) => item[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const options = (field) => [...new Set([...items.map((item) => item[field]), field === "categoria_original" ? category : counterpart].filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const filtered = filterTransactions(items, { search, category, counterpart });
   const visible = sortRows(filtered.filter((item) => matchesTransaction(item, filter)), sort.key, sort.direction);
   const pageKey = JSON.stringify([search, category, counterpart, filter, expensesOnly, sort, pageSize]);
@@ -48,24 +53,29 @@ function Workspace({ data, kind, title }) {
     ["data_vencimento", "Vencimento"], ["descricao", "Resumo do lançamento"], ["valor_total", "Total"],
     ["valor_pago", kind === "entrada" ? "Recebido" : "Pago"], ["valor_em_aberto", kind === "entrada" ? "A receber" : "A pagar"], ["situacao", "Situação"],
   ];
-  function updateParam(key, value) {
-    const next = new URLSearchParams(params);
-    if (value) next.set(key, value); else next.delete(key);
-    setParams(next);
+  function updateParams(values) {
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      Object.entries(values).forEach(([key, value]) => {
+        if (value) next.set(key, String(value)); else next.delete(key);
+      });
+      return next;
+    }, { replace: true });
     setSelected(null);
   }
-  function order(key) { setSort((previous) => ({ key, direction: previous.key === key && previous.direction === "asc" ? "desc" : "asc" })); }
+  function updateParam(key, value) { updateParams({ [key]: value }); }
+  function order(key) { updateParams({ ordem: key, direcao: sort.key === key && sort.direction === "asc" ? "desc" : "asc" }); }
   return (
     <div className="page">
       <header className="page-heading"><div><h1 className="page-title">{title}</h1><p className="page-description">{kind === "entrada" ? "Acompanhe os títulos a receber e os recebimentos da empresa." : "Acompanhe os pagamentos e as despesas operacionais em um só lugar."}</p></div></header>
-      {kind === "saida" && <div className="page-view-options" role="group" aria-label="Visão das saídas"><button type="button" aria-pressed={!expensesOnly} onClick={() => { setCategory(""); setCounterpart(""); updateParam("visao", null); }}>Todas as saídas</button><button type="button" aria-pressed={expensesOnly} onClick={() => { setCategory(""); setCounterpart(""); updateParam("visao", "despesas"); }}>Despesas operacionais</button></div>}
+      {kind === "saida" && <div className="page-view-options" role="group" aria-label="Visão das saídas"><button type="button" aria-pressed={!expensesOnly} onClick={() => updateParams({ categoria: null, pessoa: null, visao: null })}>Todas as saídas</button><button type="button" aria-pressed={expensesOnly} onClick={() => updateParams({ categoria: null, pessoa: null, visao: "despesas" })}>Despesas operacionais</button></div>}
       <section className="transactions-panel" aria-label={`Consulta de ${title.toLowerCase()}`}>
         <div className="transactions-filters">
           <div><span className="transactions-label">Vencimento</span><strong>{formatRange(data.range)}</strong><small>Altere o período no topo do painel</small></div>
-          <label>Pesquisar no período<input type="search" value={search} placeholder="Descrição, categoria ou pessoa" onChange={(event) => setSearch(event.target.value)} /></label>
-          <label>Categoria<select value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Todas</option>{options("categoria_original").map((value) => <option key={value}>{value}</option>)}</select></label>
-          <label>{kind === "entrada" ? "Cliente" : "Fornecedor"}<select value={counterpart} onChange={(event) => setCounterpart(event.target.value)}><option value="">Todos</option>{options("contraparte").map((value) => <option key={value}>{value}</option>)}</select></label>
-          {(search || category || counterpart || filter !== "todos") && <button type="button" className="transaction-button" onClick={() => { setSearch(""); setCategory(""); setCounterpart(""); updateParam("situacao", null); }}>Limpar filtros</button>}
+          <label>Pesquisar no período<input type="search" value={search} placeholder="Descrição, categoria ou pessoa" onChange={(event) => updateParam("busca", event.target.value)} /></label>
+          <label>Categoria<select aria-label="Categoria" value={category} onChange={(event) => updateParam("categoria", event.target.value)}><option value="">Todas</option>{options("categoria_original").map((value) => <option key={value}>{value}</option>)}</select></label>
+          <label>{kind === "entrada" ? "Cliente" : "Fornecedor"}<select aria-label={kind === "entrada" ? "Cliente" : "Fornecedor"} value={counterpart} onChange={(event) => updateParam("pessoa", event.target.value)}><option value="">Todos</option>{options("contraparte").map((value) => <option key={value}>{value}</option>)}</select></label>
+          {(search || category || counterpart || filter !== "todos") && <button type="button" className="transaction-button" onClick={() => updateParams({ busca: null, categoria: null, pessoa: null, situacao: null })}>Limpar filtros</button>}
         </div>
         <div className="transaction-status-cards" role="group" aria-label="Filtrar por situação">
           {TRANSACTION_FILTERS.map((key) => <button type="button" key={key} aria-pressed={filter === key} onClick={() => updateParam("situacao", key === "todos" ? null : key)}><span>{labels[key]}</span><strong>{money(transactionTotal(filtered, key))}</strong>{key === "pago" && <small>Inclui parciais</small>}</button>)}
@@ -79,7 +89,7 @@ function Workspace({ data, kind, title }) {
             </tr>)}</tbody>
           </table>
         </div>
-        <div className="data-table-pagination"><label>Por página <select aria-label="Registros por página" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{[10, 25, 50].map((value) => <option key={value}>{value}</option>)}</select></label><nav aria-label="Paginação dos lançamentos"><button type="button" disabled={page.current === 1} onClick={() => setPagination({ key: pageKey, page: page.current - 1 })}>Anterior</button><span>Página {page.current} de {page.pages}</span><button type="button" disabled={page.current === page.pages} onClick={() => setPagination({ key: pageKey, page: page.current + 1 })}>Próximo</button></nav></div>
+        <div className="data-table-pagination"><label>Por página <select aria-label="Registros por página" value={pageSize} onChange={(event) => updateParam("porPagina", event.target.value)}>{[10, 25, 50].map((value) => <option key={value}>{value}</option>)}</select></label><nav aria-label="Paginação dos lançamentos"><button type="button" disabled={page.current === 1} onClick={() => setPagination({ key: pageKey, page: page.current - 1 })}>Anterior</button><span>Página {page.current} de {page.pages}</span><button type="button" disabled={page.current === page.pages} onClick={() => setPagination({ key: pageKey, page: page.current + 1 })}>Próximo</button></nav></div>
       </section>
       <p className="section-empty">Os totais acompanham os filtros de busca, categoria e pessoa. Vencidos, hoje e a vencer somam o valor em aberto; recebidos/pagos somam os valores liquidados dos títulos com vencimento no período.</p>
       {detail && <TransactionDetail item={detail} kind={kind} status={statusLabel(detail, kind)} onClose={() => setSelected(null)} />}

@@ -22,10 +22,19 @@ export function transactionItems({ entradas, saidas, despesas = [] }, kind, expe
 }
 
 export function filterTransactions(items, { search = '', category = '', counterpart = '' } = {}) {
-  const term = search.trim().toLocaleLowerCase('pt-BR');
+  const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+  const terms = normalize(search).trim().split(/\s+/).filter(Boolean);
   return items.filter((item) => (!category || item.categoria_original === category) &&
     (!counterpart || item.contraparte === counterpart) &&
-    (!term || [item.descricao, item.categoria_original, item.categoria_principal, item.contraparte].some((value) => String(value ?? '').toLocaleLowerCase('pt-BR').includes(term))));
+    terms.every((term) => normalize([item.descricao, item.categoria_original, item.categoria_principal, item.contraparte].join(' ')).includes(term)));
+}
+
+// Entrada e saída podem ter o mesmo ID na origem; a chave inclui o tipo.
+// Contas a pagar já fazem parte de Saídas: não buscar uma segunda cópia.
+export function searchableTransactions(data, today = todayISO()) {
+  return ['entrada', 'saida'].flatMap((kind) => transactionItems(data, kind, false, today).map((item) => ({
+    ...item, kind, searchKey: `${kind}:${item.id}`,
+  })));
 }
 export function matchesTransaction(item, filter) {
   return filter === 'todos' || (filter === 'pago' ? item.valor_pago > 0 : item.situacao === filter);

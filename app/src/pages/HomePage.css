@@ -122,9 +122,9 @@
 }
 
 /* ---------- 2–3. Saúde + andamento ---------- */
-.home-faixa-saude {
+.home-operational {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   align-items: stretch;
 }
@@ -439,10 +439,10 @@
   .home-kpis {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .home-faixa-saude {
+  .home-operational {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .home-faixa-saude .home-saude {
+  .home-operational .home-saude {
     grid-column: 1 / -1;
   }
 }
@@ -457,7 +457,7 @@
   .home-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .home-faixa-saude {
+  .home-operational {
     grid-template-columns: 1fr;
   }
   .home-saude-corpo {
@@ -516,10 +516,10 @@
 .home-card-head .section-title {
   line-height: 1.4;
 }
-.home-faixa-saude {
+.home-operational {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
-.home-faixa-saude .home-saude {
+.home-operational .home-saude {
   grid-column: 1/-1;
 }
 .home-saude-headline {
@@ -539,7 +539,7 @@
     border-top: 1px solid var(--border-subtle);
     padding-top: 14px;
   }
-  .home-faixa-saude {
+  .home-operational {
     grid-template-columns: minmax(0, 1fr);
   }
   .home-saude-corpo {
