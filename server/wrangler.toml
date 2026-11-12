@@ -26,7 +26,10 @@ id = "f7c0517da71c4759b1551e30a71322d2"
 crons = ["0 * * * *"]
 
 [vars]
-APP_URL = "https://lucri-cockpit.pages.dev"
+# Endereço canônico usado pelos retornos OAuth e links de recuperação.
+APP_URL = "https://cockpit.lucribpo.com.br"
+# Mantém o endereço anterior autorizado durante a transição.
+ADDITIONAL_APP_ORIGINS = "https://lucri-cockpit.pages.dev"
 EMAIL_REMETENTE = "Lucri Cockpit <nao-responda@lucrifinancas.com.br>"
 CONTA_AZUL_CLIENT_ID = "505p89h6j5qc34l6gdgadjtjau"
 CONTA_AZUL_REDIRECT_URI = "https://lucri-cockpit-server.lucrifinancas-54e.workers.dev/api/contaazul/callback"

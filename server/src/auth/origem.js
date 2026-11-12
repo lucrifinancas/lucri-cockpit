@@ -1,4 +1,4 @@
-// Uma única fonte de verdade pra "essa origem pode falar com a API" — usada
+// Uma única fonte de verdade para as origens oficiais que podem falar com a API — usada
 // tanto pelo CORS (o que o navegador deixa o front LER) quanto pelo guard de
 // CSRF (o que o backend deixa EXECUTAR). Antes essa lista vivia só dentro do
 // cors() do index.js, e localhost/rede local ficavam liberados mesmo em
@@ -18,10 +18,15 @@ export function ehDesenvolvimento(c) {
 export function origemPermitida(origin, c) {
   if (!origin) return false;
   if (origin === c.env.APP_URL) return true;
+  const aliases = String(c.env.ADDITIONAL_APP_ORIGINS ?? '').split(',').map(value => value.trim());
+  if (aliases.some(value => {
+    try { const url = new URL(value); return url.protocol === 'https:' && url.origin === value && origin === value; }
+    catch { return false; }
+  })) return true;
 
   // Localhost/rede local só valem em desenvolvimento. Em produção, mesmo que
   // alguém finja falar de localhost no cabeçalho Origin, não é aceito — só
-  // a origem oficial.
+  // as origens oficiais explicitamente configuradas.
   if (!ehDesenvolvimento(c)) return false;
 
   return LOCALHOST.test(origin) || REDE_LOCAL.test(origin);
