@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import logoSymbol from "../assets/lucri-logo.png";
 import { useAuth } from "../auth/AuthContext";
-import { ROLE_LABELS, isInternalRole } from "../auth/roles";
+import { ROLE_LABELS } from "../auth/roles";
 import { useActiveClient } from "../context/ClientContext";
 import { useLocalProfile } from "../hooks/useLocalProfile";
 import PeriodSelector from "../components/PeriodSelector";
@@ -28,7 +28,7 @@ const NAV_ITEMS = [
   { to: "/saidas", label: "Saídas", icon: ArrowCircleUp },
   { to: "/contas-a-pagar", label: "Contas a pagar", icon: Invoice },
   { to: "/caixa", label: "Caixa", icon: Vault },
-  { to: "/relatorios", label: "Relatórios", icon: FileText, internal: true },
+  { to: "/relatorios", label: "Relatórios", icon: FileText },
 ];
 
 export default function AppLayout() {
@@ -45,7 +45,7 @@ export default function AppLayout() {
     setSelectedClientId,
   } = useActiveClient();
   const profile = useLocalProfile(user?.email);
-  const navItems = NAV_ITEMS.filter((item) => !item.internal || isInternalRole(user?.papel));
+  const navItems = NAV_ITEMS;
 
   return (
     <div className="app-shell">
@@ -140,7 +140,7 @@ export default function AppLayout() {
           </div>
         </div>
         {clientsError && <span role="alert">Não foi possível identificar a empresa. Atualize a página para tentar novamente.</span>}
-        {!["/", "/ajustes"].includes(pathname) && <GlobalSearch />}
+        {["/entradas", "/saidas"].includes(pathname) && <GlobalSearch />}
         <div className="context-period">
           <span className="context-label">Período de análise</span>
           {pathname === "/balanco" ? <span>Posição atual</span> : pathname === "/relatorios" ? <span>Todos os relatórios da empresa</span> : <PeriodSelector />}

@@ -1,4 +1,5 @@
 import { contextoAuditoria } from '../utils/observabilidade.js';
+import { pdfDisposition } from "../utils/pdfResponse.js";
 import { Hono } from "hono";
 import { exigirPapel, exigirLeituraCliente } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
@@ -343,14 +344,17 @@ clientesRoutes.delete("/:id/convites/:conviteId", exigirPapel("master"), async (
   return c.json({ ok: true });
 });
 
-// Relatórios antigos (PDF) do cliente — seção interna da equipe Lucri, não
-// aparece no portal do cliente final. Metadados no D1, arquivo no Workers
+// Relatórios PDF: equipe gerencia; cliente lê e baixa somente os da própria empresa. Metadados no D1, arquivo no Workers
 // KV (ver db/relatorios.js e o binding RELATORIOS_KV no wrangler.toml —
 // KV em vez de R2 de propósito, pra não precisar ativar uma assinatura com
 // cartão cadastrado só pra isso; o nível gratuito do KV já basta).
-clientesRoutes.get("/:id/relatorios", exigirPapel("master", "analista"), async (c) => {
+clientesRoutes.get("/:id/relatorios", exigirLeituraCliente("id"), async (c) => {
   const clienteId = Number(c.req.param("id"));
-  return c.json(await listarRelatorios(c.env.DB, clienteId));
+  const relatorios = await listarRelatorios(c.env.DB, clienteId);
+  c.header("Cache-Control", "private, no-store");
+  return c.json(c.get("usuario").papel === "cliente"
+    ? relatorios.map(({ enviado_por_email: _enviadoPorEmail, ...relatorio }) => relatorio)
+    : relatorios);
 });
 
 // Upload — multipart/form-data com os campos referencia (texto) e arquivo
@@ -398,10 +402,11 @@ clientesRoutes.post("/:id/relatorios", exigirPapel("master", "analista"), async 
 });
 
 // Baixa/abre o PDF em si (o resto dos campos já veio em GET /relatorios).
-clientesRoutes.get("/:id/relatorios/:relatorioId/arquivo", exigirPapel("master", "analista"), async (c) => {
+clientesRoutes.get("/:id/relatorios/:relatorioId/arquivo", exigirLeituraCliente("id"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   const relatorioId = Number(c.req.param("relatorioId"));
 
+  if (!Number.isSafeInteger(relatorioId) || relatorioId <= 0) return c.json({ erro: "Relatório inválido." }, 400);
   const relatorio = await buscarRelatorio(c.env.DB, clienteId, relatorioId);
   if (!relatorio) {
     return c.json({ erro: "Relatório não encontrado." }, 404);
@@ -412,10 +417,11 @@ clientesRoutes.get("/:id/relatorios/:relatorioId/arquivo", exigirPapel("master",
     return c.json({ erro: "Arquivo não encontrado no armazenamento." }, 404);
   }
 
-  const nomeArquivoSeguro = relatorio.nome_arquivo.replace(/"/g, "");
   return c.body(arquivo, 200, {
     "Content-Type": "application/pdf",
-    "Content-Disposition": `inline; filename="${nomeArquivoSeguro}"`,
+    "Content-Disposition": pdfDisposition(relatorio.nome_arquivo, c.req.query("download") === "1"),
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
   });
 });
 

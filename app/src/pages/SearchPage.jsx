@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useActiveClient } from "../context/ClientContext";
 import { useTransactionSearch } from "../hooks/useTransactionSearch";
 import { filterTransactions, matchesTransaction, searchableTransactions, TRANSACTION_FILTERS } from "../data/transactions";
@@ -42,13 +42,14 @@ export default function SearchPage() {
           <h1 className="page-title">Busca geral</h1>
           <p className="page-description">Encontre recebimentos e pagamentos por descrição, categoria ou pessoa.</p>
         </div>
+        <Link to="/entradas" className="pending-notice-link">Nova busca em Entradas →</Link>
       </header>
       <p className="search-scope">
         <strong>{activeClient?.name ?? "Empresa selecionada"}</strong> · Vencimento: {formatRange(data.range)}.
         Contas a pagar estão incluídas nas saídas, sem duplicar títulos.
       </p>
       {query.length < 2 ? (
-        <div className="pending-notice" role="status">Use a busca no topo para pesquisar com pelo menos dois caracteres. Para consultar outros meses, altere o período de análise.</div>
+        <div className="pending-notice" role="status">Inicie uma busca em Entradas ou Saídas usando pelo menos dois caracteres. Para consultar outros meses, altere o período de análise.</div>
       ) : (
         <>
           <div className="search-refinements">
