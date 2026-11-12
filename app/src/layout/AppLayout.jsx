@@ -140,7 +140,7 @@ export default function AppLayout() {
           </div>
         </div>
         {clientsError && <span role="alert">Não foi possível identificar a empresa. Atualize a página para tentar novamente.</span>}
-        {pathname !== "/" && <GlobalSearch />}
+        {!["/", "/ajustes"].includes(pathname) && <GlobalSearch />}
         <div className="context-period">
           <span className="context-label">Período de análise</span>
           {pathname === "/balanco" ? <span>Posição atual</span> : pathname === "/relatorios" ? <span>Todos os relatórios da empresa</span> : <PeriodSelector />}
