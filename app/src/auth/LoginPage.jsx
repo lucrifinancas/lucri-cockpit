@@ -10,6 +10,7 @@ import "./LoginPage.css";
 // devolve em caso de erro (ver API-CONTRACT.md). Sem entrada = erro
 // genérico.
 const ERROS_GOOGLE = {
+  acesso_desativado: "Seu acesso está desativado. Fale com o administrador da Lucri.",
   email_nao_verificado: "Seu e-mail do Google ainda não foi verificado. Verifica na sua conta Google e tenta de novo.",
   conta_nao_encontrada: "Não existe conta nem convite pra esse e-mail. Fala com quem te convidou.",
   erro: "Não deu pra entrar com o Google agora. Tenta de novo.",

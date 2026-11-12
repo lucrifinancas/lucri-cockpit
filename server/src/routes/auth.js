@@ -46,7 +46,7 @@ authRoutes.post("/login", async (c) => {
   }
 
   const usuario = await buscarUsuarioPorEmail(c.env.DB, email);
-  if (!usuario) {
+  if (!usuario || usuario.ativo === 0) {
     return c.json({ erro: "E-mail ou senha incorretos." }, 401);
   }
 
@@ -136,7 +136,7 @@ authRoutes.post("/esqueci-senha", async (c) => {
   }
 
   const usuario = await buscarUsuarioPorEmail(c.env.DB, email);
-  if (usuario) {
+  if (usuario && usuario.ativo !== 0) {
     await apagarTokensResetDoUsuario(c.env.DB, usuario.id);
 
     const token = gerarTokenReset();
@@ -166,7 +166,7 @@ authRoutes.post("/redefinir-senha", async (c) => {
   // Confere e apaga o token na mesma operação — ninguém mais consegue usar
   // esse link de novo, nem em duas abas ao mesmo tempo.
   const usuario = await consumirTokenReset(c.env.DB, token);
-  if (!usuario) {
+  if (!usuario || usuario.ativo === 0) {
     return c.json({ erro: "Link inválido ou expirado. Peça uma nova redefinição." }, 400);
   }
 

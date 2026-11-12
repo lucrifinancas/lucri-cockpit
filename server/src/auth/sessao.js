@@ -65,7 +65,7 @@ export async function lerSessaoOriginal(c, segredo, db) {
   if (!sessao) return null;
 
   const usuario = await buscarUsuarioPorId(db, sessao.sub);
-  if (!usuario || usuario.sessao_versao !== sessao.versao) return null;
+  if (!usuario || usuario.ativo === 0 || usuario.sessao_versao !== sessao.versao) return null;
 
   return { ...sessao, email: usuario.email, papel: usuario.papel, cliente_id: usuario.cliente_id ?? null };
 }
@@ -80,7 +80,7 @@ export async function lerSessaoValida(c, segredo, db) {
     const visao = await verify(token, segredo, 'HS256');
     if (visao.tipo !== 'visao_cliente' || original.papel !== 'master' || visao.ator_id !== original.sub || visao.ator_versao !== original.versao) return null;
     const alvo = await buscarUsuarioPorId(db, visao.alvo_id);
-    if (!alvo || alvo.papel !== 'cliente' || !alvo.cliente_id || alvo.sessao_versao !== visao.alvo_versao) return null;
+    if (!alvo || alvo.ativo === 0 || alvo.papel !== 'cliente' || !alvo.cliente_id || alvo.sessao_versao !== visao.alvo_versao) return null;
     return { sub: alvo.id, email: alvo.email, papel: alvo.papel, cliente_id: alvo.cliente_id,
       versao: alvo.sessao_versao, acesso_assistido: { administrador_id: original.sub, administrador_email: original.email, expira_em: visao.exp } };
   } catch { return null; }

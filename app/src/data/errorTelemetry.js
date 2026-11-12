@@ -12,8 +12,9 @@ export function setTelemetryClient(id) { activeClientId = Number.isSafeInteger(N
 export function safeOperation(value) {
   const path = String(value ?? '').split(/[?#]/, 1)[0];
   if (PAGES.has(path)) return path;
-  const normalized = path.replace(/^(\/api\/admin\/usuarios)\/\d+/, '$1/:usuarioId').replace(/^(\/api\/clientes)\/\d+/, '$1/:id')
+  const normalized = path.replace(/^(\/api\/central-acessos\/usuarios)\/\d+/, '$1/:usuarioId').replace(/^(\/api\/admin\/usuarios)\/\d+/, '$1/:usuarioId').replace(/^(\/api\/clientes)\/\d+/, '$1/:id')
     .replace(/^(\/api\/clientes\/:id\/(?:maes|maes-receita|convites|relatorios))\/[^/]+/, '$1/:item');
+  if (/^\/api\/central-acessos\/(?:usuarios|auditoria|usuarios\/:usuarioId(?:\/redefinir-senha)?)$/.test(normalized)) return normalized;
   if (/^\/api\/(?:perfil|admin\/(?:sessao|voltar)|admin\/usuarios\/:usuarioId\/(?:perfil|acessar)|clientes\/:id\/auditoria-acessos)$/.test(normalized)) return normalized;
   return /^\/api\/(?:clientes(?:\/:id(?:\/(?:home|entradas|saidas|despesas|caixa|dre|balanco|historico-mensal|categorias|maes|maes-receita|contas-pagar-maes|auditoria-categorias|categorias-pai|convites|usuarios|login|relatorios))?(?:\/(?:receitas|despesas|:item)(?:\/arquivo)?)?)?|auth\/(?:me|login|logout|alterar-senha|esqueci-senha|redefinir-senha)|registros\/erros)$/.test(normalized) ? normalized : '/desconhecida';
 }

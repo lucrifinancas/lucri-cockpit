@@ -82,6 +82,7 @@ authGoogleRoutes.get("/callback", async (c) => {
     await apagarConvitePorEmail(c.env.DB, usuarioGoogle.email);
   }
 
+  if (usuario.ativo === 0) return c.redirect(`${urlApp}/?google=acesso_desativado`);
   await criarSessao(c, usuario, c.env.JWT_SECRET);
   return c.redirect(urlApp);
 });

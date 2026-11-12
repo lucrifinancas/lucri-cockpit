@@ -20,6 +20,7 @@ import PerfilSecao from "./ajustes/PerfilSecao";
 import AparenciaSecao from "./ajustes/AparenciaSecao";
 import ClientesSecao from "./ajustes/ClientesSecao";
 import AcessosSecao from "./ajustes/AcessosSecao";
+import CentralAcessosSecao from "./ajustes/CentralAcessosSecao";
 import IntegracoesSecao from "./ajustes/IntegracoesSecao";
 import HomeSecao from "./ajustes/HomeSecao";
 import CategoriasSecao from "./ajustes/CategoriasSecao";
@@ -34,6 +35,7 @@ import "./AjustesPage.css";
 // pode usar (mesmas regras de antes: clientes/categorias só master; Home pra
 // equipe; perfil e aparência pra todos).
 const SECOES = {
+  "central-acessos": { label: "Central de acessos", Icone: Users, Componente: CentralAcessosSecao, pode: p => p.master },
   registros: { label: 'Registros', Icone: ClipboardText, Componente: RegistrosSecao, pode: p => p.master },
   perfil: {
     label: "Perfil",
@@ -87,6 +89,7 @@ const SECOES = {
 
 const GRUPOS = [
   { titulo: "Minha conta", itens: ["perfil", "aparencia"] },
+  { titulo: "Administração", itens: ["central-acessos"] },
   { titulo: "Clientes", itens: ["clientes", "acessos", "integracoes"] },
   { titulo: "Cockpit", itens: ["home", "categorias", "contas-pagar", "registros"] },
 ];

@@ -14,6 +14,7 @@ import { observarRequisicao } from "./middleware/observabilidade.js";
 import { registrosRoutes, auditoriaRoutes } from "./routes/registros.js";
 import { limparRegistros } from "./db/registros.js";
 import { perfisRoutes } from './routes/perfis.js';
+import { centralAcessosRoutes } from './routes/centralAcessos.js';
 
 const app = new Hono();
 app.use('*', observarRequisicao);
@@ -65,6 +66,7 @@ app.route("/api/clientes", financeiroRoutes);
 app.route('/api/registros', registrosRoutes);
 app.route('/api/clientes', auditoriaRoutes);
 app.route('/api', perfisRoutes);
+app.route('/api/central-acessos', centralAcessosRoutes);
 
 export default {
   fetch: app.fetch,

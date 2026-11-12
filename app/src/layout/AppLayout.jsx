@@ -32,7 +32,8 @@ const NAV_ITEMS = [
 ];
 
 export default function AppLayout() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const central = pathname === "/ajustes" && new URLSearchParams(search).get("secao") === "central-acessos";
   const confirmLeave = useConfirmLeave();
   const { user, logout } = useAuth();
   const {
@@ -114,7 +115,7 @@ export default function AppLayout() {
       </header>
 
       {user?.acesso_assistido && <AssistedAccess />}
-      <section className="app-context" aria-label="Empresa e período">
+      {!central && <section className="app-context" aria-label="Empresa e período">
         <div className="context-company">
           <span className="context-label">Empresa</span>
           <div className="topnav-client">
@@ -145,7 +146,7 @@ export default function AppLayout() {
           <span className="context-label">Período de análise</span>
           {pathname === "/balanco" ? <span>Posição atual</span> : pathname === "/relatorios" ? <span>Todos os relatórios da empresa</span> : <PeriodSelector />}
         </div>
-      </section>
+      </section>}
 
       <main className="app-content">
         <Outlet />

@@ -1,5 +1,7 @@
 // Lista fechada: nunca registrar URL completa, query string ou segmentos livres.
 const apiRoutes = [
+  /^\/api\/central-acessos\/(?:usuarios|auditoria)$/,
+  /^\/api\/central-acessos\/usuarios\/:usuarioId(?:\/redefinir-senha)?$/,
   /^\/api\/perfil$/, /^\/api\/admin\/(?:sessao|voltar)$/,
   /^\/api\/admin\/usuarios\/:usuarioId\/(?:perfil|acessar)$/,
   /^\/api\/clientes\/:id\/auditoria-acessos$/,
@@ -16,7 +18,7 @@ const pages = new Set(['/', '/entradas', '/saidas', '/despesas', '/caixa', '/con
 export function normalizarOperacao(value) {
   const path = String(value ?? '').split(/[?#]/, 1)[0];
   if (pages.has(path)) return path;
-  const normalized = path.replace(/^(\/api\/admin\/usuarios)\/\d+/, '$1/:usuarioId').replace(/^(\/api\/clientes)\/\d+/, '$1/:id')
+  const normalized = path.replace(/^(\/api\/central-acessos\/usuarios)\/\d+/, '$1/:usuarioId').replace(/^(\/api\/admin\/usuarios)\/\d+/, '$1/:usuarioId').replace(/^(\/api\/clientes)\/\d+/, '$1/:id')
     .replace(/^(\/api\/contaazul\/autorizar)\/\d+$/, '$1/:id')
     .replace(/^(\/api\/clientes\/:id\/(?:maes|maes-receita|convites|relatorios))\/[^/]+/, '$1/:item');
   return apiRoutes.some(pattern => pattern.test(normalized)) ? normalized : '/desconhecida';

@@ -46,6 +46,7 @@ perfisRoutes.put('/admin/usuarios/:usuarioId/perfil', exigirPapel('master'), asy
 });
 perfisRoutes.post('/admin/usuarios/:usuarioId/acessar', exigirPapel('master'), async c => {
   const u = await alvoCliente(c);
+  if (u?.ativo === 0) return c.json({ erro: 'O acesso dessa pessoa está desativado.' }, 409);
   if (!u) return c.json({ erro: 'Usuário cliente não encontrado.' }, 404);
   await registrarAcesso(c.env.DB, { atorId: c.get('usuario').sub, usuario: u, acao: 'acesso_iniciado', requestId: c.get('requestId') });
   await criarVisao(c, c.get('usuario'), u);
