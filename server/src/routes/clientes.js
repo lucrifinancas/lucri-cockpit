@@ -1,3 +1,4 @@
+import { contextoAuditoria } from '../utils/observabilidade.js';
 import { Hono } from "hono";
 import { exigirPapel, exigirLeituraCliente } from "../auth/guard.js";
 import { criarCliente, listarClientes, buscarClientePorId } from "../db/clientes.js";
@@ -132,7 +133,7 @@ clientesRoutes.put("/:id/categorias/despesas", exigirPapel("master"), async (c) 
     return c.json({ erro: "mae_id não pertence a esse cliente." }, 400);
   }
 
-  await salvarCategoriasDespesa(c.env.DB, clienteId, categorias);
+  await salvarCategoriasDespesa(c.env.DB, clienteId, categorias, contextoAuditoria(c));
   return c.json({ ok: true });
 });
 
@@ -151,7 +152,7 @@ clientesRoutes.put("/:id/categorias/receitas", exigirPapel("master"), async (c) 
     return c.json({ erro: "Cada receita precisa de categoria_id, categoria_nome e uma mae_id desse cliente." }, 400);
   }
 
-  await salvarCategoriasReceita(c.env.DB, clienteId, categorias);
+  await salvarCategoriasReceita(c.env.DB, clienteId, categorias, contextoAuditoria(c));
   return c.json({ ok: true });
 });
 
@@ -199,7 +200,7 @@ clientesRoutes.put("/:id/categorias-pai", exigirPapel("master"), async (c) => {
     return c.json({ erro: "Campo 'categorias_pai' precisa ser uma lista." }, 400);
   }
 
-  await salvarNomesPai(c.env.DB, clienteId, categorias_pai);
+  await salvarNomesPai(c.env.DB, clienteId, categorias_pai, contextoAuditoria(c));
   return c.json({ ok: true });
 });
 
@@ -219,7 +220,7 @@ clientesRoutes.post("/:id/maes", exigirPapel("master"), async (c) => {
     return c.json({ erro: "Nome é obrigatório." }, 400);
   }
 
-  const mae = await criarMae(c.env.DB, clienteId, nomeLimpo);
+  const mae = await criarMae(c.env.DB, clienteId, nomeLimpo, contextoAuditoria(c));
   if (!mae) {
     return c.json({ erro: "Esse cliente já tem uma categoria-mãe com esse nome." }, 409);
   }
@@ -230,7 +231,7 @@ clientesRoutes.delete("/:id/maes/:maeId", exigirPapel("master"), async (c) => {
   const clienteId = Number(c.req.param("id"));
   const maeId = Number(c.req.param("maeId"));
 
-  const resultado = await removerMae(c.env.DB, clienteId, maeId);
+  const resultado = await removerMae(c.env.DB, clienteId, maeId, contextoAuditoria(c));
   if (resultado === "nao_encontrada") {
     return c.json({ erro: "Categoria-mãe não encontrada." }, 404);
   }
@@ -260,7 +261,7 @@ clientesRoutes.put("/:id/contas-pagar-maes", exigirPapel("master"), async (c) =>
     return c.json({ erro: "mae_id não pertence a esse cliente." }, 400);
   }
 
-  await salvarMaesContasPagar(c.env.DB, clienteId, ids);
+  await salvarMaesContasPagar(c.env.DB, clienteId, ids, contextoAuditoria(c));
   return c.json({ ok: true });
 });
 
@@ -279,7 +280,7 @@ clientesRoutes.post("/:id/maes-receita", exigirPapel("master"), async (c) => {
     return c.json({ erro: "Nome é obrigatório." }, 400);
   }
 
-  const mae = await criarMaeReceita(c.env.DB, clienteId, nomeLimpo);
+  const mae = await criarMaeReceita(c.env.DB, clienteId, nomeLimpo, contextoAuditoria(c));
   if (!mae) {
     return c.json({ erro: "Esse cliente já tem uma categoria-mãe de receita com esse nome." }, 409);
   }
@@ -290,7 +291,7 @@ clientesRoutes.delete("/:id/maes-receita/:maeId", exigirPapel("master"), async (
   const clienteId = Number(c.req.param("id"));
   const maeId = Number(c.req.param("maeId"));
 
-  const resultado = await removerMaeReceita(c.env.DB, clienteId, maeId);
+  const resultado = await removerMaeReceita(c.env.DB, clienteId, maeId, contextoAuditoria(c));
   if (resultado === "nao_encontrada") {
     return c.json({ erro: "Categoria-mãe não encontrada." }, 404);
   }

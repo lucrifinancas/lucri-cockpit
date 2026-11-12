@@ -1,6 +1,6 @@
 import "../styles/page.css";
 
-export default function FinanceDataState({ title, loading, error, retry, awaitingClient }) {
+export default function FinanceDataState({ title, loading, error, errorId, retry, awaitingClient }) {
   return (
     <div className="page">
       <h1 className="page-title">{title}</h1>
@@ -9,6 +9,7 @@ export default function FinanceDataState({ title, loading, error, retry, awaitin
       ) : error ? (
         <div className="pending-notice" role="alert">
           <p>Não foi possível carregar os dados financeiros. Os valores estão indisponíveis.</p>
+          {errorId && <p>Referência do erro: <code>{errorId}</code></p>}
           <button type="button" onClick={retry}>Tentar novamente</button>
         </div>
       ) : loading ? (

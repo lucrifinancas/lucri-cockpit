@@ -26,7 +26,7 @@ export async function obterAccessTokenValido(db, env, clienteId) {
     const novosTokens = await renovarToken(env, conexao.refresh_token);
     await atualizarTokens(db, clienteId, novosTokens);
     return novosTokens.accessToken;
-  } catch (erro) {
+  } catch {
     // Pode ser que outra requisição concorrente já tenha renovado esse
     // mesmo token entre o momento em que lemos e agora (o refresh_token do
     // Conta Azul só serve uma vez por renovação) — antes de desistir,
@@ -36,7 +36,7 @@ export async function obterAccessTokenValido(db, env, clienteId) {
       return conexaoAtualizada.access_token;
     }
 
-    console.error(`Falha ao renovar token do cliente ${clienteId}:`, erro);
+    // O chamador registra a falha de forma estruturada, sem tokens ou corpo da API.
     throw new ContaAzulDesconectadaError(clienteId);
   }
 }

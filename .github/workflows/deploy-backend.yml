@@ -19,9 +19,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Node para testes e deploy
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Instalar dependências
         working-directory: server
         run: npm ci
+
+      - name: Testar backend
+        working-directory: server
+        run: npm test
+
+      # Só a migração nova, aditiva e idempotente: não reaplica o histórico.
+      - name: Preparar tabelas de registros
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: server
+          command: d1 execute DB --remote --file=src/db/migrations/0014_registros.sql
 
       - name: Deploy no Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

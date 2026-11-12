@@ -1,5 +1,30 @@
 # Contrato da API — Lucri Cockpit
 
+## Registros de erros e auditoria de categorias (12/11/2026)
+
+- `GET /api/registros/erros`: somente master. Filtros opcionais `cliente_id`,
+  `antes` (ID do último item da página anterior) e `limite` (1–100; padrão 25).
+- `GET /api/clientes/:id/auditoria-categorias`: somente master, com `antes` e `limite`.
+- Ambas retornam `{ itens: [...], proximo: number | null }`, mais recentes primeiro.
+  A auditoria inclui `acao`, `antes`, `depois`, `usuario_id`, `usuario_email`,
+  `criado_em`, `request_id` e `versao`. A identidade é derivada da sessão.
+- `POST /api/registros/erros`: sessão válida; relato de navegador com no máximo
+  2 KB e 20 eventos/minuto/usuário. Aceita somente códigos predefinidos,
+  operação normalizada, método, versão, empresa e referência UUID. Dados livres
+  são descartados. O cliente final não pode indicar outra empresa.
+- Falhas inesperadas e de conexão Conta Azul no backend retornam `request_id`;
+  todas as respostas têm `X-Request-ID`, exposto no CORS. O front anexa a versão
+  na query `versao_app`, sem exigir cabeçalho novo do backend anterior.
+- Não são armazenados corpos HTTP, mensagens/stack brutos, queries, senhas,
+  tokens ou valores financeiros. Histórico guarda apenas configuração de categorias.
+- Auditoria é transacional, ignora no-op e não possui endpoint público de escrita.
+  Alterações anteriores à ativação não são reconstruídas como eventos novos.
+- Retenção: erros 30 dias; auditoria 365 dias, com limpeza no cron existente.
+
+Ativação exige `server/src/db/migrations/0014_registros.sql` antes do Worker novo.
+O deploy prepara somente essa migração idempotente, sem reaplicar as antigas.
+
+
 Formato de request/response de cada endpoint do backend, testado com dados
 reais. Base URL (produção): `https://lucri-cockpit-server.lucrifinancas-54e.workers.dev`
 

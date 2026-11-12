@@ -10,18 +10,23 @@ import { ContaAzulDesconectadaError } from "./contaazul/errors.js";
 import { recalcularHistoricoPendente } from "./cron/historico.js";
 import { origemPermitida } from "./auth/origem.js";
 import { bloquearCsrf } from "./middleware/csrf.js";
+import { observarRequisicao } from "./middleware/observabilidade.js";
+import { registrosRoutes, auditoriaRoutes } from "./routes/registros.js";
+import { limparRegistros } from "./db/registros.js";
 
 const app = new Hono();
+app.use('*', observarRequisicao);
 
 // Tratamento central de erros — qualquer rota que jogue esse erro específico
 // vira uma resposta clara (409), em vez de um 500 genérico que o front não
 // consegue diferenciar de um bug qualquer.
 app.onError((erro, c) => {
   if (erro instanceof ContaAzulDesconectadaError) {
-    return c.json({ erro: "conta_azul_desconectada" }, 409);
+    c.set('codigoErro', 'CONTA_AZUL_DESCONECTADA');
+    return c.json({ erro: "conta_azul_desconectada", request_id: c.get('requestId') }, 409);
   }
-  console.error(erro);
-  return c.json({ erro: "Erro interno do servidor." }, 500);
+  c.set('codigoErro', 'ERRO_INTERNO');
+  return c.json({ erro: "Erro interno do servidor.", request_id: c.get('requestId') }, 500);
 });
 
 // Só o front oficial (definido em APP_URL) pode chamar essa API, e só ele
@@ -35,7 +40,8 @@ app.use(
   cors({
     origin: (origin, c) => (origemPermitida(origin, c) ? origin : ""),
     credentials: true,
-    allowHeaders: ["Content-Type"],
+    allowHeaders: ["Content-Type", "X-App-Version"],
+    exposeHeaders: ["X-Request-ID"],
   })
 );
 
@@ -55,6 +61,8 @@ app.route("/api/clientes", clientesRoutes);
 app.route("/api/contaazul", contaazulOnboardingRoutes);
 app.route("/api/clientes", homeRoutes);
 app.route("/api/clientes", financeiroRoutes);
+app.route('/api/registros', registrosRoutes);
+app.route('/api/clientes', auditoriaRoutes);
 
 export default {
   fetch: app.fetch,
@@ -63,5 +71,6 @@ export default {
   // requisições HTTP, roda em paralelo via waitUntil.
   scheduled(event, env, ctx) {
     ctx.waitUntil(recalcularHistoricoPendente(env));
+    ctx.waitUntil(limparRegistros(env.DB));
   },
 };

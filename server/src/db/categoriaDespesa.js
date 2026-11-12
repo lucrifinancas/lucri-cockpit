@@ -1,3 +1,5 @@
+import { batchAuditado, snapshotMapeamento } from './auditoria.js';
+
 // Override manual de "essa categoria conta como despesa?" — só existe uma
 // linha aqui quando o master mexeu explicitamente naquela categoria (ver
 // utils/despesas.js: sem override, vale o tipo=DESPESA automático do Conta
@@ -28,7 +30,7 @@ export async function listarMaesPorCategoria(db, clienteId) {
 // Substitui os overrides do cliente pela lista recebida — só as categorias
 // onde o master escolheu diferente do automático precisam vir aqui (ver
 // AjustesPage.jsx: manda só o diff, não a lista inteira de categorias).
-export async function salvarCategoriasDespesa(db, clienteId, categorias) {
+export async function salvarCategoriasDespesa(db, clienteId, categorias, contexto) {
   const statements = [
     db.prepare("DELETE FROM categoria_despesa WHERE cliente_id = ?").bind(clienteId),
     ...categorias.map((cat) =>
@@ -40,5 +42,5 @@ export async function salvarCategoriasDespesa(db, clienteId, categorias) {
         .bind(clienteId, cat.categoria_id, cat.categoria_nome, cat.is_despesa ? 1 : 0, cat.mae_id ?? null)
     ),
   ];
-  await db.batch(statements);
+  await batchAuditado(db, { clienteId, contexto, acao: 'mapeamento_despesas', snapshot: snapshotMapeamento('despesas'), bindings: [clienteId] }, statements);
 }

@@ -1,3 +1,5 @@
+import { batchAuditado } from './auditoria.js';
+
 export async function listarNomesPai(db, clienteId) {
   const { results } = await db
     .prepare("SELECT categoria_pai_id, nome FROM categoria_pai_nome WHERE cliente_id = ?")
@@ -7,7 +9,7 @@ export async function listarNomesPai(db, clienteId) {
 }
 
 // Substitui a lista inteira recebida (mesmo padrão de salvarCategoriasDespesa).
-export async function salvarNomesPai(db, clienteId, nomes) {
+export async function salvarNomesPai(db, clienteId, nomes, contexto) {
   const statements = nomes.map((n) =>
     db
       .prepare(
@@ -17,5 +19,7 @@ export async function salvarNomesPai(db, clienteId, nomes) {
       )
       .bind(clienteId, n.categoria_pai_id, n.nome)
   );
-  if (statements.length) await db.batch(statements);
+  if (statements.length) await batchAuditado(db, { clienteId, contexto, acao: 'nomes_categorias_pai',
+    snapshot: `SELECT COALESCE(json_group_array(json_object('id', categoria_pai_id, 'nome', nome)), '[]')
+      FROM (SELECT * FROM categoria_pai_nome WHERE cliente_id = ? ORDER BY categoria_pai_id)`, bindings: [clienteId] }, statements);
 }

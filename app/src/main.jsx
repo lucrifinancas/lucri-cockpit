@@ -6,6 +6,10 @@ import "./styles/tokens.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { installErrorTelemetry } from './data/errorTelemetry.js';
+import { BASE_URL } from './api/client.js';
+
+installErrorTelemetry(BASE_URL);
 
 // Data router permite bloquear navegação e o botão Voltar com edição pendente.
 const router = createBrowserRouter([

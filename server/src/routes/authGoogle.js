@@ -53,8 +53,8 @@ authGoogleRoutes.get("/callback", async (c) => {
   let usuarioGoogle;
   try {
     usuarioGoogle = await obterUsuarioGoogle(c.env, code);
-  } catch (erro) {
-    console.error(erro);
+  } catch {
+    c.set('codigoErro', 'FALHA_LOGIN_GOOGLE');
     return c.redirect(`${urlApp}/?google=erro`);
   }
 

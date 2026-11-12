@@ -12,7 +12,7 @@ function buildQuery(range) {
   return qs ? `?${qs}` : "";
 }
 
-const emptyState = { home: null, entradas: null, saidas: null, despesas: [], previousHome: null, previousEntradas: null, previousSaidas: null, previousDespesas: [], loading: true, error: null };
+const emptyState = { home: null, entradas: null, saidas: null, despesas: [], previousHome: null, previousEntradas: null, previousSaidas: null, previousDespesas: [], loading: true, error: null, errorId: null };
 
 // Hook único de acesso a dado financeiro da Home.
 // `home`/`entradas`/`saidas`/`despesas` vêm da API real (ver API-CONTRACT.md).
@@ -76,7 +76,7 @@ export function useFinanceData() {
         });
       })
       .catch((err) => {
-        if (!cancelled) setState({ ...emptyState, loading: false, error: err.message, requestKey });
+        if (!cancelled) setState({ ...emptyState, loading: false, error: err.message, errorId: err.requestId ?? null, requestKey });
       });
 
     return () => {

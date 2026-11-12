@@ -52,8 +52,8 @@ contaazulOnboardingRoutes.get("/callback", async (c) => {
     const tokens = await trocarCodePorToken(c.env, code);
     await salvarConexao(c.env.DB, pendente.cliente_id, tokens);
     return c.redirect(`${urlApp}/ajustes?contaazul=sucesso`);
-  } catch (erro) {
-    console.error(erro);
+  } catch {
+    c.set('codigoErro', 'FALHA_CONEXAO_CONTA_AZUL');
     return c.redirect(`${urlApp}/ajustes?contaazul=erro`);
   }
 });

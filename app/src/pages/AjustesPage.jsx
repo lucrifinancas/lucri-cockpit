@@ -10,6 +10,7 @@ import {
   User,
   UserPlus,
   Users,
+  ClipboardText,
 } from "@phosphor-icons/react";
 import { useAuth } from "../auth/AuthContext";
 import { isInternalRole } from "../auth/roles";
@@ -23,6 +24,7 @@ import IntegracoesSecao from "./ajustes/IntegracoesSecao";
 import HomeSecao from "./ajustes/HomeSecao";
 import CategoriasSecao from "./ajustes/CategoriasSecao";
 import ContasPagarSecao from "./ajustes/ContasPagarSecao";
+import RegistrosSecao from './ajustes/RegistrosSecao';
 import "../styles/page.css";
 import "./AjustesPage.css";
 
@@ -32,6 +34,7 @@ import "./AjustesPage.css";
 // pode usar (mesmas regras de antes: clientes/categorias só master; Home pra
 // equipe; perfil e aparência pra todos).
 const SECOES = {
+  registros: { label: 'Registros', Icone: ClipboardText, Componente: RegistrosSecao, pode: p => p.master },
   perfil: {
     label: "Perfil",
     Icone: User,
@@ -85,7 +88,7 @@ const SECOES = {
 const GRUPOS = [
   { titulo: "Minha conta", itens: ["perfil", "aparencia"] },
   { titulo: "Clientes", itens: ["clientes", "acessos", "integracoes"] },
-  { titulo: "Cockpit", itens: ["home", "categorias", "contas-pagar"] },
+  { titulo: "Cockpit", itens: ["home", "categorias", "contas-pagar", "registros"] },
 ];
 
 export default function AjustesPage() {

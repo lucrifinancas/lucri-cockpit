@@ -45,7 +45,7 @@ async function fetchComRetentativa(url, accessToken) {
     await resp?.body?.cancel(); // descarta o corpo da resposta com erro antes de repetir
     const retryAfter = Number(resp?.headers.get("Retry-After"));
     const espera = retryAfter > 0 ? Math.min(retryAfter * 1000, 3000) : ESPERAS_RETENTATIVA_MS[tentativa];
-    console.warn(`Conta Azul ${url.pathname} ${resp ? resp.status : "falha de rede"} — tentando de novo em ${espera} ms`);
+    console.warn(JSON.stringify({ evento: 'conta_azul_retentativa', status: resp?.status ?? null, espera_ms: espera }));
     await new Promise((r) => setTimeout(r, espera));
   }
 }

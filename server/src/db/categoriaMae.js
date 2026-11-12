@@ -1,3 +1,5 @@
+import { batchAuditado, snapshotGrupo, snapshotContasPagar } from './auditoria.js';
+
 export async function listarMaes(db, clienteId) {
   const { results } = await db
     .prepare("SELECT id, nome FROM categoria_mae WHERE cliente_id = ? ORDER BY nome COLLATE NOCASE")
@@ -7,23 +9,22 @@ export async function listarMaes(db, clienteId) {
 }
 
 // Devolve a mãe criada, ou null se o cliente já tem uma com esse nome.
-export async function criarMae(db, clienteId, nome) {
+export async function criarMae(db, clienteId, nome, contexto) {
   const existente = await db
     .prepare("SELECT id FROM categoria_mae WHERE cliente_id = ? AND nome = ? COLLATE NOCASE")
     .bind(clienteId, nome)
     .first();
   if (existente) return null;
 
-  const { meta } = await db
-    .prepare("INSERT INTO categoria_mae (cliente_id, nome) VALUES (?, ?)")
-    .bind(clienteId, nome)
-    .run();
+  const [{ meta }] = await batchAuditado(db, { clienteId, contexto, acao: 'grupo_despesa_criado', snapshot: snapshotGrupo('despesas', true), bindings: [clienteId, nome] }, [
+    db.prepare('INSERT INTO categoria_mae (cliente_id, nome) VALUES (?, ?)').bind(clienteId, nome),
+  ]);
   return { id: meta.last_row_id, nome };
 }
 
 // Só apaga se nenhuma despesa do cliente estiver usando essa categoria
 // master. Devolve "nao_encontrada", "em_uso" ou "ok".
-export async function removerMae(db, clienteId, maeId) {
+export async function removerMae(db, clienteId, maeId, contexto) {
   const mae = await db
     .prepare("SELECT nome FROM categoria_mae WHERE id = ? AND cliente_id = ?")
     .bind(maeId, clienteId)
@@ -36,7 +37,7 @@ export async function removerMae(db, clienteId, maeId) {
     .first();
   if (emUso) return "em_uso";
 
-  await db.batch([
+  await batchAuditado(db, { clienteId, contexto, acao: 'grupo_despesa_removido', snapshot: snapshotGrupo('despesas'), bindings: [clienteId, maeId] }, [
     db.prepare("DELETE FROM contas_pagar_mae WHERE cliente_id = ? AND mae_id = ?").bind(clienteId, maeId),
     db.prepare("DELETE FROM categoria_mae WHERE id = ? AND cliente_id = ?").bind(maeId, clienteId),
   ]);
@@ -56,8 +57,8 @@ export async function listarMaesContasPagar(db, clienteId) {
   return results;
 }
 
-export async function salvarMaesContasPagar(db, clienteId, maeIds) {
-  await db.batch([
+export async function salvarMaesContasPagar(db, clienteId, maeIds, contexto) {
+  await batchAuditado(db, { clienteId, contexto, acao: 'grupos_contas_pagar', snapshot: snapshotContasPagar, bindings: [clienteId] }, [
     db.prepare("DELETE FROM contas_pagar_mae WHERE cliente_id = ?").bind(clienteId),
     ...maeIds.map((maeId) =>
       db.prepare("INSERT INTO contas_pagar_mae (cliente_id, mae_id) VALUES (?, ?)").bind(clienteId, maeId)

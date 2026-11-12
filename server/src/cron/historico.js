@@ -1,3 +1,4 @@
+import { registrarErro } from '../db/registros.js';
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { computarMes, mesesJanelaBalanco } from "../contaazul/historico.js";
 import { listarClienteIdsConectados } from "../db/conexoesContaazul.js";
@@ -43,9 +44,13 @@ export async function recalcularHistoricoPendente(env) {
       if (!accessToken) continue; // desconectou entre a listagem e agora
       const valores = await computarMes(env.DB, accessToken, clienteId, mes);
       await upsertHistoricoMes(env.DB, clienteId, mes, valores);
-    } catch (erro) {
+    } catch {
       // Um cliente/mês falhando não pode travar os outros da fatia.
-      console.error(`Falha ao recalcular histórico do cliente ${clienteId}, mês ${mes}:`, erro);
+      const requestId = crypto.randomUUID();
+      const event = { requestId, origem: 'backend', codigo: 'FALHA_HISTORICO', operacao: '/tarefas/historico', clienteId };
+      console.error(JSON.stringify({ evento: 'erro_aplicacao', ...event }));
+      try { await registrarErro(env.DB, event); }
+      catch { console.error(JSON.stringify({ evento: 'falha_registro_erro', requestId })); }
     }
   }
 }

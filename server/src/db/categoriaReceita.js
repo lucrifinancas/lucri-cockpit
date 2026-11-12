@@ -1,3 +1,5 @@
+import { batchAuditado, snapshotGrupo, snapshotMapeamento } from './auditoria.js';
+
 // Categoria-mãe das receitas (migração 0011) — mesmo modelo das despesas
 // (categoriaMae.js + categoriaDespesa.js), só que com lista de mães própria
 // (categoria_mae_receita). Sem o override "conta como despesa?": toda
@@ -12,23 +14,22 @@ export async function listarMaesReceita(db, clienteId) {
 }
 
 // Devolve a mãe criada, ou null se o cliente já tem uma com esse nome.
-export async function criarMaeReceita(db, clienteId, nome) {
+export async function criarMaeReceita(db, clienteId, nome, contexto) {
   const existente = await db
     .prepare("SELECT id FROM categoria_mae_receita WHERE cliente_id = ? AND nome = ? COLLATE NOCASE")
     .bind(clienteId, nome)
     .first();
   if (existente) return null;
 
-  const { meta } = await db
-    .prepare("INSERT INTO categoria_mae_receita (cliente_id, nome) VALUES (?, ?)")
-    .bind(clienteId, nome)
-    .run();
+  const [{ meta }] = await batchAuditado(db, { clienteId, contexto, acao: 'grupo_receita_criado', snapshot: snapshotGrupo('receitas', true), bindings: [clienteId, nome] }, [
+    db.prepare('INSERT INTO categoria_mae_receita (cliente_id, nome) VALUES (?, ?)').bind(clienteId, nome),
+  ]);
   return { id: meta.last_row_id, nome };
 }
 
 // Só apaga se nenhuma receita do cliente estiver usando essa mãe.
 // Devolve "nao_encontrada", "em_uso" ou "ok".
-export async function removerMaeReceita(db, clienteId, maeId) {
+export async function removerMaeReceita(db, clienteId, maeId, contexto) {
   const mae = await db
     .prepare("SELECT nome FROM categoria_mae_receita WHERE id = ? AND cliente_id = ?")
     .bind(maeId, clienteId)
@@ -41,7 +42,9 @@ export async function removerMaeReceita(db, clienteId, maeId) {
     .first();
   if (emUso) return "em_uso";
 
-  await db.prepare("DELETE FROM categoria_mae_receita WHERE id = ? AND cliente_id = ?").bind(maeId, clienteId).run();
+  await batchAuditado(db, { clienteId, contexto, acao: 'grupo_receita_removido', snapshot: snapshotGrupo('receitas'), bindings: [clienteId, maeId] }, [
+    db.prepare('DELETE FROM categoria_mae_receita WHERE id = ? AND cliente_id = ?').bind(maeId, clienteId),
+  ]);
   return "ok";
 }
 
@@ -61,8 +64,8 @@ export async function listarMaesPorCategoriaReceita(db, clienteId) {
 
 // Substitui a classificação do cliente pela lista recebida (só as receitas
 // com mãe — receita sem mãe simplesmente não vem).
-export async function salvarCategoriasReceita(db, clienteId, categorias) {
-  await db.batch([
+export async function salvarCategoriasReceita(db, clienteId, categorias, contexto) {
+  await batchAuditado(db, { clienteId, contexto, acao: 'mapeamento_receitas', snapshot: snapshotMapeamento('receitas'), bindings: [clienteId] }, [
     db.prepare("DELETE FROM categoria_receita WHERE cliente_id = ?").bind(clienteId),
     ...categorias.map((cat) =>
       db

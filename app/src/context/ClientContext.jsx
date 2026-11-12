@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { isInternalRole } from "../auth/roles";
 import { apiFetch } from "../api/client";
+import { setTelemetryClient } from '../data/errorTelemetry.js';
 
 // Cliente "ativo" na tela: master/analista escolhem qual cliente ver (seletor
 // no header, lista vem de `GET /api/clientes`); cliente final está sempre
@@ -41,6 +42,10 @@ export function ClientProvider({ children }) {
 
   const activeClientId = user?.papel === "cliente" ? user.cliente_id : selectedClientId;
   const activeClient = clients.find((c) => c.id === activeClientId) ?? null;
+  useEffect(() => {
+    setTelemetryClient(activeClientId);
+    return () => setTelemetryClient(null);
+  }, [activeClientId]);
 
   const value = useMemo(
     () => ({
