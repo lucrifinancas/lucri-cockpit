@@ -1,7 +1,7 @@
 import { categoryLabel } from "../data/labels";
 import HistoryState from "../components/home/HistoryState";
 import { todayISO, previousRange, formatRange } from "../data/period";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { Link } from "react-router-dom";
 import {
@@ -34,9 +34,7 @@ import ComparisonBarChart from "../components/charts/ComparisonBarChart";
 import ProportionDonut from "../components/charts/ProportionDonut";
 import HorizontalBarChart from "../components/charts/HorizontalBarChart";
 import ProgressBar from "../components/charts/ProgressBar";
-import InsightsCard from "../components/home/InsightsCard";
 import EmptyMetricState from "../components/home/EmptyMetricState";
-import { gerarInsights } from "../data/homeInsights";
 import "../styles/page.css";
 import "./HomePage.css";
 
@@ -165,6 +163,7 @@ function buildAgeing(lancamentos) {
 }
 
 export default function HomePage() {
+  const [analise, setAnalise] = useState("receitas");
   const { user } = useAuth();
   const {
     home,
@@ -397,17 +396,6 @@ export default function HomePage() {
     }));
 
   const periodo = rotuloPeriodo(range);
-  const insights = gerarInsights({
-    receitas: totalEntradas,
-    despesas: totalDespesas,
-    saldo: saldoTotal,
-    vencidas: contasVencidas,
-    inadimplenciaPct,
-    despesasPorCategoria,
-    semMae: totalSemMae + totalReceitasSemMae,
-    papel: user?.papel,
-  });
-
   // Histórico mensal (Receitas x Despesas, Resultado, Vencidas): 1 fetch só
   // (useHistoricoMensal), reaproveitado nos 3 gráficos abaixo.
   const monthlyHistory = historico.map((m) => ({
@@ -435,7 +423,7 @@ export default function HomePage() {
         <div>
           <h1 className="page-title">Visão geral</h1>
           <p className="home-sub">
-            Seu caixa, os resultados do período e o que merece atenção.
+            Seu caixa e os resultados do período.
           </p>
         </div>
         {/* Só afirma o que é verdade: se a Home carregou, a conexão funcionou. */}
@@ -520,10 +508,6 @@ export default function HomePage() {
             context="Vencido ÷ total a receber"
           />
         )}
-      </div>
-
-      <div className="home-attention home-cap-perto">
-        <InsightsCard items={insights} periodLabel={periodo} />
       </div>
 
       {/* Andamento dos pagamentos e recebimentos do período. */}
@@ -708,13 +692,21 @@ export default function HomePage() {
           <span>
             <strong>Análises adicionais</strong>
             <span className="home-detalhes-sub">
-              Detalhamento de categorias · Contas vencidas por mês · Faixas de atraso
+              Consulte as categorias e os atrasos em detalhe
             </span>
           </span>
         </summary>
         <div className="home-detalhes-corpo">
-          <div className="chart-row chart-row-2">
-            <section className="page-section">
+          <div className="home-analysis-toolbar">
+            <div className="home-analysis-switch" role="group" aria-label="Selecionar análise">
+              {[["receitas", "Receitas"], ["despesas", "Despesas"], ["atrasos", "Atrasos"]].map(([valor, rotulo]) => (
+                <button key={valor} type="button" aria-pressed={analise === valor} onClick={() => setAnalise(valor)}>{rotulo}</button>
+              ))}
+            </div>
+            <span className="home-card-period">{analise === "atrasos" ? "Histórico e período selecionado" : periodo}</span>
+          </div>
+          <div className="home-analysis-content">
+            <section className="page-section" hidden={analise !== "receitas"}>
               <h2 className="section-title">Receitas por categoria</h2>
               {totalReceitasSemMae > 0 && (
                 <p className="pending-notice">
@@ -731,8 +723,8 @@ export default function HomePage() {
                 total={totalEntradas}
               />
             </section>
-            <section className="page-section">
-              <h2 className="section-title">Despesas totais</h2>
+            <section className="page-section" hidden={analise !== "despesas"}>
+              <h2 className="section-title">Despesas por categoria</h2>
               {totalSemMae > 0 && (
                 <p className="pending-notice">
                   {fmtBRL.format(totalSemMae)} em despesas ainda sem categoria principal.
@@ -750,8 +742,8 @@ export default function HomePage() {
             </section>
           </div>
 
-          <section className="page-section">
-            <h2 className="section-title">Contas a receber vencidas por mês</h2>
+          <section className="page-section" hidden={analise !== "atrasos"}>
+            <header className="home-card-head"><h2 className="section-title">Contas a receber vencidas por mês</h2><span className="home-card-period">Últimos 12 meses · não acompanha filtro</span></header>
             <HistoryState loading={historyLoading} error={historyError} pending={historyPending} partial={incompleteHistory} retry={retryHistory}>
             {temVencidasHist ? (
               <HistoryBarChart
@@ -768,10 +760,8 @@ export default function HomePage() {
           </HistoryState>
           </section>
 
-          <section className="page-section">
-            <h2 className="section-title">
-              Inadimplência por faixa de atraso
-            </h2>
+          <section className="page-section" hidden={analise !== "atrasos"}>
+            <header className="home-card-head"><h2 className="section-title">Inadimplência por faixa de atraso</h2><span className="home-card-period">{periodo}</span></header>
             {ageingChart.length > 0 ? (
               <HorizontalBarChart
                 data={ageingChart}

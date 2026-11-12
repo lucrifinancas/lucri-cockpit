@@ -607,3 +607,25 @@
   outline: 2px solid var(--cta);
   outline-offset: 4px;
 }
+
+/* Consultas adicionais em largura completa, sem cartões aninhados. */
+.home-analysis-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.home-analysis-switch { display: flex; gap: 4px; padding: 4px; background: var(--bg-subtle); border-radius: 10px; }
+.home-analysis-switch button { min-height: 44px; padding: 8px 20px; border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.home-analysis-switch button:hover { background: var(--bg-panel-hover); color: var(--text-primary); }
+.home-analysis-switch button[aria-pressed="true"] { background: var(--bg-panel); color: var(--text-primary); }
+.home-analysis-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.home-analysis-content { min-width: 0; }
+.home-detalhes-corpo [hidden] { display: none; }
+.home-detalhes-corpo .entradas-summary-table, .home-detalhes-corpo .chart-block { border: 0; padding: 0; border-radius: 0; background: transparent; }
+.home-detalhes-corpo .entradas-summary-table td { padding: 10px 0; font-variant-numeric: tabular-nums; }
+.home-detalhes-corpo .entradas-summary-table th:first-child { width: 55%; }
+.home-detalhes-corpo .entradas-summary-table .num { white-space: nowrap; padding-left: 16px; }
+.home-detalhes-corpo .entradas-summary-table .row-filho td:first-child { padding-left: 22px; }
+.home-detalhes-corpo .page-section { gap: 16px; }
+@media (max-width: 700px) {
+  .home-detalhes-corpo .entradas-summary-table { overflow-x: auto; }
+  .home-detalhes-corpo .entradas-summary-table table { min-width: 460px; }
+  .home-analysis-switch { width: 100%; }
+  .home-analysis-switch button { flex: 1; padding-inline: 12px; }
+}
