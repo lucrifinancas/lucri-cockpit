@@ -1,4 +1,7 @@
+import { prepararRegistros } from './registrosSchema.js';
+
 export async function registrarErro(db, event) {
+  await prepararRegistros(db);
   await db.prepare(`INSERT INTO registros_erros
     (request_id, origem, codigo, operacao, metodo, status, cliente_id, usuario_id, papel, versao)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -7,6 +10,7 @@ export async function registrarErro(db, event) {
 }
 
 export async function listarRegistros(db, tipo, { clienteId = null, antes = null, limite = 25 } = {}) {
+  await prepararRegistros(db);
   const table = tipo === 'auditoria' ? 'auditoria_categorias' : 'registros_erros';
   const where = [];
   const args = [];
@@ -25,6 +29,7 @@ export async function listarRegistros(db, tipo, { clienteId = null, antes = null
 }
 
 export async function limparRegistros(db) {
+  await prepararRegistros(db);
   await db.batch([
     db.prepare("DELETE FROM registros_erros WHERE criado_em < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')"),
     db.prepare("DELETE FROM auditoria_categorias WHERE criado_em < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-365 days')"),

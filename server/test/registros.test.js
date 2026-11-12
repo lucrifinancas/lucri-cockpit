@@ -11,6 +11,7 @@ import { criarMaeReceita, removerMaeReceita } from '../src/db/categoriaReceita.j
 import { limparRegistros } from '../src/db/registros.js';
 import { normalizarOperacao } from '../src/utils/observabilidade.js';
 import { salvarNomesPai } from '../src/db/categoriaPaiNome.js';
+import { prepararRegistros, REGISTROS_SCHEMA } from '../src/db/registrosSchema.js';
 
 const secret = 'somente-para-testes-de-registros';
 const context = { usuarioId: 1, papel: 'master', requestId: crypto.randomUUID(), versao: 'teste.1' };
@@ -24,12 +25,11 @@ function database(t) {
     (1,'admin@example.test','hash','master',NULL), (2,'analista@example.test','hash','analista',NULL), (3,'cliente@example.test','hash','cliente',7);`);
   const db = {
     prepare(query) {
-      const statement = sql.prepare(query);
       let args = [];
       return { bind(...values) { args = values; return this; },
-        async first() { return statement.get(...args) ?? null; },
-        async all() { return { results: statement.all(...args) }; },
-        async run() { const result = statement.run(...args); return { meta: { last_row_id: Number(result.lastInsertRowid), changes: Number(result.changes) } }; },
+        async first() { return sql.prepare(query).get(...args) ?? null; },
+        async all() { return { results: sql.prepare(query).all(...args) }; },
+        async run() { const result = sql.prepare(query).run(...args); return { meta: { last_row_id: Number(result.lastInsertRowid), changes: Number(result.changes) } }; },
       };
     },
     async batch(statements) {
@@ -193,4 +193,26 @@ test('falha ao persistir erro mantém resposta e referência originais', async t
   assert.equal(response.status, 500);
   assert.ok((await response.json()).request_id);
   assert.ok(messages.some(message => JSON.parse(message).evento === 'falha_registro_erro'));
+});
+
+test('primeiro uso cria esquema pelo vínculo D1 e equivale à migração versionada', async t => {
+  const { db, sql } = database(t);
+  sql.exec('DROP TABLE auditoria_categorias; DROP TABLE registros_erros;');
+  await criarMae(db, 7, 'Grupo inicial', context);
+  assert.equal(audits(sql).length, 1);
+  const file = readFileSync(new URL('../src/db/migrations/0014_registros.sql', import.meta.url), 'utf8');
+  const normalize = value => value.replace(/^\s*--.*$/gm, '').replace(/\s+/g, ' ').replace(/\s*;\s*/g, ';').trim().replace(/;$/, '');
+  assert.equal(normalize(REGISTROS_SCHEMA.join(';')), normalize(file));
+});
+
+test('preparação compartilha uma execução e permite repetir após falha transitória', async t => {
+  const { db } = database(t);
+  const batch = db.batch;
+  let attempts = 0;
+  db.batch = async statements => { attempts++; if (attempts === 1) throw new Error('indisponibilidade transitória'); return batch(statements); };
+  await assert.rejects(() => prepararRegistros(db));
+  await Promise.all([prepararRegistros(db), prepararRegistros(db)]);
+  assert.equal(attempts, 2);
+  await prepararRegistros(db);
+  assert.equal(attempts, 2);
 });

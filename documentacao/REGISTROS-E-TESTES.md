@@ -40,16 +40,18 @@ ocorrido depois da ativação ou com uma identidade/data reconstruída.
 
 ## Publicação
 
-O workflow do backend testa o código com Node 24, executa somente a migração
-aditiva e idempotente `0014_registros.sql` e depois publica o Worker. Não
-reaplica as migrações antigas, que podem ter sido aplicadas manualmente.
-O token do workflow precisa permitir escrita no D1 além do deploy do Worker.
+O workflow testa o backend com Node 24 e publica o Worker. As tabelas são
+preparadas pelo vínculo D1 existente antes da primeira leitura de registros,
+gravação de erro, auditoria ou limpeza. A preparação usa somente o DDL aditivo
+e idempotente da migração 0014, com cache por vínculo/isolate e nova tentativa
+se falhar. Não reaplica migrações antigas nem amplia as permissões do token
+de deploy. Os testes verificam a equivalência entre o SQL e a definição de
+inicialização, além da primeira execução sem as tabelas.
 
-Comandos equivalentes, na pasta `server/`:
+Publicação, na pasta `server/`:
 
 ```sh
 npm test
-npx wrangler d1 execute DB --remote --file=src/db/migrations/0014_registros.sql
 npm run deploy
 ```
 

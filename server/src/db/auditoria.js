@@ -1,6 +1,9 @@
+import { prepararRegistros } from './registrosSchema.js';
+
 // Captura antes e depois dentro do batch transacional do D1. Se qualquer
 // statement falhar, tanto a alteração quanto a auditoria sofrem rollback.
 export async function batchAuditado(db, { clienteId, contexto = {}, acao, snapshot, bindings }, statements) {
+  await prepararRegistros(db);
   const eventoId = crypto.randomUUID();
   const results = await db.batch([
     db.prepare(`INSERT INTO auditoria_categorias

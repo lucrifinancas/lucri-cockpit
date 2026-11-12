@@ -21,8 +21,9 @@
   Alterações anteriores à ativação não são reconstruídas como eventos novos.
 - Retenção: erros 30 dias; auditoria 365 dias, com limpeza no cron existente.
 
-Ativação exige `server/src/db/migrations/0014_registros.sql` antes do Worker novo.
-O deploy prepara somente essa migração idempotente, sem reaplicar as antigas.
+A primeira operação de registros/auditoria prepara as tabelas pelo vínculo D1
+do Worker, com o mesmo DDL aditivo e idempotente de `0014_registros.sql`. Não
+reaplica migrações antigas nem exige permissões administrativas extras do token.
 
 
 Formato de request/response de cada endpoint do backend, testado com dados
