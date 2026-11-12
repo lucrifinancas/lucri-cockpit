@@ -6,9 +6,11 @@ import { buscarUsuarioPorId } from "../db/usuarios.js";
 import { ehDesenvolvimento } from "./origem.js";
 
 const NOME_COOKIE = "lucri_sessao";
+const COOKIE_VISAO = "lucri_visao";
 const DURACAO_SEGUNDOS = 60 * 60 * 24 * 7; // 7 dias
 
 export async function criarSessao(c, usuario, segredo) {
+  encerrarVisao(c);
   const agora = Math.floor(Date.now() / 1000);
   const payload = {
     sub: usuario.id,
@@ -58,16 +60,43 @@ export async function lerSessao(c, segredo) {
 // senha derrubar sessões antigas na prática (sem isso, um JWT continuaria
 // válido por até 7 dias mesmo depois da vítima recuperar a conta). Usar
 // esta função em todo lugar que hoje usa lerSessao pra proteger uma rota.
-export async function lerSessaoValida(c, segredo, db) {
+export async function lerSessaoOriginal(c, segredo, db) {
   const sessao = await lerSessao(c, segredo);
   if (!sessao) return null;
 
   const usuario = await buscarUsuarioPorId(db, sessao.sub);
   if (!usuario || usuario.sessao_versao !== sessao.versao) return null;
 
-  return { ...sessao, papel: usuario.papel, cliente_id: usuario.cliente_id ?? null };
+  return { ...sessao, email: usuario.email, papel: usuario.papel, cliente_id: usuario.cliente_id ?? null };
 }
 
+export async function lerSessaoValida(c, segredo, db) {
+  const original = await lerSessaoOriginal(c, segredo, db);
+  if (!original) return null;
+  const token = getCookie(c, COOKIE_VISAO);
+  if (!token) return original;
+  // Uma visão inválida/expirada nunca volta silenciosamente aos poderes do admin.
+  try {
+    const visao = await verify(token, segredo, 'HS256');
+    if (visao.tipo !== 'visao_cliente' || original.papel !== 'master' || visao.ator_id !== original.sub || visao.ator_versao !== original.versao) return null;
+    const alvo = await buscarUsuarioPorId(db, visao.alvo_id);
+    if (!alvo || alvo.papel !== 'cliente' || !alvo.cliente_id || alvo.sessao_versao !== visao.alvo_versao) return null;
+    return { sub: alvo.id, email: alvo.email, papel: alvo.papel, cliente_id: alvo.cliente_id,
+      versao: alvo.sessao_versao, acesso_assistido: { administrador_id: original.sub, administrador_email: original.email, expira_em: visao.exp } };
+  } catch { return null; }
+}
+
+export async function criarVisao(c, original, alvo) {
+  const agora = Math.floor(Date.now() / 1000);
+  const token = await sign({ tipo: 'visao_cliente', ator_id: original.sub, ator_versao: original.versao,
+    alvo_id: alvo.id, alvo_versao: alvo.sessao_versao, iat: agora, exp: agora + 1800 }, c.env.JWT_SECRET);
+  const producao = !ehDesenvolvimento(c);
+  // Cookie de sessão: permanece presente após expirar o JWT, impedindo fallback ao admin.
+  setCookie(c, COOKIE_VISAO, token, { httpOnly: true, secure: producao, sameSite: producao ? 'None' : 'Lax', path: '/' });
+}
+export function encerrarVisao(c) { deleteCookie(c, COOKIE_VISAO, { path: '/' }); }
+
 export function encerrarSessao(c) {
+  encerrarVisao(c);
   deleteCookie(c, NOME_COOKIE, { path: "/" });
 }

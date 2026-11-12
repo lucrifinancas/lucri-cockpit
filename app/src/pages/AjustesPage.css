@@ -1041,3 +1041,17 @@
 }
 .aj-onboarding li { padding-left: 4px; }
 @media (max-width: 640px) { .aj-onboarding { grid-template-columns: 1fr; } }
+
+.aj-access-person { flex-wrap: wrap; gap: 12px; }
+.aj-access-identity { flex: 1; min-width: 160px; overflow-wrap: anywhere; }
+.aj-access-actions, .aj-profile-photo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.aj-access-actions button, .aj-profile-photo-actions button { min-height: 44px; }
+.aj-access-editor { flex-basis: 100%; min-width: 0; padding: 16px 0 0; border-top: 1px solid var(--border-subtle); }
+.aj-access-event { display: flex; flex-direction: column; gap: 4px; padding: 16px 0; overflow-wrap: anywhere; }
+.aj-access-event span, .aj-access-event time { font-size: 13px; color: var(--text-secondary); }
+
+.aj-access-person > .aj-access-actions { flex: 0 1 auto; flex-direction: row; gap: 8px; }
+.aj-access-person > .aj-access-editor { flex: 1 0 100%; display: block; }
+.aj-access-person > .client-avatar { flex: none; }
+.aj-profile-form > .aj-perfil-topo, .aj-profile-form > .aj-hint { grid-column: 1 / -1; }
+.aj-pessoa.aj-access-person > .client-avatar { flex: 0 0 auto; }

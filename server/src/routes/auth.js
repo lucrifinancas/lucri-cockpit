@@ -73,6 +73,7 @@ authRoutes.get("/me", async (c) => {
     email: sessao.email,
     papel: sessao.papel,
     cliente_id: sessao.cliente_id,
+    acesso_assistido: sessao.acesso_assistido ?? null,
   });
 });
 
@@ -86,6 +87,7 @@ authRoutes.post("/alterar-senha", async (c) => {
   if (!sessao) {
     return c.json({ erro: "Não autenticado." }, 401);
   }
+  if (sessao.acesso_assistido) return c.json({ erro: "Volte ao administrador para gerenciar sua própria senha." }, 403);
 
   const { senha_atual, senha_nova } = await c.req.json();
   if (!senha_atual || !senha_nova) {

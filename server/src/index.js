@@ -13,6 +13,7 @@ import { bloquearCsrf } from "./middleware/csrf.js";
 import { observarRequisicao } from "./middleware/observabilidade.js";
 import { registrosRoutes, auditoriaRoutes } from "./routes/registros.js";
 import { limparRegistros } from "./db/registros.js";
+import { perfisRoutes } from './routes/perfis.js';
 
 const app = new Hono();
 app.use('*', observarRequisicao);
@@ -63,6 +64,7 @@ app.route("/api/clientes", homeRoutes);
 app.route("/api/clientes", financeiroRoutes);
 app.route('/api/registros', registrosRoutes);
 app.route('/api/clientes', auditoriaRoutes);
+app.route('/api', perfisRoutes);
 
 export default {
   fetch: app.fetch,

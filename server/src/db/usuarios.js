@@ -1,4 +1,5 @@
 // Consultas relacionadas à tabela "usuarios".
+import { prepararPerfis } from "./perfis.js";
 
 export async function buscarUsuarioPorEmail(db, email) {
   const resultado = await db
@@ -99,8 +100,9 @@ export async function criarUsuarioClienteGoogle(db, clienteId, email, nome, sobr
 // Contas de acesso (papel "cliente") de uma empresa — Ajustes → Acessos.
 // Sem senha_hash, claro.
 export async function listarUsuariosDoCliente(db, clienteId) {
+  await prepararPerfis(db);
   const { results } = await db
-    .prepare("SELECT id, email, nome, sobrenome, criado_em FROM usuarios WHERE cliente_id = ? AND papel = 'cliente' ORDER BY email")
+    .prepare("SELECT u.id, u.email, u.nome, u.sobrenome, u.criado_em, p.nome AS nome_exibicao, p.avatar_url FROM usuarios u LEFT JOIN usuario_perfis p ON p.usuario_id = u.id WHERE u.cliente_id = ? AND u.papel = 'cliente' ORDER BY u.email")
     .bind(clienteId)
     .all();
   return results;

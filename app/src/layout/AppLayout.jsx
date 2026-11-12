@@ -19,6 +19,7 @@ import { useLocalProfile } from "../hooks/useLocalProfile";
 import PeriodSelector from "../components/PeriodSelector";
 import ClientAvatar from "../components/ClientAvatar";
 import GlobalSearch from "../components/GlobalSearch";
+import AssistedAccess from "../components/AssistedAccess";
 import "./AppLayout.css";
 
 const NAV_ITEMS = [
@@ -112,6 +113,7 @@ export default function AppLayout() {
         </div>
       </header>
 
+      {user?.acesso_assistido && <AssistedAccess />}
       <section className="app-context" aria-label="Empresa e período">
         <div className="context-company">
           <span className="context-label">Empresa</span>

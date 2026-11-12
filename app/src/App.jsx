@@ -16,6 +16,7 @@ import BalancoPage from "./pages/BalancoPage";
 import DrePage from "./pages/DrePage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import SearchPage from "./pages/SearchPage";
+import AssistedAccess from "./components/AssistedAccess";
 
 // Beta 1.2: as 8 abas do escopo todas roteadas. Home/Ajustes/Entradas/
 // Saídas/Despesas/Caixa com dado real; Balanço/DRE ainda são só o aviso
@@ -23,13 +24,14 @@ import SearchPage from "./pages/SearchPage";
 // contábil (DRE, que já tem endpoint pronto no backend).
 
 export default function App() {
-  const { user, checkingSession } = useAuth();
+  const { user, checkingSession, canReturn } = useAuth();
 
   if (checkingSession) {
     return null;
   }
 
   if (!user) {
+    if (canReturn) return <AssistedAccess expired />;
     return (
       <Routes>
         <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />

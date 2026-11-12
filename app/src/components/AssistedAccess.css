@@ -1,0 +1,6 @@
+.assisted-access { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 24px; background: var(--bg-subtle); color: var(--text-primary); border-bottom: 1px solid var(--border-subtle); }
+.assisted-access strong { font-size: 14px; overflow-wrap: anywhere; }
+.assisted-access p { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); }
+.assisted-access button { min-height: 44px; }
+.app-shell > .assisted-access { position: sticky; top: 80px; z-index: 29; }
+@media (max-width: 900px) { .app-shell > .assisted-access { position: static; } }

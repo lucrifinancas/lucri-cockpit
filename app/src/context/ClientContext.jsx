@@ -17,7 +17,10 @@ export function ClientProvider({ children }) {
   const isEquipe = isInternalRole(user?.papel);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(isEquipe);
-  const [selectedClientId, updateSelectedClientId] = useState(null);
+  const [selectedClientId, updateSelectedClientId] = useState(() => {
+    const id = Number(new URLSearchParams(window.location.search).get('cliente'));
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  });
   const [clientsError, setClientsError] = useState(null);
 
   useEffect(() => {

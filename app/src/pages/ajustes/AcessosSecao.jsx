@@ -1,14 +1,25 @@
-import { useEffect, useState } from "react";
-import { EnvelopeSimple, PaperPlaneTilt, UserCircle, UserPlus, Users, X } from "@phosphor-icons/react";
+import { Fragment, useEffect, useState } from "react";
+import { EnvelopeSimple, PaperPlaneTilt, UserPlus, Users, X } from "@phosphor-icons/react";
 import { apiFetch } from "../../api/client";
 import { useActiveClient } from "../../context/ClientContext";
 import { ClienteAlvo, SecaoHeader } from "./comum";
+import { useAuth } from '../../auth/AuthContext';
+import { useConfirmLeave } from '../../hooks/usePendingChanges';
+import ClientAvatar from '../../components/ClientAvatar';
+import UsuarioPerfilEditor from './UsuarioPerfilEditor';
 
 // Clientes → Acessos: quem já entra no Cockpit dessa empresa e convites
 // pendentes. Convite = reserva o e-mail; na 1ª vez que a pessoa entra com
 // Google usando esse e-mail, a conta "cliente" é criada sozinha.
 export default function AcessosSecao({ icone }) {
   const { activeClientId } = useActiveClient();
+  const { accessAs } = useAuth();
+  const confirmLeave = useConfirmLeave();
+  const [editing, setEditing] = useState(null);
+  const [accessing, setAccessing] = useState(null);
+  const [revision, setRevision] = useState(0);
+  const [audit, setAudit] = useState(null);
+  const [auditError, setAuditError] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [convites, setConvites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +38,23 @@ export default function AcessosSecao({ icone }) {
       .catch((e) => !cancelado && setErro(e.message))
       .finally(() => !cancelado && setLoading(false));
     return () => { cancelado = true; };
-  }, [activeClientId]);
+  }, [activeClientId, revision]);
+
+  useEffect(() => { setEditing(null); }, [activeClientId]);
+  useEffect(() => {
+    if (!activeClientId) return;
+    let cancelled = false;
+    setAudit(null); setAuditError(null);
+    apiFetch(`/api/clientes/${activeClientId}/auditoria-acessos`).then(data => { if (!cancelled) setAudit(data); })
+      .catch(error => { if (!cancelled) setAuditError(error.message); });
+    return () => { cancelled = true; };
+  }, [activeClientId, revision]);
+  async function acessar(u) {
+    if (!confirmLeave()) return;
+    setEditing(null); setAccessing(u.id); setErro(null);
+    try { await accessAs(u.id, activeClientId); }
+    catch (error) { setErro(error.message); setAccessing(null); }
+  }
 
   async function convidar(e) {
     e.preventDefault();
@@ -57,7 +84,7 @@ export default function AcessosSecao({ icone }) {
     }
   }
 
-  const nomeCompleto = (u) => [u.nome, u.sobrenome].filter(Boolean).join(" ");
+  const nomeCompleto = (u) => u.nome_exibicao || [u.nome, u.sobrenome].filter(Boolean).join(" ");
 
   return (
     <>
@@ -71,14 +98,20 @@ export default function AcessosSecao({ icone }) {
         {!loading && !erro && usuarios.length === 0 && <p className="aj-hint">Ninguém dessa empresa tem acesso ainda. Autorize um e-mail abaixo.</p>}
         <ul className="aj-lista">
           {usuarios.map((u) => (
-            <li key={u.id} className="aj-pessoa">
-              <UserCircle size={32} weight="light" className="aj-pessoa-icone" aria-hidden="true" />
-              <div>
+            <Fragment key={u.id}>
+            <li className="aj-pessoa aj-access-person">
+              <ClientAvatar client={{ name: nomeCompleto(u) || u.email, logoUrl: u.avatar_url }} size={40} />
+              <div className="aj-access-identity">
                 <strong>{nomeCompleto(u) || u.email}</strong>
                 {nomeCompleto(u) && <span className="aj-hint-inline">{u.email}</span>}
               </div>
-              <span className="aj-badge">Cliente</span>
+              <div className="aj-access-actions">
+                <button type="button" className="aj-btn-util" disabled={Boolean(accessing)} aria-expanded={editing === u.id} onClick={() => { if (confirmLeave()) setEditing(editing === u.id ? null : u.id); }}>Editar perfil</button>
+                <button type="button" className="aj-btn-util" disabled={Boolean(accessing)} onClick={() => acessar(u)}>{accessing === u.id ? 'Abrindo…' : 'Acessar como usuário'}</button>
+              </div>
+              {editing === u.id && <UsuarioPerfilEditor key={u.id} usuario={u} onSaved={() => setRevision(v => v + 1)} />}
             </li>
+            </Fragment>
           ))}
         </ul>
       </section>
@@ -113,6 +146,19 @@ export default function AcessosSecao({ icone }) {
             </ul>
           </>
         )}
+      </section>
+      <section className="aj-card">
+        <h3 className="aj-card-titulo">Histórico de acessos e perfis</h3>
+        <p className="aj-hint">Últimos 50 eventos desta empresa. As fotos não são copiadas para o histórico.</p>
+        {!audit && !auditError && <p className="aj-hint">Carregando histórico…</p>}
+        {auditError && <p className="aj-hint aj-erro" role="alert">{auditError}</p>}
+        {audit?.length === 0 && <p className="aj-hint">Nenhum evento registrado ainda.</p>}
+        <ul className="aj-lista">{audit?.map(item => <li key={item.id} className="aj-access-event">
+          <strong>{{ perfil_atualizado: 'Perfil atualizado', acesso_iniciado: 'Acesso como cliente iniciado', acesso_encerrado: 'Retorno ao administrador' }[item.acao]}</strong>
+          <span>{item.usuario_email} · por {item.administrador_email}</span>
+          <time dateTime={item.criado_em.replace(' ', 'T') + 'Z'}>{new Date(item.criado_em.replace(' ', 'T') + 'Z').toLocaleString('pt-BR')}</time>
+        </li>)}</ul>
+        {auditError && <button type="button" className="aj-btn-util" onClick={() => setRevision(v => v + 1)}>Tentar novamente</button>}
       </section>
     </>
   );
