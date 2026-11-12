@@ -94,9 +94,15 @@ export async function criarVisao(c, original, alvo) {
   // Cookie de sessão: permanece presente após expirar o JWT, impedindo fallback ao admin.
   setCookie(c, COOKIE_VISAO, token, { httpOnly: true, secure: producao, sameSite: producao ? 'None' : 'Lax', path: '/' });
 }
-export function encerrarVisao(c) { deleteCookie(c, COOKIE_VISAO, { path: '/' }); }
+function apagarCookieSessao(c, nome) {
+  const producao = !ehDesenvolvimento(c);
+  // A exclusão também é um Set-Cookie: sem SameSite=None; Secure o
+  // navegador a rejeita na chamada do Cockpit para o domínio da API.
+  deleteCookie(c, nome, { path: '/', httpOnly: true, secure: producao, sameSite: producao ? 'None' : 'Lax' });
+}
+export function encerrarVisao(c) { apagarCookieSessao(c, COOKIE_VISAO); }
 
 export function encerrarSessao(c) {
   encerrarVisao(c);
-  deleteCookie(c, NOME_COOKIE, { path: "/" });
+  apagarCookieSessao(c, NOME_COOKIE);
 }

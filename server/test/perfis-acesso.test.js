@@ -146,3 +146,16 @@ test('logout apaga os dois cookies e histórico só aparece ao administrador da 
  const b=await (await request(db,'/clientes/8/auditoria-acessos')).json();
  assert.equal(a.length,1);assert.equal(a[0].administrador_email,'admin@example.test');assert.equal(b.length,0);
 });
+
+test('exclusão dos cookies preserva atributos exigidos em chamadas entre sites',async t=>{
+ const {db}=database(t);const cookie=await start(db);
+ const back=await request(db,'/admin/voltar',{cookie,method:'POST'});
+ const logout=await request(db,'/auth/logout',{cookie,method:'POST'});
+ for(const header of [...back.headers.getSetCookie(),...logout.headers.getSetCookie()]) {
+  assert.match(header,/Max-Age=0/);
+  assert.match(header,/Path=\//);
+  assert.match(header,/HttpOnly/);
+  assert.match(header,/Secure/);
+  assert.match(header,/SameSite=None/);
+ }
+});

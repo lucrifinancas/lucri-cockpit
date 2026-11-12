@@ -52,6 +52,8 @@ export function AuthProvider({ children }) {
   }
   async function returnToAdmin() {
     await apiFetch('/api/admin/voltar', { method: 'POST' });
+    const restored = await apiFetch('/api/auth/me', { cache: 'no-store' });
+    if (restored.papel !== 'master' || restored.acesso_assistido) throw new Error('O navegador ainda mantém a visão do cliente. Tente voltar novamente.');
     let cliente = '';
     try { cliente = sessionStorage.getItem('lucri-admin-retorno-cliente') || ''; sessionStorage.removeItem('lucri-admin-retorno-cliente'); } catch { /* Usa a seleção padrão. */ }
     window.location.assign('/ajustes?secao=acessos' + (/^[1-9]\d*$/.test(cliente) ? '&cliente=' + cliente : ''));
