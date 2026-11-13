@@ -7,7 +7,9 @@ import '../../components/DataTable.css';
 import './RegistrosSecao.css';
 
 const formatDate = value => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Sao_Paulo' }).format(new Date(value));
-const actor = item => item.usuario_email ?? (item.usuario_id ? `Usuário #${item.usuario_id}` : 'Sistema / sessão não identificada');
+const actor = item => item.operacao === '/tarefas/historico' ? 'Sistema · atualização automática' : item.usuario_email ?? (item.usuario_id ? `Usuário #${item.usuario_id}` : 'Sistema / sessão não identificada');
+const STAGES = { autenticacao: 'Autenticação com Conta Azul', consulta: 'Consulta e cálculo', salvamento: 'Salvamento do histórico' };
+const CAUSES = { CONEXAO_INTERROMPIDA: 'Conexão precisa de nova autorização', LIMITE_CONTA_AZUL: 'Limite de consultas da Conta Azul', AUTORIZACAO_CONTA_AZUL: 'Consulta não autorizada pela Conta Azul', INDISPONIBILIDADE_CONTA_AZUL: 'Conta Azul indisponível', RESPOSTA_CONTA_AZUL: 'Consulta recusada pela Conta Azul', REDE: 'Falha de comunicação com Conta Azul', RESPOSTA_INVALIDA: 'Resposta em formato inválido', NAO_IDENTIFICADA: 'Causa não identificada' };
 const ERRORS = { FALHA_LOGIN_GOOGLE: 'Falha no login Google', FALHA_CONEXAO_CONTA_AZUL: 'Falha na conexão com Conta Azul', FALHA_HISTORICO: 'Falha na atualização do histórico', ERRO_INTERNO: 'Erro no servidor', CONTA_AZUL_DESCONECTADA: 'Conexão com Conta Azul interrompida', FRONTEND_RUNTIME: 'Erro na interface', FRONTEND_PROMISE: 'Falha de operação na interface', REDE_INDISPONIVEL: 'Falha de conexão relatada pelo navegador', RESPOSTA_INVALIDA: 'Resposta inválida do servidor' };
 
 export default function RegistrosSecao({ icone }) {
@@ -53,7 +55,7 @@ function Records({ type, clientId }) {
     {current.loading ? <p className="records-message" role="status">Carregando registros…</p> : current.error ? <div className="records-message" role="alert"><p>Não foi possível consultar os registros. Tente atualizar.</p>{current.reference && <p>Referência: <code>{current.reference}</code></p>}<button type="button" className="aj-btn-util" onClick={() => setAttempt(value => value + 1)}>Tentar novamente</button></div> : current.items.length === 0 ? <p className="records-message" role="status">{type === 'erros' ? 'Nenhum erro registrado neste recorte. Relatos dependem da conexão do navegador e não cobrem todos os testes.' : 'Nenhuma alteração registrada neste recorte. O histórico começa após a ativação deste recurso.'}</p> :
       type === 'erros' ? <div className="data-table-scroll" tabIndex={0} role="region" aria-label="Tabela de erros"><table className="data-table records-table"><thead><tr><th scope="col">Quando</th><th scope="col">Erro e referência</th><th scope="col">Operação</th><th scope="col">Origem e usuário</th></tr></thead><tbody>{current.items.map(item => <tr key={item.id}>
         <td>{formatDate(item.criado_em)}</td><td><strong>{ERRORS[item.codigo] ?? 'Erro da aplicação'}</strong><code className="record-reference">{item.request_id}</code></td>
-        <td>{item.metodo} {item.operacao}<small className="record-meta">{item.status ? `HTTP ${item.status} · ` : ''}Versão: {item.versao ?? 'Não informada'}</small></td>
+        <td>{item.metodo} {item.operacao}{item.detalhes && <small className="record-meta">{item.detalhes.mes ? `Mês: ${item.detalhes.mes} · ` : ''}{STAGES[item.detalhes.etapa]}<br />{CAUSES[item.detalhes.causa] ?? CAUSES.NAO_IDENTIFICADA}</small>}<small className="record-meta">{item.status ? `HTTP ${item.status} · ` : ''}Versão: {item.versao ?? 'Não informada'}</small></td>
         <td>{item.origem === 'backend' ? 'API' : 'Relato do navegador'}<small className="record-meta">{actor(item)}{item.cliente_id ? ` · Empresa #${item.cliente_id}` : ''}</small></td>
       </tr>)}</tbody></table></div> : <ol className="records-audit">{current.items.map(item => {
         const changes = auditChanges(item);

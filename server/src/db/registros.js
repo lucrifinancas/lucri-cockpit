@@ -1,12 +1,13 @@
+import { detalhesHistoricoSeguros } from '../utils/erroHistorico.js';
 import { prepararRegistros } from './registrosSchema.js';
 
 export async function registrarErro(db, event) {
   await prepararRegistros(db);
   await db.prepare(`INSERT INTO registros_erros
-    (request_id, origem, codigo, operacao, metodo, status, cliente_id, usuario_id, papel, versao)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    (request_id, origem, codigo, operacao, metodo, status, cliente_id, usuario_id, papel, versao, detalhes_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(event.requestId, event.origem, event.codigo, event.operacao, event.metodo ?? null,
-      event.status ?? null, event.clienteId ?? null, event.usuarioId ?? null, event.papel ?? null, event.versao ?? null).run();
+      event.status ?? null, event.clienteId ?? null, event.usuarioId ?? null, event.papel ?? null, event.versao ?? null, event.codigo === 'FALHA_HISTORICO' ? JSON.stringify(detalhesHistoricoSeguros(event.detalhes)) : null).run();
 }
 
 export async function listarRegistros(db, tipo, { clienteId = null, antes = null, limite = 25 } = {}) {
@@ -21,7 +22,12 @@ export async function listarRegistros(db, tipo, { clienteId = null, antes = null
     ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY r.id DESC LIMIT ?`)
     .bind(...args, limite + 1).all();
   const items = results.slice(0, limite).map(row => {
-    if (tipo !== 'auditoria') return row;
+    if (tipo !== 'auditoria') {
+      const { detalhes_json, ...rest } = row;
+      let detalhes = null;
+      try { detalhes = detalhesHistoricoSeguros(JSON.parse(detalhes_json)); } catch { /* Registro anterior sem detalhes. */ }
+      return { ...rest, detalhes };
+    }
     const { antes_json, depois_json, ...rest } = row;
     return { ...rest, antes: JSON.parse(antes_json), depois: JSON.parse(depois_json) };
   });

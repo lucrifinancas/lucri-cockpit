@@ -216,3 +216,40 @@ test('preparação compartilha uma execução e permite repetir após falha tran
   await prepararRegistros(db);
   assert.equal(attempts, 2);
 });
+
+
+test('cron registra mês, etapa e causa segura sem sobrescrever histórico salvo', async t => {
+  const { db, sql } = database(t);
+  const { recalcularHistoricoPendente } = await import('../src/cron/historico.js');
+  const { detalhesHistoricoSeguros, causaHistorico } = await import('../src/utils/erroHistorico.js');
+  sql.prepare('INSERT INTO conexoes_contaazul (cliente_id, access_token, refresh_token, expira_em) VALUES (?, ?, ?, ?)').run(7, 'token-secreto', 'refresh-secreto', '2099-01-01T00:00:00Z');
+  sql.exec("INSERT INTO historico_mensal (cliente_id, mes, receitas, despesas, vencidas) VALUES (7, '2020-01', 123, 45, 0)");
+  const originalFetch = globalThis.fetch;
+  const originalError = console.error;
+  const logs = [];
+  globalThis.fetch = async () => new Response('corpo-sensivel', { status: 401 });
+  console.error = value => logs.push(value);
+  t.after(() => { globalThis.fetch = originalFetch; console.error = originalError; });
+  await recalcularHistoricoPendente({ DB: db });
+  const rows = sql.prepare('SELECT * FROM registros_erros').all();
+  assert.equal(rows.length, 6);
+  for (const row of rows) {
+    const details = JSON.parse(row.detalhes_json);
+    assert.match(details.mes, /^\d{4}-\d{2}$/);
+    assert.equal(details.etapa, 'consulta');
+    assert.equal(details.causa, 'AUTORIZACAO_CONTA_AZUL');
+  }
+  assert.equal(sql.prepare("SELECT receitas FROM historico_mensal WHERE mes = '2020-01'").get().receitas, 123);
+  assert.doesNotMatch(JSON.stringify(rows) + logs.join(''), /token-secreto|refresh-secreto|corpo-sensivel/);
+  assert.deepEqual(detalhesHistoricoSeguros({ mes: 'segredo', etapa: 'token', causa: 'corpo' }), { mes: null, etapa: null, causa: 'NAO_IDENTIFICADA' });
+  assert.equal(causaHistorico({ contaAzulStatus: 429 }), 'LIMITE_CONTA_AZUL');
+  assert.equal(causaHistorico({ contaAzulStatus: 503 }), 'INDISPONIBILIDADE_CONTA_AZUL');
+});
+
+test('atualiza esquema antigo de registros preservando eventos existentes', async t => {
+  const { db, sql } = database(t);
+  sql.exec('ALTER TABLE registros_erros DROP COLUMN detalhes_json');
+  await prepararRegistros(db);
+  await prepararRegistros(db);
+  assert.ok(sql.prepare('PRAGMA table_info(registros_erros)').all().some(c => c.name === 'detalhes_json'));
+});

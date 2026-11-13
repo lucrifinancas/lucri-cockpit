@@ -1,3 +1,4 @@
+import { causaHistorico } from '../utils/erroHistorico.js';
 import { registrarErro } from '../db/registros.js';
 import { obterAccessTokenValido } from "../contaazul/tokenManager.js";
 import { computarMes, mesesJanelaBalanco } from "../contaazul/historico.js";
@@ -39,15 +40,18 @@ export async function recalcularHistoricoPendente(env) {
   pendentes.sort((a, b) => b.idade - a.idade);
 
   for (const { clienteId, mes } of pendentes.slice(0, LIMITE_POR_EXECUCAO)) {
+    let etapa = 'autenticacao';
     try {
       const accessToken = await obterAccessTokenValido(env.DB, env, clienteId);
       if (!accessToken) continue; // desconectou entre a listagem e agora
+      etapa = 'consulta';
       const valores = await computarMes(env.DB, accessToken, clienteId, mes);
+      etapa = 'salvamento';
       await upsertHistoricoMes(env.DB, clienteId, mes, valores);
-    } catch {
+    } catch (error) {
       // Um cliente/mês falhando não pode travar os outros da fatia.
       const requestId = crypto.randomUUID();
-      const event = { requestId, origem: 'backend', codigo: 'FALHA_HISTORICO', operacao: '/tarefas/historico', clienteId };
+      const event = { requestId, origem: 'backend', codigo: 'FALHA_HISTORICO', operacao: '/tarefas/historico', clienteId, detalhes: { mes, etapa, causa: causaHistorico(error) } };
       console.error(JSON.stringify({ evento: 'erro_aplicacao', ...event }));
       try { await registrarErro(env.DB, event); }
       catch { console.error(JSON.stringify({ evento: 'falha_registro_erro', requestId })); }

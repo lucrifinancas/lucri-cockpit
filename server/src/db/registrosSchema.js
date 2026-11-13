@@ -14,7 +14,17 @@ const ready = new WeakMap();
 // com acesso à API administrativa do banco. Apenas DDL aditivo/idempotente.
 export function prepararRegistros(db) {
   if (!ready.has(db)) {
-    const pending = Promise.resolve().then(() => db.batch(REGISTROS_SCHEMA.map(sql => db.prepare(sql))))
+    const pending = Promise.resolve().then(async () => {
+      await db.batch(REGISTROS_SCHEMA.map(sql => db.prepare(sql)));
+      const columns = await db.prepare("PRAGMA table_info(registros_erros)").all();
+      if (!columns.results.some(column => column.name === "detalhes_json")) {
+        try { await db.prepare("ALTER TABLE registros_erros ADD COLUMN detalhes_json TEXT").run(); }
+        catch (error) {
+          const current = await db.prepare("PRAGMA table_info(registros_erros)").all();
+          if (!current.results.some(column => column.name === "detalhes_json")) throw error;
+        }
+      }
+    })
       .catch(error => { ready.delete(db); throw error; });
     ready.set(db, pending);
   }

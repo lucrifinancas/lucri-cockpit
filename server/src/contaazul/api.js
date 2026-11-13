@@ -36,7 +36,7 @@ async function fetchComRetentativa(url, accessToken) {
     try {
       resp = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     } catch (erro) {
-      if (ultima) throw erro;
+      if (ultima) { const failure = new Error('Falha de rede na Conta Azul', { cause: erro }); failure.contaAzulRede = true; throw failure; }
     }
     if (resp && (resp.ok || (resp.status !== 429 && resp.status < 500) || ultima)) {
       return resp;
@@ -67,7 +67,10 @@ async function chamarApi(path, accessToken, params = {}, { cache = true } = {}) 
   const resp = await fetchComRetentativa(url, accessToken);
 
   if (!resp.ok) {
-    throw new Error(`Conta Azul ${path} falhou: ${resp.status} ${await resp.text()}`);
+    await resp.body?.cancel();
+    const error = new Error(`Conta Azul ${path} falhou: ${resp.status}`);
+    error.contaAzulStatus = resp.status;
+    throw error;
   }
 
   const dados = await resp.json();
