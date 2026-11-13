@@ -351,3 +351,5 @@
 
 .login-showcase-dots button { border: 0; padding: 0; }
 .login-showcase-dots button:focus-visible { outline: 2px solid var(--lucri-sky); outline-offset: 4px; }
+
+.login-access-hint { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }

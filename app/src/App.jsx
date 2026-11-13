@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
 import RedefinirSenhaPage from "./auth/RedefinirSenhaPage";
@@ -17,6 +17,9 @@ import DrePage from "./pages/DrePage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import SearchPage from "./pages/SearchPage";
 import AssistedAccess from "./components/AssistedAccess";
+import ProductFooter from './components/ProductFooter';
+import AjudaPage from './pages/public/AjudaPage';
+import PrivacidadePage from './pages/public/PrivacidadePage';
 
 // Beta 1.2: as 8 abas do escopo todas roteadas. Home/Ajustes/Entradas/
 // Saídas/Despesas/Caixa com dado real; Balanço/DRE ainda são só o aviso
@@ -24,8 +27,14 @@ import AssistedAccess from "./components/AssistedAccess";
 // contábil (DRE, que já tem endpoint pronto no backend).
 
 export default function App() {
+  return <div className="product-frame"><div className="product-frame-content"><AppContent /></div><ProductFooter /></div>;
+}
+function AppContent() {
+  const { pathname } = useLocation();
   const { user, checkingSession, canReturn } = useAuth();
 
+  if (pathname === '/ajuda') return <AjudaPage />;
+  if (pathname === '/privacidade') return <PrivacidadePage />;
   if (checkingSession) {
     return null;
   }

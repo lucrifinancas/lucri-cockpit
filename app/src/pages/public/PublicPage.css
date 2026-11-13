@@ -1,0 +1,26 @@
+.public-page { width: min(100%, 880px); margin-inline: auto; padding: 28px 32px 56px; color: var(--text-primary); }
+.public-page-brand { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border-subtle); }
+.public-page-brand > a:first-child { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; color: var(--text-primary); }
+.public-page a { color: var(--accent); text-underline-offset: 3px; }
+.public-page a:focus-visible, .public-page summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+.public-page article { padding-top: 32px; max-width: 72ch; margin-inline: auto; }
+.public-page h1 { font-size: 30px; line-height: 1.2; letter-spacing: -0.025em; }
+.public-page-intro { color: var(--text-secondary); font-size: 16px; line-height: 1.7; margin: 12px 0 28px; }
+.public-page section { margin-top: 28px; }
+.public-page h2 { font-size: 19px; line-height: 1.4; margin-bottom: 10px; }
+.public-page h3 { font-size: 16px; margin: 20px 0 8px; }
+.public-page p, .public-page li { font-size: 14px; line-height: 1.8; }
+.public-page p + p { margin-top: 12px; }
+.public-page ul, .public-page ol { padding-left: 24px; }
+.public-page li + li { margin-top: 6px; }
+.public-page details { padding: 16px 0; border-top: 1px solid var(--border-subtle); }
+.public-page summary { cursor: pointer; font-size: 16px; font-weight: 600; line-height: 1.5; padding: 8px 0; min-height: 44px; }
+.public-page details p { margin-top: 12px; }
+.public-page .public-note { padding: 16px; background: var(--bg-subtle); border-radius: 12px; margin: 24px 0; }
+.public-page .public-note p { margin: 0; }
+.public-page table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.public-page th, .public-page td { border-bottom: 1px solid var(--border-subtle); padding: 12px 8px; text-align: left; vertical-align: top; line-height: 1.6; }
+.public-page th { font-weight: 600; }
+.public-table-scroll { overflow-x: auto; }
+.public-page .public-updated { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+@media(max-width:640px) { .public-page { padding: 20px 20px 36px; } .public-page h1 { font-size: 26px; } .public-page-brand a { min-height: 44px; display: inline-flex; align-items: center; } }

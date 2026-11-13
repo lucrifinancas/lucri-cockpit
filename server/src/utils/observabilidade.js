@@ -13,7 +13,7 @@ const apiRoutes = [
   /^\/api\/registros\/erros$/, /^\/api\/contaazul\/(?:iniciar|callback)$/,
   /^\/api\/contaazul\/autorizar\/:id$/,
 ];
-const pages = new Set(['/', '/entradas', '/saidas', '/despesas', '/caixa', '/contas-a-pagar', '/balanco', '/dre', '/relatorios', '/ajustes', '/busca', '/redefinir-senha']);
+const pages = new Set(['/', '/entradas', '/saidas', '/despesas', '/caixa', '/contas-a-pagar', '/balanco', '/dre', '/relatorios', '/ajustes', '/busca', '/redefinir-senha', '/ajuda', '/privacidade']);
 
 export function normalizarOperacao(value) {
   const path = String(value ?? '').split(/[?#]/, 1)[0];

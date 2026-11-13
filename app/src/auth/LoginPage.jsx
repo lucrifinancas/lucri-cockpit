@@ -100,6 +100,7 @@ export default function LoginPage() {
           <form className="login-form-pane" onSubmit={handleSubmit}>
             <img src={logo} alt="Lucri" className="login-logo" />
             <h1>Entrar no Cockpit</h1>
+            <p className="login-access-hint">Use o e-mail autorizado pela Lucri. Você pode entrar com senha, mesmo sem conta Google.</p>
 
             {erro && <p className="login-error" role="alert">{erro}</p>}
 

@@ -1,6 +1,6 @@
 export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'local';
 const CODES = new Set(['FRONTEND_RUNTIME', 'FRONTEND_PROMISE', 'REDE_INDISPONIVEL', 'RESPOSTA_INVALIDA']);
-const PAGES = new Set(['/', '/entradas', '/saidas', '/despesas', '/caixa', '/contas-a-pagar', '/balanco', '/dre', '/relatorios', '/ajustes', '/busca', '/redefinir-senha']);
+const PAGES = new Set(['/', '/entradas', '/saidas', '/despesas', '/caixa', '/contas-a-pagar', '/balanco', '/dre', '/relatorios', '/ajustes', '/busca', '/redefinir-senha', '/ajuda', '/privacidade']);
 let activeClientId = null;
 let installed = false;
 const recent = new Map();

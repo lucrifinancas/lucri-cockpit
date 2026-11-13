@@ -8,6 +8,7 @@ import {
   Vault,
   FileText,
   GearSix,
+  Question,
   SignOut,
   CaretDown,
 } from "@phosphor-icons/react";
@@ -98,6 +99,9 @@ export default function AppLayout() {
             </div>
           </div>
 
+          <NavLink to="/ajuda" className="topnav-iconbtn" aria-label="Ajuda" title="Ajuda">
+            <Question size={18} weight="light" aria-hidden="true" />
+          </NavLink>
           <NavLink
             to="/ajustes"
             className={({ isActive }) =>
